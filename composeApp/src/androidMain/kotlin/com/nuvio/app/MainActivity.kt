@@ -10,8 +10,10 @@ import androidx.activity.SystemBarStyle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.nuvio.app.core.auth.AuthStorage
+import com.nuvio.app.core.network.CloudflareSolver
 import com.nuvio.app.core.deeplink.handleAppUrl
 import com.nuvio.app.core.storage.PlatformLocalAccountDataCleaner
+import com.nuvio.app.core.sync.SyncClientIdentityStorage
 import com.nuvio.app.features.addons.AddonStorage
 import com.nuvio.app.features.collection.CollectionMobileSettingsStorage
 import com.nuvio.app.features.collection.CollectionStorage
@@ -20,6 +22,7 @@ import com.nuvio.app.features.downloads.DownloadsLiveStatusPlatform
 import com.nuvio.app.features.downloads.DownloadsPlatformDownloader
 import com.nuvio.app.features.downloads.DownloadsStorage
 import com.nuvio.app.features.library.LibraryStorage
+import com.nuvio.app.features.livetv.LiveTvStorage
 import com.nuvio.app.features.details.MetaScreenSettingsStorage
 import com.nuvio.app.features.home.HomeCatalogSettingsStorage
 import com.nuvio.app.features.mdblist.MdbListSettingsStorage
@@ -27,10 +30,14 @@ import com.nuvio.app.features.notifications.EpisodeReleaseNotificationPlatform
 import com.nuvio.app.features.notifications.EpisodeReleaseNotificationsStorage
 import com.nuvio.app.features.player.PlayerSettingsStorage
 import com.nuvio.app.features.player.PlayerTrackPreferenceStorage
+import com.nuvio.app.core.share.SharePlatform
 import com.nuvio.app.features.player.ExternalPlayerPlatform
+import com.nuvio.app.features.player.SubtitleFileCache
 import com.nuvio.app.features.player.PlayerPictureInPictureManager
+import com.nuvio.app.features.player.PipRemoteActionReceiver
 import com.nuvio.app.features.p2p.P2pSettingsStorage
 import com.nuvio.app.features.p2p.P2pStreamingEngine
+import com.nuvio.app.features.cloudstream.CloudStreamPlatformStorage
 import com.nuvio.app.features.plugins.PluginStorage
 import com.nuvio.app.features.profiles.AvatarStorage
 import com.nuvio.app.features.profiles.ProfilePinCacheStorage
@@ -38,12 +45,21 @@ import com.nuvio.app.features.profiles.ProfileStorage
 import com.nuvio.app.features.details.SeasonViewModeStorage
 import com.nuvio.app.features.search.SearchHistoryStorage
 import com.nuvio.app.features.settings.ThemeSettingsStorage
+import com.nuvio.app.features.settings.NuvioAppIconSwitcher
+import com.nuvio.app.features.mal.MalAuthStorage
+import com.nuvio.app.features.kitsu.KitsuStorage
+import com.nuvio.app.features.kitsu.KitsuSyncCoordinator
+import com.nuvio.app.features.anilist.AniListSyncCoordinator
+import com.nuvio.app.features.mal.MalSyncCoordinator
+import com.nuvio.app.features.mal.MalLibraryStorage
 import com.nuvio.app.features.trakt.TraktAuthStorage
 import com.nuvio.app.features.trakt.TraktCommentsStorage
 import com.nuvio.app.features.trakt.TraktLibraryStorage
 import com.nuvio.app.features.trakt.TraktSettingsStorage
 import com.nuvio.app.features.tmdb.TmdbSettingsStorage
+import com.nuvio.app.features.opensubtitles.OpenSubtitlesSettingsStorage
 import com.nuvio.app.features.updater.AndroidAppUpdaterPlatform
+import com.nuvio.app.core.ui.CardDepthStyleStorage
 import com.nuvio.app.core.ui.PosterCardStyleStorage
 import com.nuvio.app.features.watched.WatchedStorage
 import com.nuvio.app.features.streams.StreamLinkCacheStorage
@@ -53,8 +69,40 @@ import com.nuvio.app.features.watchprogress.ContinueWatchingEnrichmentStorage
 import com.nuvio.app.features.watchprogress.ContinueWatchingPreferencesStorage
 import com.nuvio.app.features.watchprogress.ResumePromptStorage
 import com.nuvio.app.features.watchprogress.WatchProgressStorage
+import com.nuvio.app.features.home.Top10CatalogStorage
+import com.nuvio.app.features.streams.StreamsAppearanceStorage
+import android.util.Log
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+private const val CRASH_TAG = "NuvioCrash"
 
 class MainActivity : AppCompatActivity() {
+    private fun writeCrashLog(throwable: Throwable) {
+        try {
+            val dir = getExternalFilesDir(null) ?: filesDir
+            val dateStr = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+            val file = File(dir, "crash_$dateStr.log")
+            val sb = StringBuilder()
+            sb.appendLine("=== NUVIO CRASH REPORT ===")
+            sb.appendLine("Time: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())}")
+            sb.appendLine("Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+            sb.appendLine("Android: ${android.os.Build.VERSION.SDK_INT}")
+            sb.appendLine("App: ${packageName}")
+            sb.appendLine()
+            sb.appendLine("Exception: ${throwable.javaClass.name}: ${throwable.message}")
+            sb.appendLine("Stack trace:")
+            sb.appendLine(throwable.stackTraceToString())
+            file.writeText(sb.toString(), Charsets.UTF_8)
+            Log.e(CRASH_TAG, "Crash log written to ${file.absolutePath}")
+        } catch (e: Exception) {
+            Log.e(CRASH_TAG, "Failed to write crash log: ${e.message}")
+        }
+    }
+    private var pipRemoteActionReceiver: PipRemoteActionReceiver? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge(
@@ -62,29 +110,46 @@ class MainActivity : AppCompatActivity() {
                 scrim = 0xFF020404.toInt(),
             ),
         )
+        Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
+            writeCrashLog(throwable)
+        }
         ThemeSettingsStorage.initialize(applicationContext)
+        NuvioAppIconSwitcher.initialize(applicationContext)
         super.onCreate(savedInstanceState)
         window.setBackgroundDrawableResource(R.color.nuvio_background)
+        pipRemoteActionReceiver = PipRemoteActionReceiver.register(this)
+        SyncClientIdentityStorage.initialize(applicationContext)
         AddonStorage.initialize(applicationContext)
+        CloudflareSolver.initialize(applicationContext)
         AuthStorage.initialize(applicationContext)
         LibraryStorage.initialize(applicationContext)
+        LiveTvStorage.initialize(applicationContext)
         WatchedStorage.initialize(applicationContext)
         MetaScreenSettingsStorage.initialize(applicationContext)
         HomeCatalogSettingsStorage.initialize(applicationContext)
+        Top10CatalogStorage.initialize(applicationContext)
         PlayerSettingsStorage.initialize(applicationContext)
         PlayerTrackPreferenceStorage.initialize(applicationContext)
         P2pSettingsStorage.initialize(applicationContext)
         P2pStreamingEngine.initialize(applicationContext)
         ExternalPlayerPlatform.initialize(applicationContext)
+        SharePlatform.initialize(applicationContext)
+        SubtitleFileCache.initialize(applicationContext)
         ProfileStorage.initialize(applicationContext)
         AvatarStorage.initialize(applicationContext)
         ProfilePinCacheStorage.initialize(applicationContext)
         SearchHistoryStorage.initialize(applicationContext)
         SeasonViewModeStorage.initialize(applicationContext)
         PosterCardStyleStorage.initialize(applicationContext)
+        CardDepthStyleStorage.initialize(applicationContext)
+        com.nuvio.app.features.settings.globalNetworkSettingsRepository = com.nuvio.app.features.settings.NetworkSettingsRepository(com.nuvio.app.features.settings.AndroidNetworkSettingsStorage(applicationContext))
         DebridSettingsStorage.initialize(applicationContext)
         TmdbSettingsStorage.initialize(applicationContext)
         MdbListSettingsStorage.initialize(applicationContext)
+        OpenSubtitlesSettingsStorage.initialize(applicationContext)
+        MalAuthStorage.initialize(applicationContext)
+        MalLibraryStorage.initialize(applicationContext)
+        KitsuStorage.initialize(applicationContext)
         TraktAuthStorage.initialize(applicationContext)
         TraktCommentsStorage.initialize(applicationContext)
         TraktLibraryStorage.initialize(applicationContext)
@@ -98,6 +163,7 @@ class MainActivity : AppCompatActivity() {
         StreamBadgeSettingsStorage.initialize(applicationContext)
         BingeGroupCacheStorage.initialize(applicationContext)
         PluginStorage.initialize(applicationContext)
+        CloudStreamPlatformStorage.initialize(this)
         CollectionMobileSettingsStorage.initialize(applicationContext)
         CollectionStorage.initialize(applicationContext)
         DownloadsStorage.initialize(applicationContext)
@@ -106,8 +172,14 @@ class MainActivity : AppCompatActivity() {
         AndroidAppUpdaterPlatform.initialize(applicationContext)
         PlatformLocalAccountDataCleaner.initialize(applicationContext)
         EpisodeReleaseNotificationPlatform.initialize(applicationContext)
+        StreamsAppearanceStorage.initialize(applicationContext)
+        SyncClientIdentityStorage.initialize(applicationContext)
         EpisodeReleaseNotificationPlatform.bindActivity(this)
         handleIncomingAppIntent(intent)
+
+        KitsuSyncCoordinator.syncOnLaunchIfNeeded()
+        AniListSyncCoordinator.syncOnLaunchIfNeeded()
+        MalSyncCoordinator.syncOnLaunchIfNeeded()
 
         setContent {
             App()
@@ -135,6 +207,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         EpisodeReleaseNotificationPlatform.unbindActivity(this)
+        val receiver = pipRemoteActionReceiver
+        if (receiver != null) {
+            runCatching { unregisterReceiver(receiver) }
+            pipRemoteActionReceiver = null
+        }
         super.onDestroy()
     }
 
