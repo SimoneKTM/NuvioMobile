@@ -1,0 +1,691 @@
+package com.nuvio.app.features.settings
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material3.BasicAlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.animation.core.animateDpAsState
+import coil3.compose.AsyncImage
+import com.nuvio.app.core.i18n.localizedShortMonthName
+import com.nuvio.app.core.ui.NuvioActionLabel
+import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.features.kitsu.KitsuAuthRepository
+import com.nuvio.app.features.kitsu.KitsuConnectionMode
+import com.nuvio.app.features.kitsu.KitsuSectionSettings
+import com.nuvio.app.features.kitsu.KitsuSettingsRepository
+import com.nuvio.app.features.kitsu.KitsuSyncCoordinator
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.settings_kitsu_attribution_body
+import nuvio.composeapp.generated.resources.settings_kitsu_attribution_title
+import org.jetbrains.compose.resources.stringResource
+import sh.calvin.reorderable.ReorderableCollectionItemScope
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
+import kotlin.math.roundToInt
+
+internal fun LazyListScope.kitsuSettingsContent(
+    isTablet: Boolean,
+) {
+    item {
+        SettingsGroup(isTablet = isTablet) {
+            KitsuBrandIntro(isTablet = isTablet)
+        }
+    }
+
+    item {
+        SettingsSection(
+            title = "Kitsu Integration Settings",
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                KitsuConnectionCard(isTablet = isTablet)
+            }
+        }
+    }
+
+    item {
+        val authUiState by KitsuAuthRepository.uiState.collectAsState()
+        val settingsUiState by KitsuSettingsRepository.uiState.collectAsState()
+
+        if (authUiState.mode == KitsuConnectionMode.CONNECTED) {
+            Spacer(modifier = Modifier.height(16.dp))
+            SettingsSection(
+                title = "Playback",
+                isTablet = isTablet,
+            ) {
+                SettingsGroup(isTablet = isTablet) {
+                    KitsuWatchedThresholdRow(
+                        isTablet = isTablet,
+                        threshold = settingsUiState.markWatchedThreshold
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = if (isTablet) 24.dp else 16.dp))
+                    SettingsSwitchRow(
+                        title = "Automatically Add New Anime to Kitsu",
+                        description = "When enabled, watching an anime not in your Kitsu library will automatically add it to your Currently Watching list and sync your progress.",
+                        checked = settingsUiState.autoAddNewAnime,
+                        enabled = settingsUiState.enableSync,
+                        isTablet = isTablet,
+                        onCheckedChange = { KitsuSettingsRepository.setAutoAddNewAnime(it) }
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            SettingsSection(
+                title = "Customize Library Sections",
+                isTablet = isTablet,
+                actions = {
+                    NuvioActionLabel(
+                        text = "Reset",
+                        onClick = { KitsuSettingsRepository.resetLibrarySections() }
+                    )
+                }
+            ) {
+                KitsuSectionsList(
+                    isTablet = isTablet,
+                    items = settingsUiState.librarySections
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun KitsuBrandIntro(isTablet: Boolean) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(all = if (isTablet) 24.dp else 16.dp),
+        horizontalAlignment = Alignment.Start
+    ) {
+        Text(
+            text = stringResource(Res.string.settings_kitsu_attribution_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(Res.string.settings_kitsu_attribution_body),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun KitsuConnectionCard(isTablet: Boolean) {
+    val authUiState by KitsuAuthRepository.uiState.collectAsState()
+    val settingsUiState by KitsuSettingsRepository.uiState.collectAsState()
+    val isSyncing by KitsuSyncCoordinator.isSyncing.collectAsState()
+    val syncMessage by KitsuSyncCoordinator.syncMessage.collectAsState()
+
+    val uriHandler = LocalUriHandler.current
+    var showDisconnectConfirm by remember { mutableStateOf(false) }
+    var showLoginDialog by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(all = if (isTablet) 24.dp else 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        when (authUiState.mode) {
+            KitsuConnectionMode.CONNECTED -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (!authUiState.avatarUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = authUiState.avatarUrl,
+                            contentDescription = authUiState.username,
+                            modifier = Modifier.size(48.dp).clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier.size(48.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = authUiState.username?.take(1)?.uppercase() ?: "K",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = authUiState.username ?: "Kitsu User",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Connected",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        val expiresAt = authUiState.tokenExpiresAtEpochMs
+                        if (expiresAt != null && expiresAt > 0L) {
+                            val remainingMs = expiresAt - androidx.compose.runtime.remember {
+                                com.nuvio.app.features.watchprogress.WatchProgressClock.nowEpochMs()
+                            }
+                            val label = when {
+                                remainingMs <= 0 -> "Token expired"
+                                remainingMs < 60_000L -> "Expires in <1 min"
+                                remainingMs < 3_600_000L -> "Expires in ${remainingMs / 60_000L} min"
+                                remainingMs < 86_400_000L -> "Expires in ${remainingMs / 3_600_000L}h ${(remainingMs % 3_600_000L) / 60_000L}m"
+                                else -> "Expires in ${remainingMs / 86_400_000L}d"
+                            }
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Button(
+                        onClick = { showDisconnectConfirm = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    ) {
+                        Text("Disconnect")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                SettingsSwitchRow(
+                    title = "Enable Kitsu Sync",
+                    description = "Master sync control for Kitsu watch progress.",
+                    checked = settingsUiState.enableSync,
+                    isTablet = isTablet,
+                    onCheckedChange = { KitsuSettingsRepository.setEnableSync(it) }
+                )
+
+                SettingsSwitchRow(
+                    title = "Sync Watching Progress",
+                    description = "Synchronize watching state changes with Kitsu.",
+                    checked = settingsUiState.syncWatching,
+                    enabled = settingsUiState.enableSync,
+                    isTablet = isTablet,
+                    onCheckedChange = { KitsuSettingsRepository.setSyncWatching(it) }
+                )
+
+                SettingsSwitchRow(
+                    title = "Auto Sync While Watching",
+                    description = "Upload progress automatically while playing files.",
+                    checked = settingsUiState.autoSync,
+                    enabled = settingsUiState.enableSync,
+                    isTablet = isTablet,
+                    onCheckedChange = { KitsuSettingsRepository.setAutoSync(it) }
+                )
+
+                SettingsSwitchRow(
+                    title = "Sync on App Launch",
+                    description = "Run a full sync check every time the app opens.",
+                    checked = settingsUiState.syncOnLaunch,
+                    enabled = settingsUiState.enableSync,
+                    isTablet = isTablet,
+                    onCheckedChange = { KitsuSettingsRepository.setSyncOnLaunch(it) }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (settingsUiState.enableSync) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Button(
+                            onClick = { KitsuSyncCoordinator.syncNow() },
+                            enabled = !isSyncing,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            if (isSyncing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Syncing...")
+                            } else {
+                                Text("Sync Now")
+                            }
+                        }
+
+                        if (!syncMessage.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = syncMessage.orEmpty(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        if (settingsUiState.lastSyncTimestamp > 0L) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Last Synced: Just now",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            KitsuConnectionMode.DISCONNECTED -> {
+                Text(
+                    text = "You are not connected to Kitsu. Connect your account to synchronize anime shelves and tracking state.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (!authUiState.errorMessage.isNullOrBlank()) {
+                    Text(
+                        text = authUiState.errorMessage.orEmpty(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { showLoginDialog = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Connect Kitsu")
+                }
+            }
+
+            KitsuConnectionMode.LOADING -> {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
+    }
+
+    if (showDisconnectConfirm) {
+        BasicAlertDialog(onDismissRequest = { showDisconnectConfirm = false }) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface,
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Disconnect Kitsu?",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "Are you sure you want to disconnect your Kitsu account? This will clear local anime progress syncing settings.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = { showDisconnectConfirm = false },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        ) { Text("Cancel") }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                KitsuAuthRepository.disconnect()
+                                showDisconnectConfirm = false
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            )
+                        ) { Text("Disconnect") }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showLoginDialog) {
+        val loginAuthUiState by KitsuAuthRepository.uiState.collectAsState()
+        var email by remember { mutableStateOf("") }
+        var password by remember { mutableStateOf("") }
+        var loginError by remember { mutableStateOf<String?>(null) }
+        var isLoggingIn by remember { mutableStateOf(false) }
+
+        if (loginAuthUiState.mode == KitsuConnectionMode.CONNECTED) {
+            showLoginDialog = false
+        }
+
+        val repoError = loginAuthUiState.errorMessage
+        if (repoError != null && isLoggingIn) {
+            loginError = repoError
+            isLoggingIn = false
+        }
+
+        BasicAlertDialog(onDismissRequest = {
+            if (!isLoggingIn) {
+                showLoginDialog = false
+                loginError = null
+            }
+        }) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface,
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Connect to Kitsu",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "Enter your Kitsu email and password to sync your anime library.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it; loginError = null },
+                        label = { Text("Email") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        enabled = !isLoggingIn,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it; loginError = null },
+                        label = { Text("Password") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        enabled = !isLoggingIn,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (loginError != null) {
+                        Text(
+                            text = loginError.orEmpty(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = {
+                                showLoginDialog = false
+                                loginError = null
+                            },
+                            enabled = !isLoggingIn,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        ) { Text("Cancel") }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                if (email.isBlank() || password.isBlank()) {
+                                    loginError = "Please enter both email and password."
+                                    return@Button
+                                }
+                                isLoggingIn = true
+                                loginError = null
+                                KitsuAuthRepository.loginWithPassword(email, password)
+                            },
+                            enabled = !isLoggingIn,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            if (isLoggingIn) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                            Text("Login")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun KitsuSectionSettingsRow(
+    item: KitsuSectionSettings,
+    isTablet: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
+    dragHandleScope: ReorderableCollectionItemScope,
+) {
+    val tokens = MaterialTheme.nuvio
+    val horizontalPadding = if (isTablet) 20.dp else 16.dp
+    val verticalPadding = if (isTablet) 18.dp else 16.dp
+    val hapticFeedback = LocalHapticFeedback.current
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.type,
+                style = MaterialTheme.typography.bodyLarge,
+                color = tokens.colors.textPrimary,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Switch(
+                checked = item.enabled,
+                onCheckedChange = onEnabledChange,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = tokens.colors.onAccent,
+                    checkedTrackColor = tokens.colors.accent,
+                    uncheckedThumbColor = tokens.colors.textMuted,
+                    uncheckedTrackColor = tokens.colors.borderDefault,
+                ),
+            )
+            IconButton(
+                modifier = with(dragHandleScope) {
+                    Modifier.draggableHandle(
+                        onDragStarted = { hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress) },
+                        onDragStopped = { hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove) },
+                    )
+                },
+                onClick = {},
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Menu,
+                    contentDescription = "Reorder",
+                    tint = tokens.colors.textMuted,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun KitsuSectionsList(
+    isTablet: Boolean,
+    items: List<KitsuSectionSettings>,
+) {
+    val hapticFeedback = LocalHapticFeedback.current
+    val lazyListState = rememberLazyListState()
+    val reorderableLazyListState = rememberReorderableLazyListState(
+        lazyListState = lazyListState,
+    ) { from, to ->
+        KitsuSettingsRepository.moveSection(from.index, to.index)
+        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+    }
+
+    SettingsGroup(isTablet = isTablet) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = if (isTablet) 550.dp else 400.dp),
+            state = lazyListState,
+        ) {
+            itemsIndexed(items, key = { _, item -> item.type }) { index, item ->
+                ReorderableItem(reorderableLazyListState, key = item.type) { isDragging ->
+                    val elevation by animateDpAsState(if (isDragging) 4.dp else 0.dp)
+                    Surface(shadowElevation = elevation) {
+                        Column {
+                            if (index > 0) SettingsGroupDivider(isTablet = isTablet)
+                            KitsuSectionSettingsRow(
+                                item = item,
+                                isTablet = isTablet,
+                                onEnabledChange = { enabled -> KitsuSettingsRepository.setSectionEnabled(item.type, enabled) },
+                                dragHandleScope = this@ReorderableItem,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun KitsuWatchedThresholdRow(isTablet: Boolean, threshold: Float) {
+    val percent = (threshold * 100f).roundToInt()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = if (isTablet) 24.dp else 16.dp, vertical = 12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Mark Episode as Watched At",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium,
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Episode is marked as watched after reaching this point",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "$percent%",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Slider(
+            value = threshold,
+            onValueChange = { KitsuSettingsRepository.setMarkWatchedThreshold(it) },
+            valueRange = 0f..1f,
+            steps = 19,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text("0%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("100%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
