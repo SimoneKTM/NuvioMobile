@@ -2,8 +2,10 @@ package com.nuvio.app.features.library
 
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.auth.AuthRepository
+import com.nuvio.app.core.ui.NuvioToastController
 import com.nuvio.app.core.auth.AuthState
 import com.nuvio.app.core.network.SupabaseProvider
+import com.nuvio.app.core.sync.putSyncOriginClientId
 import com.nuvio.app.features.home.PosterShape
 import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.features.trakt.TraktAuthRepository
@@ -14,16 +16,23 @@ import com.nuvio.app.features.trakt.TraktMembershipChanges
 import com.nuvio.app.features.trakt.TraktSettingsRepository
 import com.nuvio.app.features.trakt.effectiveLibrarySourceMode as resolveEffectiveLibrarySourceMode
 import com.nuvio.app.features.trakt.shouldUseTraktLibrary
+import com.nuvio.app.features.mal.MalAuthRepository
+import com.nuvio.app.features.mal.MalLibraryRepository
+import com.nuvio.app.features.mal.MalLibraryItem
+import com.nuvio.app.features.anilist.AniListAuthRepository
+import com.nuvio.app.features.anilist.AniListLibraryRepository
+import com.nuvio.app.features.anilist.AniListLibraryItem
+import com.nuvio.app.features.kitsu.KitsuAuthRepository
+import com.nuvio.app.features.kitsu.KitsuLibraryRepository
+import com.nuvio.app.features.kitsu.KitsuLibraryItem
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
-import kotlinx.coroutines.runBlocking
-import nuvio.composeapp.generated.resources.Res
-import nuvio.composeapp.generated.resources.library_local_tab_title
-import nuvio.composeapp.generated.resources.library_other
-import org.jetbrains.compose.resources.getString
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -33,6 +42,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -41,6 +53,17 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.put
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.library_local_tab_title
+import nuvio.composeapp.generated.resources.library_mal_status_watching
+import nuvio.composeapp.generated.resources.library_mal_status_completed
+import nuvio.composeapp.generated.resources.library_mal_status_on_hold
+import nuvio.composeapp.generated.resources.library_mal_status_dropped
+import nuvio.composeapp.generated.resources.library_mal_status_plan_to_watch
+import nuvio.composeapp.generated.resources.library_other
+import nuvio.composeapp.generated.resources.trakt_lists_update_failed
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getString
 
 @Serializable
 private data class StoredLibraryPayload(
@@ -76,12 +99,11 @@ object LibraryRepository {
     private val _uiState = MutableStateFlow(LibraryUiState())
     val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
 
-    private var hasLoaded = false
-    private var currentProfileId: Int = 1
-    private var itemsById: MutableMap<String, LibraryItem> = mutableMapOf()
-    private var isPullingNuvioSyncFromServer = false
-    private var hasCompletedInitialNuvioSyncPull = false
-    private var pushJob: Job? = null
+    private val localState = LibraryLocalState()
+    private val loadLock = SynchronizedObject()
+    private val nuvioPullMutex = Mutex()
+    private val persistenceLock = SynchronizedObject()
+    private val lastPersistedContentRevisionByProfile = mutableMapOf<Int, Long>()
 
     init {
         syncScope.launch {
@@ -105,6 +127,15 @@ object LibraryRepository {
                         TraktLibraryRepository.preloadListTabsAsync()
                         publish()
                         refreshTraktLibraryAsync()
+                    } else if (source == LibrarySourceMode.MAL) {
+                        publish()
+                        refreshMalLibraryAsync()
+                    } else if (source == LibrarySourceMode.ANILIST) {
+                        publish()
+                        refreshAniListLibraryAsync()
+                    } else if (source == LibrarySourceMode.KITSU) {
+                        publish()
+                        refreshKitsuLibraryAsync()
                     } else {
                         publish()
                     }
@@ -117,144 +148,318 @@ object LibraryRepository {
                 }
             }
         }
+        syncScope.launch {
+            MalAuthRepository.isAuthenticated.collectLatest { authenticated ->
+                if (authenticated && isMalLibrarySourceActive()) {
+                    runCatching { MalLibraryRepository.refreshNow() }
+                        .onFailure { log.e(it) { "Failed to refresh MAL library after auth change" } }
+                }
+                publish()
+            }
+        }
+        syncScope.launch {
+            MalLibraryRepository.uiState.collectLatest {
+                if (MalAuthRepository.isAuthenticated.value) {
+                    publish()
+                }
+            }
+        }
+        syncScope.launch {
+            AniListAuthRepository.isAuthenticated.collectLatest { authenticated ->
+                if (authenticated && isAniListLibrarySourceActive()) {
+                    runCatching { AniListLibraryRepository.refreshNow() }
+                        .onFailure { log.e(it) { "Failed to refresh AniList library after auth change" } }
+                }
+                publish()
+            }
+        }
+        syncScope.launch {
+            AniListLibraryRepository.uiState.collectLatest {
+                if (AniListAuthRepository.isAuthenticated.value) {
+                    publish()
+                }
+            }
+        }
+        syncScope.launch {
+            KitsuAuthRepository.isAuthenticated.collectLatest { authenticated ->
+                if (authenticated && isKitsuLibrarySourceActive()) {
+                    runCatching { KitsuLibraryRepository.refreshNow() }
+                        .onFailure { log.e(it) { "Failed to refresh Kitsu library after auth change" } }
+                }
+                publish()
+            }
+        }
+        syncScope.launch {
+            KitsuLibraryRepository.uiState.collectLatest {
+                if (KitsuAuthRepository.isAuthenticated.value) {
+                    publish()
+                }
+            }
+        }
     }
 
     fun ensureLoaded() {
         TraktAuthRepository.ensureLoaded()
         TraktSettingsRepository.ensureLoaded()
         TraktLibraryRepository.ensureLoaded()
-        if (hasLoaded) return
-        loadFromDisk(ProfileRepository.activeProfileId)
+        MalAuthRepository.ensureLoaded()
+        MalLibraryRepository.ensureLoaded()
+        AniListAuthRepository.ensureLoaded()
+        AniListLibraryRepository.ensureLoaded()
+        KitsuAuthRepository.ensureLoaded()
+        KitsuLibraryRepository.ensureLoaded()
+        while (true) {
+            val activeProfileId = ProfileRepository.activeProfileId
+            val snapshot = localState.snapshot()
+            if (snapshot.hasLoaded && snapshot.token.profileId == activeProfileId) break
+            loadFromDisk(activeProfileId)
+        }
         if (TraktAuthRepository.isAuthenticated.value) {
             TraktLibraryRepository.preloadListTabsAsync()
             if (isTraktLibrarySourceActive()) {
                 refreshTraktLibraryAsync()
             }
+        }
+        if (isMalLibrarySourceActive()) {
+            refreshMalLibraryAsync()
+        }
+        if (isAniListLibrarySourceActive()) {
+            refreshAniListLibraryAsync()
         }
     }
 
     fun onProfileChanged(profileId: Int) {
-        if (profileId == currentProfileId && hasLoaded) return
-        pushJob?.cancel()
-        isPullingNuvioSyncFromServer = false
-        hasCompletedInitialNuvioSyncPull = false
+        val current = localState.snapshot()
+        if (profileId == current.token.profileId && current.hasLoaded) return
+
         TraktSettingsRepository.onProfileChanged()
-        loadFromDisk(profileId)
+        if (!loadFromDisk(profileId)) return
         TraktAuthRepository.onProfileChanged()
         TraktLibraryRepository.onProfileChanged()
+        MalAuthRepository.onProfileChanged()
+        MalLibraryRepository.onProfileChanged()
+        AniListAuthRepository.onProfileChanged()
+        AniListLibraryRepository.onProfileChanged()
         if (TraktAuthRepository.isAuthenticated.value) {
             TraktLibraryRepository.preloadListTabsAsync()
             if (isTraktLibrarySourceActive()) {
                 refreshTraktLibraryAsync()
             }
         }
+        if (isMalLibrarySourceActive()) {
+            refreshMalLibraryAsync()
+        }
+        if (isAniListLibrarySourceActive()) {
+            refreshAniListLibraryAsync()
+        }
     }
 
     fun clearLocalState() {
-        hasLoaded = false
-        currentProfileId = 1
-        itemsById.clear()
-        pushJob?.cancel()
-        isPullingNuvioSyncFromServer = false
-        hasCompletedInitialNuvioSyncPull = false
+        val transition = synchronized(loadLock) { localState.reset() }
+        transition.detachedPushJob?.cancel()
         TraktAuthRepository.clearLocalState()
         TraktLibraryRepository.clearLocalState()
+        MalAuthRepository.clearLocalState()
+        MalLibraryRepository.clearLocalState()
+        AniListAuthRepository.clearLocalState()
+        AniListLibraryRepository.clearLocalState()
         _uiState.value = LibraryUiState()
     }
 
-    private fun loadFromDisk(profileId: Int) {
-        currentProfileId = profileId
-        hasLoaded = true
-        itemsById.clear()
+    internal fun runAccountStorageWipe(wipeStorage: () -> Unit) {
+        synchronized(loadLock) {
+            val transition = localState.reset()
+            transition.detachedPushJob?.cancel()
+            synchronized(persistenceLock) {
+                try {
+                    wipeStorage()
+                } finally {
+                    lastPersistedContentRevisionByProfile.clear()
+                }
+            }
+        }
+    }
 
-        val payload = LibraryStorage.loadPayload(profileId).orEmpty().trim()
-        if (payload.isNotEmpty()) {
-            val items = runCatching {
+    private fun loadFromDisk(profileId: Int): Boolean {
+        var shouldPublish = false
+        val loaded = synchronized(loadLock) {
+            if (ProfileRepository.activeProfileId != profileId) return@synchronized false
+            val current = localState.snapshot()
+            if (current.hasLoaded && current.token.profileId == profileId) {
+                return@synchronized true
+            }
+
+            val transition = localState.beginProfileLoad(profileId)
+            transition.detachedPushJob?.cancel()
+            shouldPublish = completeLoadFromDisk(transition.snapshot.token)
+            shouldPublish
+        }
+        if (shouldPublish) publish()
+        return loaded
+    }
+
+    private fun completeLoadFromDisk(token: LibraryProfileToken): Boolean {
+        val payload = LibraryStorage.loadPayload(token.profileId).orEmpty().trim()
+        val items = if (payload.isNotEmpty()) {
+            runCatching {
                 json.decodeFromString<StoredLibraryPayload>(payload).items
             }.getOrDefault(emptyList())
-            itemsById = items.associateBy { libraryItemKey(it.id, it.type) }.toMutableMap()
+        } else {
+            emptyList()
         }
 
-        publish()
+        return localState.completeProfileLoad(
+            token = token,
+            activeProfileId = ProfileRepository.activeProfileId,
+            items = items,
+        ) != null
     }
 
     suspend fun pullFromServer(profileId: Int) {
-        currentProfileId = profileId
+        val operationToken = activeOperationToken(profileId) ?: run {
+            log.d { "Skipping library pull for inactive profile $profileId" }
+            return
+        }
 
         if (isTraktLibrarySourceActive()) {
-            runCatching { TraktLibraryRepository.refreshNow() }
-                .onFailure { e -> log.e(e) { "Failed to pull Trakt library" } }
-            hasCompletedInitialNuvioSyncPull = true
+            try {
+                TraktLibraryRepository.refreshNow()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                log.e(error) { "Failed to pull Trakt library" }
+            }
+            if (!isActiveOperation(operationToken)) return
             publish()
             return
         }
 
-        isPullingNuvioSyncFromServer = true
-        runCatching {
-            val serverItems = pullAllLibrarySyncItems(profileId)
-            if (serverItems.isEmpty() && itemsById.isNotEmpty()) {
-                log.w { "Remote library is empty while local has ${itemsById.size} entries; preserving local library" }
-            } else {
-                itemsById = serverItems
-                    .map { it.toLibraryItem() }
-                    .associateBy { libraryItemKey(it.id, it.type) }
-                    .toMutableMap()
-                persist()
-            }
-            hasLoaded = true
+        if (isMalLibrarySourceActive()) {
+            runCatching { MalLibraryRepository.refreshNow() }
+                .onFailure { e -> log.e(e) { "Failed to pull MAL library" } }
             publish()
-        }.onFailure { e ->
-            log.e(e) { "Failed to pull library from server" }
-        }.also {
-            hasCompletedInitialNuvioSyncPull = true
-            isPullingNuvioSyncFromServer = false
+            return
+        }
+
+        if (isAniListLibrarySourceActive()) {
+            runCatching { AniListLibraryRepository.refreshNow() }
+                .onFailure { e -> log.e(e) { "Failed to pull AniList library" } }
+            publish()
+            return
+        }
+
+        nuvioPullMutex.withLock {
+            val serializedToken = activeOperationToken(profileId) ?: return@withLock
+            val pullSnapshot = localState.markPullStarted(serializedToken) ?: return@withLock
+
+            var appliedItems = false
+            try {
+                val serverItems = pullAllLibrarySyncItems(profileId).map { it.toLibraryItem() }
+                val applyResult = localState.applyServerItems(pullSnapshot, serverItems)
+                    ?: return@withLock
+                appliedItems = true
+                if (applyResult.preservedLocalItems) {
+                    log.w {
+                        "Preserving ${applyResult.snapshot.items.size} local library items because the remote " +
+                            "snapshot is empty or local changes are pending"
+                    }
+                } else {
+                    persist(applyResult.snapshot)
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                log.e(error) { "Failed to pull library from server" }
+            }
+
+            if (appliedItems) publish()
         }
     }
+
+    private fun activeOperationToken(profileId: Int): LibraryProfileToken? {
+        if (ProfileRepository.activeProfileId != profileId) return null
+        if (!loadFromDisk(profileId)) return null
+        return localState.currentTokenIfLoaded(profileId)
+            ?.takeIf { ProfileRepository.activeProfileId == profileId }
+    }
+
+    private fun isActiveOperation(token: LibraryProfileToken): Boolean =
+        localState.isCurrent(token) && ProfileRepository.activeProfileId == token.profileId
 
     fun toggleSaved(item: LibraryItem) {
         ensureLoaded()
 
         if (isTraktLibrarySourceActive()) {
+            val profileId = localState.snapshot().token.profileId
+            log.i { "toggleSaved routed to Trakt library source item=${item.id} type=${item.type} profile=$profileId" }
             syncScope.launch {
                 runCatching { TraktLibraryRepository.toggleWatchlist(item) }
-                    .onFailure { e -> log.e(e) { "Failed to toggle Trakt watchlist" } }
+                    .onFailure { e ->
+                        log.e(e) { "Failed to toggle Trakt watchlist" }
+                        NuvioToastController.show(
+                            e.message?.takeIf { it.isNotBlank() }
+                                ?: getString(Res.string.trakt_lists_update_failed),
+                        )
+                    }
                 publish()
             }
             return
         }
 
-        if (itemsById.containsKey(libraryItemKey(item.id, item.type))) {
-            remove(item.id, item.type)
+        val result = localState.toggle(
+            item.copy(savedAtEpochMs = LibraryClock.nowEpochMs()),
+        )
+        if (result.isSaved) {
+            log.i {
+                "Saving local library item item=${item.id} type=${item.type} " +
+                    "profile=${result.snapshot.token.profileId}"
+            }
         } else {
-            save(item)
+            log.i {
+                "Removing local library item id=${item.id} type=${item.type} " +
+                    "profile=${result.snapshot.token.profileId}"
+            }
         }
+        persist(result.snapshot)
+        publish()
+        pushToServer(result.snapshot)
     }
 
     fun save(item: LibraryItem) {
         ensureLoaded()
-        itemsById[libraryItemKey(item.id, item.type)] = item.copy(savedAtEpochMs = LibraryClock.nowEpochMs())
+        val snapshot = localState.upsert(item.copy(savedAtEpochMs = LibraryClock.nowEpochMs()))
+        log.i {
+            "Saving local library item item=${item.id} type=${item.type} profile=${snapshot.token.profileId}"
+        }
+        persist(snapshot)
         publish()
-        persist()
-        pushToServer()
+        pushToServer(snapshot)
     }
 
     fun remove(id: String) {
         ensureLoaded()
-        val before = itemsById.size
-        itemsById.entries.removeAll { (_, item) -> item.id == id }
-        if (itemsById.size != before) {
+        val result = localState.removeById(id)
+        if (result.affectedCount > 0) {
+            log.i {
+                "Removing local library item id=$id profile=${result.snapshot.token.profileId} " +
+                    "removed=${result.affectedCount}"
+            }
+            persist(result.snapshot)
             publish()
-            persist()
-            pushToServer()
+            pushToServer(result.snapshot)
         }
     }
 
     private fun remove(id: String, type: String) {
         ensureLoaded()
-        if (itemsById.remove(libraryItemKey(id, type)) != null) {
+        val result = localState.remove(id, type)
+        if (result.affectedCount > 0) {
+            log.i {
+                "Removing local library item id=$id type=$type profile=${result.snapshot.token.profileId}"
+            }
+            persist(result.snapshot)
             publish()
-            persist()
-            pushToServer()
+            pushToServer(result.snapshot)
         }
     }
 
@@ -272,10 +477,18 @@ object LibraryRepository {
             return false
         }
 
+        if (isMalLibrarySourceActive()) {
+            return MalLibraryRepository.uiState.value.allItems.any { "mal:${it.id}" == id }
+        }
+
+        if (isAniListLibrarySourceActive()) {
+            return allAniListItems().any { "anilist:${it.id}" == id }
+        }
+
         return if (type != null) {
-            itemsById.containsKey(libraryItemKey(id, type))
+            localState.contains(id, type)
         } else {
-            itemsById.values.any { it.id == id }
+            localState.containsId(id)
         }
     }
 
@@ -286,7 +499,22 @@ object LibraryRepository {
             return TraktLibraryRepository.uiState.value.allItems.firstOrNull { it.id == id }
         }
 
-        return itemsById.values.firstOrNull { it.id == id }
+        if (isMalLibrarySourceActive()) {
+            val malItem = MalLibraryRepository.uiState.value.allItems.firstOrNull { "mal:${it.id}" == id }
+            return malItem?.toLibraryItem()
+        }
+
+        if (isAniListLibrarySourceActive()) {
+            val aniListItem = allAniListItems().firstOrNull { "anilist:${it.id}" == id }
+            return aniListItem?.toLibraryItem()
+        }
+
+        return localState.findById(id)
+    }
+
+    private fun allAniListItems(): List<AniListLibraryItem> {
+        val s = AniListLibraryRepository.uiState.value
+        return s.watching + s.rewatching + s.completed + s.planning + s.paused + s.dropped
     }
 
     fun libraryListTabs(): List<TraktListTab> {
@@ -302,7 +530,7 @@ object LibraryRepository {
 
     suspend fun getMembershipSnapshot(item: LibraryItem): Map<String, Boolean> {
         ensureLoaded()
-        val inLocal = itemsById.containsKey(libraryItemKey(item.id, item.type))
+        val inLocal = localState.contains(item.id, item.type)
         if (TraktAuthRepository.isAuthenticated.value) {
             val traktMembership = TraktLibraryRepository.getMembershipSnapshot(item).listMembership
             return libraryMembershipWithLocal(
@@ -316,7 +544,13 @@ object LibraryRepository {
     suspend fun applyMembershipChanges(item: LibraryItem, desiredMembership: Map<String, Boolean>) {
         ensureLoaded()
         val localDesired = desiredMembership[LOCAL_LIBRARY_LIST_KEY] == true
-        val currentlyInLocal = itemsById.containsKey(libraryItemKey(item.id, item.type))
+        val currentlyInLocal = localState.contains(item.id, item.type)
+        val profileId = localState.snapshot().token.profileId
+        log.i {
+            "Applying library membership item=${item.id} type=${item.type} profile=$profileId " +
+                "localDesired=$localDesired currentlyInLocal=$currentlyInLocal " +
+                "traktAuthenticated=${TraktAuthRepository.isAuthenticated.value}"
+        }
         if (localDesired != currentlyInLocal) {
             if (localDesired) {
                 save(item)
@@ -347,27 +581,62 @@ object LibraryRepository {
         applyMembershipChanges(item, desiredMembership)
     }
 
-    private fun pushToServer() {
+    private fun pushToServer(snapshot: LibraryLocalSnapshot) {
         val authState = AuthRepository.state.value
-        if (authState !is AuthState.Authenticated || authState.isAnonymous) return
-        if (isPullingNuvioSyncFromServer || !hasCompletedInitialNuvioSyncPull) return
-
-        pushJob?.cancel()
-        pushJob = syncScope.launch {
+        val profileId = snapshot.token.profileId
+        val itemCount = snapshot.items.size
+        if (authState !is AuthState.Authenticated) {
+            log.w { "Skipping library push: auth state is ${authState::class.simpleName} profile=$profileId" }
+            return
+        }
+        if (authState.isAnonymous) {
+            log.w { "Skipping library push: anonymous auth user=${authState.userId} profile=$profileId" }
+            return
+        }
+        val pushJob = syncScope.launch(start = CoroutineStart.LAZY) {
             delay(500)
+            if (!localState.isContentCurrent(snapshot)) {
+                val current = localState.snapshot()
+                log.w {
+                    "Skipping stale debounced library push: scheduled=${snapshot.token} " +
+                        "current=${current.token} scheduledContentRevision=${snapshot.contentRevision} " +
+                        "currentContentRevision=${current.contentRevision}"
+                }
+                return@launch
+            }
             runCatching {
-                val profileId = ProfileRepository.activeProfileId
-                val syncItems = itemsById.values.map { it.toSyncItem() }
-                if (syncItems.isEmpty()) return@runCatching
+                val syncItems = snapshot.items.map { it.toSyncItem() }
+                if (syncItems.isEmpty()) {
+                    log.w { "Skipping library push: sync payload is empty profile=$profileId" }
+                    return@runCatching false
+                }
                 val params = buildJsonObject {
                     put("p_profile_id", profileId)
                     put("p_items", json.encodeToJsonElement(syncItems))
+                    putSyncOriginClientId()
                 }
+                log.i { "Pushing library to server profile=$profileId itemCount=${syncItems.size}" }
                 SupabaseProvider.client.postgrest.rpc("sync_push_library", params)
+                true
+            }.onSuccess { pushed ->
+                if (pushed) {
+                    localState.markPushCompleted(snapshot)
+                    log.i { "Library push completed profile=$profileId itemCount=$itemCount" }
+                }
             }.onFailure { e ->
-                log.e(e) { "Failed to push library to server" }
+                if (e is CancellationException) throw e
+                log.e(e) { "Failed to push library to server profile=$profileId itemCount=$itemCount" }
             }
         }
+        pushJob.invokeOnCompletion { localState.clearPushJob(pushJob) }
+
+        val installResult = localState.installPushJob(snapshot, pushJob)
+        if (!installResult.installed) {
+            pushJob.cancel()
+            return
+        }
+        installResult.detachedPushJob?.cancel()
+        pushJob.start()
     }
 
     private suspend fun pullAllLibrarySyncItems(profileId: Int): List<LibrarySyncItem> {
@@ -392,6 +661,7 @@ object LibraryRepository {
     }
 
     private fun publish() {
+        val localSnapshot = localState.snapshot()
         if (isTraktLibrarySourceActive()) {
             val traktState = TraktLibraryRepository.uiState.value
             val sections = traktState.listTabs.mapNotNull { tab ->
@@ -407,7 +677,7 @@ object LibraryRepository {
                 }
             }
 
-            _uiState.value = LibraryUiState(
+            val newUiState = LibraryUiState(
                 sourceMode = LibrarySourceMode.TRAKT,
                 items = traktState.allItems,
                 sections = sections,
@@ -415,10 +685,109 @@ object LibraryRepository {
                 isLoading = traktState.isLoading,
                 errorMessage = traktState.errorMessage,
             )
+            localState.runIfTokenCurrent(localSnapshot.token) {
+                _uiState.value = newUiState
+            }
             return
         }
 
-        val items = itemsById.values
+        if (isMalLibrarySourceActive()) {
+            val malState = MalLibraryRepository.uiState.value
+            val sectionOrder = listOf("watching", "completed", "plan_to_watch", "on_hold", "dropped")
+            val sections = sectionOrder.mapNotNull { status ->
+                val statusItems = malState.entriesByStatus[status].orEmpty()
+                if (statusItems.isEmpty()) return@mapNotNull null
+                LibrarySection(
+                    type = "mal:$status",
+                    displayTitle = malStatusDisplayTitle(status),
+                    items = statusItems.map { it.toLibraryItem() },
+                )
+            }
+
+            _uiState.value = LibraryUiState(
+                sourceMode = LibrarySourceMode.MAL,
+                items = malState.allItems.map { it.toLibraryItem() },
+                sections = sections,
+                isLoaded = malState.hasLoaded,
+                isLoading = malState.isLoading,
+                errorMessage = malState.errorMessage,
+            )
+            return
+        }
+
+        if (isAniListLibrarySourceActive()) {
+            val aniListState = AniListLibraryRepository.uiState.value
+            val sectionOrder = listOf("watching", "rewatching", "completed", "planning", "paused", "dropped")
+            val sections = sectionOrder.mapNotNull { status ->
+                val statusItems = when (status) {
+                    "watching" -> aniListState.watching
+                    "rewatching" -> aniListState.rewatching
+                    "completed" -> aniListState.completed
+                    "planning" -> aniListState.planning
+                    "paused" -> aniListState.paused
+                    "dropped" -> aniListState.dropped
+                    else -> emptyList()
+                }
+                if (statusItems.isEmpty()) return@mapNotNull null
+                LibrarySection(
+                    type = "anilist:$status",
+                    displayTitle = aniListStatusDisplayTitle(status),
+                    items = statusItems.map { it.toLibraryItem() },
+                )
+            }
+            val allItems = (
+                aniListState.watching + aniListState.rewatching +
+                aniListState.completed + aniListState.planning +
+                aniListState.paused + aniListState.dropped
+            ).map { it.toLibraryItem() }
+
+            _uiState.value = LibraryUiState(
+                sourceMode = LibrarySourceMode.ANILIST,
+                items = allItems,
+                sections = sections,
+                isLoaded = aniListState.isLoaded,
+                isLoading = aniListState.isLoading,
+                errorMessage = aniListState.errorMessage,
+            )
+            return
+        }
+
+        if (isKitsuLibrarySourceActive()) {
+            val kitsuState = KitsuLibraryRepository.uiState.value
+            val sectionOrder = listOf("current", "completed", "planned", "on_hold", "dropped")
+            val sections = sectionOrder.mapNotNull { status ->
+                val statusItems = when (status) {
+                    "current" -> kitsuState.current
+                    "completed" -> kitsuState.completed
+                    "planned" -> kitsuState.planned
+                    "on_hold" -> kitsuState.onHold
+                    "dropped" -> kitsuState.dropped
+                    else -> emptyList()
+                }
+                if (statusItems.isEmpty()) return@mapNotNull null
+                LibrarySection(
+                    type = "kitsu:$status",
+                    displayTitle = kitsuStatusDisplayTitle(status),
+                    items = statusItems.map { it.toLibraryItem() },
+                )
+            }
+            val allItems = (
+                kitsuState.current + kitsuState.completed +
+                kitsuState.planned + kitsuState.onHold + kitsuState.dropped
+            ).map { it.toLibraryItem() }
+
+            _uiState.value = LibraryUiState(
+                sourceMode = LibrarySourceMode.KITSU,
+                items = allItems,
+                sections = sections,
+                isLoaded = kitsuState.isLoaded,
+                isLoading = kitsuState.isLoading,
+                errorMessage = kitsuState.errorMessage,
+            )
+            return
+        }
+
+        val items = localSnapshot.items
             .sortedByDescending { it.savedAtEpochMs }
         val sections = items
             .groupBy { it.type }
@@ -431,25 +800,123 @@ object LibraryRepository {
             }
             .sortedBy { it.displayTitle }
 
-        _uiState.value = LibraryUiState(
+        val newUiState = LibraryUiState(
             sourceMode = LibrarySourceMode.LOCAL,
             items = items,
             sections = sections,
-            isLoaded = true,
-            isLoading = false,
+            isLoaded = localSnapshot.hasLoaded,
+            isLoading = localSnapshot.isLoading,
             errorMessage = null,
+        )
+        localState.runIfCurrent(localSnapshot) {
+            _uiState.value = newUiState
+        }
+    }
+
+    private fun malStatusDisplayTitle(status: String): String = runBlocking {
+        when (status) {
+            "watching" -> getString(Res.string.library_mal_status_watching)
+            "completed" -> getString(Res.string.library_mal_status_completed)
+            "on_hold" -> getString(Res.string.library_mal_status_on_hold)
+            "dropped" -> getString(Res.string.library_mal_status_dropped)
+            "plan_to_watch" -> getString(Res.string.library_mal_status_plan_to_watch)
+            else -> status.replace('_', ' ').replaceFirstChar { it.uppercase() }
+        }
+    }
+
+    private fun aniListStatusDisplayTitle(status: String): String =
+        when (status) {
+            "watching" -> "Watching"
+            "rewatching" -> "Rewatching"
+            "completed" -> "Completed"
+            "planning" -> "Planning"
+            "paused" -> "Paused"
+            "dropped" -> "Dropped"
+            else -> status.replaceFirstChar { it.uppercase() }
+        }
+
+    private fun MalLibraryItem.toLibraryItem(): LibraryItem {
+        val itemId = "mal:${id}"
+        val now = LibraryClock.nowEpochMs()
+        return LibraryItem(
+            id = itemId,
+            type = "anime-series",
+            name = title,
+            poster = posterUrl,
+            description = synopsis,
+            releaseInfo = numEpisodes?.let { "$it episodes" },
+            imdbRating = meanScore?.let { "%.1f".format(it) },
+            genres = genres,
+            posterShape = PosterShape.Poster,
+            savedAtEpochMs = updatedAtEpochMs ?: now,
         )
     }
 
-    private fun persist() {
-        LibraryStorage.savePayload(
-            currentProfileId,
-            json.encodeToString(
-                StoredLibraryPayload(
-                    items = itemsById.values.sortedByDescending { it.savedAtEpochMs },
-                ),
+    private fun AniListLibraryItem.toLibraryItem(): LibraryItem {
+        val now = LibraryClock.nowEpochMs()
+        val normalizedType = when (format?.uppercase()) {
+            "MOVIE" -> "movie"
+            else -> "series"
+        }
+        return LibraryItem(
+            id = "anilist:$id",
+            type = normalizedType,
+            name = title,
+            poster = posterUrl,
+            releaseInfo = totalEpisodes?.let { "$it episodes" },
+            imdbRating = score?.let { "${it / 10}" },
+            posterShape = PosterShape.Poster,
+            savedAtEpochMs = updatedAt * 1000L,
+        )
+    }
+
+    private fun kitsuStatusDisplayTitle(status: String): String =
+        when (status) {
+            "current" -> "Current"
+            "completed" -> "Completed"
+            "planned" -> "Planned"
+            "on_hold" -> "On Hold"
+            "dropped" -> "Dropped"
+            else -> status.replace('_', ' ').replaceFirstChar { it.uppercase() }
+        }
+
+    private fun KitsuLibraryItem.toLibraryItem(): LibraryItem {
+        val now = LibraryClock.nowEpochMs()
+        val progressInfo = if (totalEpisodes != null) {
+            "$progress/$totalEpisodes"
+        } else if (progress > 0) {
+            "$progress episodes"
+        } else {
+            null
+        }
+        return LibraryItem(
+            id = "kitsu:$kitsuMediaId",
+            type = "series",
+            name = title,
+            poster = posterUrl,
+            description = synopsis,
+            releaseInfo = progressInfo ?: totalEpisodes?.let { "$it episodes" },
+            imdbRating = rating?.let { "%.1f".format(it) },
+            posterShape = PosterShape.Poster,
+            savedAtEpochMs = now,
+        )
+    }
+
+    private fun persist(snapshot: LibraryLocalSnapshot) {
+        val payload = json.encodeToString(
+            StoredLibraryPayload(
+                items = snapshot.items.sortedByDescending { it.savedAtEpochMs },
             ),
         )
+        synchronized(persistenceLock) {
+            val profileId = snapshot.token.profileId
+            val lastPersistedRevision = lastPersistedContentRevisionByProfile[profileId] ?: Long.MIN_VALUE
+            if (snapshot.contentRevision <= lastPersistedRevision) return@synchronized
+            localState.runIfContentCurrent(snapshot) {
+                LibraryStorage.savePayload(profileId, payload)
+                lastPersistedContentRevisionByProfile[profileId] = snapshot.contentRevision
+            }
+        }
     }
 
     private fun refreshTraktLibraryAsync() {
@@ -465,22 +932,80 @@ object LibraryRepository {
         return TraktSettingsRepository.uiState.value.librarySourceMode
     }
 
-    private fun effectiveLibrarySourceMode(): LibrarySourceMode =
-        resolveEffectiveLibrarySourceMode(
-            isAuthenticated = TraktAuthRepository.isAuthenticated.value,
-            source = selectedLibrarySourceMode(),
-        )
+    private fun effectiveLibrarySourceMode(): LibrarySourceMode {
+        val source = selectedLibrarySourceMode()
+        if (source == LibrarySourceMode.TRAKT && TraktAuthRepository.isAuthenticated.value) {
+            return LibrarySourceMode.TRAKT
+        }
+        if (source == LibrarySourceMode.MAL) {
+            MalAuthRepository.ensureLoaded()
+            if (MalAuthRepository.isAuthenticated.value) {
+                return LibrarySourceMode.MAL
+            }
+        }
+        if (source == LibrarySourceMode.ANILIST) {
+            AniListAuthRepository.ensureLoaded()
+            if (AniListAuthRepository.isAuthenticated.value) {
+                return LibrarySourceMode.ANILIST
+            }
+        }
+        if (source == LibrarySourceMode.KITSU) {
+            KitsuAuthRepository.ensureLoaded()
+            if (KitsuAuthRepository.isAuthenticated.value) {
+                return LibrarySourceMode.KITSU
+            }
+        }
+        return LibrarySourceMode.LOCAL
+    }
 
     private fun isTraktLibrarySourceActive(): Boolean =
         effectiveLibrarySourceMode() == LibrarySourceMode.TRAKT
+
+    private fun isMalLibrarySourceActive(): Boolean =
+        effectiveLibrarySourceMode() == LibrarySourceMode.MAL
+
+    private fun isAniListLibrarySourceActive(): Boolean =
+        effectiveLibrarySourceMode() == LibrarySourceMode.ANILIST
+
+    private fun isKitsuLibrarySourceActive(): Boolean =
+        effectiveLibrarySourceMode() == LibrarySourceMode.KITSU
+
+    private fun refreshMalLibraryAsync() {
+        syncScope.launch {
+            runCatching { MalLibraryRepository.refreshNow() }
+                .onFailure { e -> log.e(e) { "Failed to refresh MAL library" } }
+            publish()
+        }
+    }
+
+    private fun refreshAniListLibraryAsync() {
+        syncScope.launch {
+            runCatching { AniListLibraryRepository.refreshNow() }
+                .onFailure { e -> log.e(e) { "Failed to refresh AniList library" } }
+            publish()
+        }
+    }
+
+    private fun refreshKitsuLibraryAsync() {
+        syncScope.launch {
+            runCatching { KitsuLibraryRepository.refreshNow() }
+                .onFailure { e -> log.e(e) { "Failed to refresh Kitsu library" } }
+            publish()
+        }
+    }
 }
 
 internal const val LOCAL_LIBRARY_LIST_KEY = "local"
+private const val DEFAULT_LOCAL_LIBRARY_TAB_TITLE = "Nuvio Library"
+private const val DEFAULT_LIBRARY_OTHER_TITLE = "Other"
 
 internal fun localLibraryListTab(): TraktListTab =
     TraktListTab(
         key = LOCAL_LIBRARY_LIST_KEY,
-        title = runBlocking { getString(Res.string.library_local_tab_title) },
+        title = localizedStringOrDefault(
+            resource = Res.string.library_local_tab_title,
+            fallback = DEFAULT_LOCAL_LIBRARY_TAB_TITLE,
+        ),
         type = TraktListType.WATCHLIST,
     )
 
@@ -533,9 +1058,6 @@ private fun LibraryItem.toSyncItem(): LibrarySyncItem = LibrarySyncItem(
     addedAt = savedAtEpochMs,
 )
 
-private fun libraryItemKey(id: String, type: String): String =
-    "${type.trim().lowercase()}:${id.trim()}"
-
 private fun String.toPosterShape(): PosterShape =
     when (trim().uppercase()) {
         "LANDSCAPE" -> PosterShape.Landscape
@@ -552,7 +1074,7 @@ private fun PosterShape.toSyncName(): String =
 
 internal fun String.toLibraryDisplayTitle(): String {
     val normalized = trim()
-    if (normalized.isBlank()) return runBlocking { getString(Res.string.library_other) }
+    if (normalized.isBlank()) return localizedLibraryOtherTitle()
 
     return normalized
         .split('-', '_', ' ')
@@ -560,5 +1082,15 @@ internal fun String.toLibraryDisplayTitle(): String {
         .joinToString(" ") { token ->
             token.lowercase().replaceFirstChar { char -> char.uppercase() }
         }
-        .ifBlank { runBlocking { getString(Res.string.library_other) } }
+        .ifBlank { localizedLibraryOtherTitle() }
 }
+
+private fun localizedLibraryOtherTitle(): String =
+    localizedStringOrDefault(
+        resource = Res.string.library_other,
+        fallback = DEFAULT_LIBRARY_OTHER_TITLE,
+    )
+
+private fun localizedStringOrDefault(resource: StringResource, fallback: String): String =
+    runCatching { runBlocking { getString(resource) } }
+        .getOrDefault(fallback)
