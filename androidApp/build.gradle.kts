@@ -14,6 +14,20 @@ fun readXcconfigValue(file: File, key: String): String? {
         ?.second
 }
 
+fun readVersionJsonString(file: File, key: String): String? {
+    if (!file.exists()) return null
+    val text = file.readText()
+    val regex = Regex("\"${Regex.escape(key)}\"\\s*:\\s*\"([^\"]+)\"")
+    return regex.find(text)?.groupValues?.getOrNull(1)
+}
+
+fun readVersionJsonInt(file: File, key: String): Int? {
+    if (!file.exists()) return null
+    val text = file.readText()
+    val regex = Regex("\"${Regex.escape(key)}\"\\s*:\\s*(\\d+)")
+    return regex.find(text)?.groupValues?.getOrNull(1)?.toIntOrNull()
+}
+
 plugins {
     alias(libs.plugins.androidApplication)
 }
@@ -32,10 +46,14 @@ fun envOrLocalProperty(key: String): String? =
         ?: localProps.getProperty(key)?.trim()?.takeIf { it.isNotBlank() }
 
 val appVersionConfigFile = rootProject.file("iosApp/Configuration/Version.xcconfig")
+val versionJsonFile = rootProject.file("version.json")
 val releaseAppVersionName = readXcconfigValue(appVersionConfigFile, "MARKETING_VERSION")
-    ?: error("MARKETING_VERSION is missing from ${appVersionConfigFile.path}")
+    ?: readVersionJsonString(versionJsonFile, "version")
+    ?: error("MARKETING_VERSION is missing from ${appVersionConfigFile.path} and \"version\" is missing from version.json")
 val releaseAppVersionCode = readXcconfigValue(appVersionConfigFile, "CURRENT_PROJECT_VERSION")
     ?.toIntOrNull()
+    ?: readVersionJsonInt(versionJsonFile, "versionCode")
+    ?: releaseAppVersionName.replace(".", "").toIntOrNull()
     ?: error("CURRENT_PROJECT_VERSION is missing or invalid in ${appVersionConfigFile.path}")
 
 android {
