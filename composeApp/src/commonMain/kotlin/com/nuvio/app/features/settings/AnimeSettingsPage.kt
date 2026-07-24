@@ -66,38 +66,32 @@ internal fun LazyListScope.animeRootSettingsContent(
     onHomescreenClick: () -> Unit,
     onCollectionsClick: () -> Unit,
     onContinueWatchingClick: () -> Unit,
-    onPosterStyleClick: () -> Unit,
     onIntegrationsClick: () -> Unit,
 ) {
     item {
-        SettingsSection(
-            title = "Anime",
-            isTablet = isTablet,
-        ) {
-            SettingsGroup(isTablet = isTablet) {
+        SettingsGroup(isTablet = isTablet) {
+            SettingsNavigationRow(
+                title = stringResource(Res.string.compose_settings_page_addons),
+                description = "Gestisci i componenti aggiuntivi per la scheda Anime",
+                icon = Icons.Rounded.Extension,
+                isTablet = isTablet,
+                onClick = onAddonsClick,
+            )
+            if (showPluginsEntry) {
+                SettingsGroupDivider(isTablet = isTablet)
                 SettingsNavigationRow(
-                    title = stringResource(Res.string.compose_settings_page_addons),
-                    description = "Gestisci i componenti aggiuntivi per la scheda Anime",
+                    title = stringResource(Res.string.compose_settings_page_plugins),
+                    description = "Gestisci i plugin per la scheda Anime",
                     icon = Icons.Rounded.Extension,
                     isTablet = isTablet,
-                    onClick = onAddonsClick,
+                    onClick = onPluginsClick,
                 )
-                if (showPluginsEntry) {
-                    SettingsGroupDivider(isTablet = isTablet)
-                    SettingsNavigationRow(
-                        title = stringResource(Res.string.compose_settings_page_plugins),
-                        description = "Gestisci i plugin per la scheda Anime",
-                        icon = Icons.Rounded.Extension,
-                        isTablet = isTablet,
-                        onClick = onPluginsClick,
-                    )
-                }
             }
         }
     }
     item {
         SettingsSection(
-            title = "Layout Home",
+            title = "Layout Anime",
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
@@ -123,14 +117,6 @@ internal fun LazyListScope.animeRootSettingsContent(
                     icon = Icons.Rounded.PlayCircle,
                     isTablet = isTablet,
                     onClick = onContinueWatchingClick,
-                )
-                SettingsGroupDivider(isTablet = isTablet)
-                SettingsNavigationRow(
-                    title = stringResource(Res.string.compose_settings_page_poster_customization),
-                    description = stringResource(Res.string.settings_appearance_poster_customization_description),
-                    icon = Icons.Rounded.Tune,
-                    isTablet = isTablet,
-                    onClick = onPosterStyleClick,
                 )
                 SettingsGroupDivider(isTablet = isTablet)
                 SettingsNavigationRow(

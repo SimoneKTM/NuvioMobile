@@ -253,6 +253,21 @@ internal enum class SettingsPage(
         category = SettingsCategory.Anime,
         parentPage = AnimeRoot,
     ),
+    AnimeHomescreen(
+        titleRes = Res.string.compose_settings_page_homescreen,
+        category = SettingsCategory.Anime,
+        parentPage = AnimeRoot,
+    ),
+    AnimeContinueWatching(
+        titleRes = Res.string.compose_settings_page_continue_watching,
+        category = SettingsCategory.Anime,
+        parentPage = AnimeRoot,
+    ),
+    AnimeIntegrations(
+        titleRes = Res.string.compose_settings_page_integrations,
+        category = SettingsCategory.Anime,
+        parentPage = AnimeRoot,
+    ),
 }
 
 internal val SettingsPage.opensInlineOnTablet: Boolean

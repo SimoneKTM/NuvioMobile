@@ -964,11 +964,10 @@ private fun MobileSettingsScreen(
                         showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
                         onAddonsClick = { onPageChange(SettingsPage.AnimeAddons) },
                         onPluginsClick = { onPageChange(SettingsPage.AnimePlugins) },
-                        onHomescreenClick = { onPageChange(SettingsPage.Homescreen) },
+                        onHomescreenClick = { onPageChange(SettingsPage.AnimeHomescreen) },
                         onCollectionsClick = onCollectionsClick,
-                        onContinueWatchingClick = onContinueWatchingClick,
-                        onPosterStyleClick = { onPageChange(SettingsPage.PosterCustomization) },
-                        onIntegrationsClick = { onPageChange(SettingsPage.Integrations) },
+                        onContinueWatchingClick = { onPageChange(SettingsPage.AnimeContinueWatching) },
+                        onIntegrationsClick = { onPageChange(SettingsPage.AnimeIntegrations) },
                     )
                 }
                 SettingsPage.AnimeRoot -> {
@@ -977,17 +976,50 @@ private fun MobileSettingsScreen(
                         showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
                         onAddonsClick = { onPageChange(SettingsPage.AnimeAddons) },
                         onPluginsClick = { onPageChange(SettingsPage.AnimePlugins) },
-                        onHomescreenClick = { onPageChange(SettingsPage.Homescreen) },
+                        onHomescreenClick = { onPageChange(SettingsPage.AnimeHomescreen) },
                         onCollectionsClick = onCollectionsClick,
-                        onContinueWatchingClick = onContinueWatchingClick,
-                        onPosterStyleClick = { onPageChange(SettingsPage.PosterCustomization) },
-                        onIntegrationsClick = { onPageChange(SettingsPage.Integrations) },
+                        onContinueWatchingClick = { onPageChange(SettingsPage.AnimeContinueWatching) },
+                        onIntegrationsClick = { onPageChange(SettingsPage.AnimeIntegrations) },
                     )
                 }
                 SettingsPage.AnimeAddons -> animeAddonsSettingsContent()
                 SettingsPage.AnimePlugins -> if (AppFeaturePolicy.pluginsEnabled) pluginsSettingsContent() else addonsSettingsContent()
                 SettingsPage.AnimeWebScraper -> animeWebScraperSettingsContent(isTablet = false)
                 SettingsPage.AnimeAdvanced -> animeAdvancedSettingsContent(isTablet = false)
+                SettingsPage.AnimeHomescreen -> homescreenSettingsContent(
+                    isTablet = false,
+                    heroEnabled = homescreenHeroEnabled,
+                    showCatalogType = homescreenShowCatalogType,
+                    hideUnreleasedContent = homescreenHideUnreleasedContent,
+                    hideCatalogUnderline = homescreenHideCatalogUnderline,
+                    items = homescreenItems,
+                )
+                SettingsPage.AnimeContinueWatching -> continueWatchingSettingsContent(
+                    isTablet = false,
+                    isVisible = continueWatchingPreferencesUiState.isVisible,
+                    style = continueWatchingPreferencesUiState.style,
+                    upNextFromFurthestEpisode = continueWatchingPreferencesUiState.upNextFromFurthestEpisode,
+                    useEpisodeThumbnails = continueWatchingPreferencesUiState.useEpisodeThumbnails,
+                    showUnairedNextUp = continueWatchingPreferencesUiState.showUnairedNextUp,
+                    blurNextUp = continueWatchingPreferencesUiState.blurNextUp,
+                    showResumePromptOnLaunch = continueWatchingPreferencesUiState.showResumePromptOnLaunch,
+                    sortMode = continueWatchingPreferencesUiState.sortMode,
+                )
+                SettingsPage.AnimeIntegrations -> integrationsContent(
+                    isTablet = false,
+                    onAiAssistantClick = { onPageChange(SettingsPage.AiAssistant) },
+                    onTraktClick = { onPageChange(SettingsPage.TraktAuthentication) },
+                    onMalClick = { onPageChange(SettingsPage.Mal) },
+                    onKitsuClick = { onPageChange(SettingsPage.Kitsu) },
+                    onAnilistClick = { onPageChange(SettingsPage.Anilist) },
+                    onSimklClick = { onPageChange(SettingsPage.Simkl) },
+                    onOpenSubtitlesClick = { onPageChange(SettingsPage.OpenSubtitles) },
+                    onSubdlClick = { onPageChange(SettingsPage.Subdl) },
+                    onTmdbClick = { onPageChange(SettingsPage.TmdbEnrichment) },
+                    onMdbListClick = { onPageChange(SettingsPage.MdbListRatings) },
+                    onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
+                    onDebridClick = { onPageChange(SettingsPage.Debrid) },
+                )
                 else -> {}
             }
         }
@@ -1494,27 +1526,59 @@ private fun TabletSettingsScreen(
                         showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
                         onAddonsClick = { openInlinePage(SettingsPage.AnimeAddons) },
                         onPluginsClick = { openInlinePage(SettingsPage.AnimePlugins) },
-                        onHomescreenClick = { openInlinePage(SettingsPage.Homescreen) },
+                        onHomescreenClick = { openInlinePage(SettingsPage.AnimeHomescreen) },
                         onCollectionsClick = onCollectionsClick,
-                        onContinueWatchingClick = { openInlinePage(SettingsPage.ContinueWatching) },
-                        onPosterStyleClick = { openInlinePage(SettingsPage.PosterCustomization) },
-                        onIntegrationsClick = { openInlinePage(SettingsPage.Integrations) },
+                        onContinueWatchingClick = { openInlinePage(SettingsPage.AnimeContinueWatching) },
+                        onIntegrationsClick = { openInlinePage(SettingsPage.AnimeIntegrations) },
                     )
                     SettingsPage.AnimeRoot -> animeRootSettingsContent(
                         isTablet = true,
                         showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
                         onAddonsClick = { openInlinePage(SettingsPage.AnimeAddons) },
                         onPluginsClick = { openInlinePage(SettingsPage.AnimePlugins) },
-                        onHomescreenClick = { openInlinePage(SettingsPage.Homescreen) },
+                        onHomescreenClick = { openInlinePage(SettingsPage.AnimeHomescreen) },
                         onCollectionsClick = onCollectionsClick,
-                        onContinueWatchingClick = { openInlinePage(SettingsPage.ContinueWatching) },
-                        onPosterStyleClick = { openInlinePage(SettingsPage.PosterCustomization) },
-                        onIntegrationsClick = { openInlinePage(SettingsPage.Integrations) },
+                        onContinueWatchingClick = { openInlinePage(SettingsPage.AnimeContinueWatching) },
+                        onIntegrationsClick = { openInlinePage(SettingsPage.AnimeIntegrations) },
                     )
                 SettingsPage.AnimeAddons -> animeAddonsSettingsContent()
                     SettingsPage.AnimePlugins -> if (AppFeaturePolicy.pluginsEnabled) pluginsSettingsContent() else addonsSettingsContent()
                     SettingsPage.AnimeWebScraper -> animeWebScraperSettingsContent(isTablet = true)
                     SettingsPage.AnimeAdvanced -> animeAdvancedSettingsContent(isTablet = true)
+                    SettingsPage.AnimeHomescreen -> homescreenSettingsContent(
+                        isTablet = true,
+                        heroEnabled = homescreenHeroEnabled,
+                        showCatalogType = homescreenShowCatalogType,
+                        hideUnreleasedContent = homescreenHideUnreleasedContent,
+                        hideCatalogUnderline = homescreenHideCatalogUnderline,
+                        items = homescreenItems,
+                    )
+                    SettingsPage.AnimeContinueWatching -> continueWatchingSettingsContent(
+                        isTablet = true,
+                        isVisible = continueWatchingPreferencesUiState.isVisible,
+                        style = continueWatchingPreferencesUiState.style,
+                        upNextFromFurthestEpisode = continueWatchingPreferencesUiState.upNextFromFurthestEpisode,
+                        useEpisodeThumbnails = continueWatchingPreferencesUiState.useEpisodeThumbnails,
+                        showUnairedNextUp = continueWatchingPreferencesUiState.showUnairedNextUp,
+                        blurNextUp = continueWatchingPreferencesUiState.blurNextUp,
+                        showResumePromptOnLaunch = continueWatchingPreferencesUiState.showResumePromptOnLaunch,
+                        sortMode = continueWatchingPreferencesUiState.sortMode,
+                    )
+                    SettingsPage.AnimeIntegrations -> integrationsContent(
+                        isTablet = true,
+                        onAiAssistantClick = { onPageChange(SettingsPage.AiAssistant) },
+                        onTraktClick = { onPageChange(SettingsPage.TraktAuthentication) },
+                        onMalClick = { onPageChange(SettingsPage.Mal) },
+                        onKitsuClick = { onPageChange(SettingsPage.Kitsu) },
+                        onAnilistClick = { onPageChange(SettingsPage.Anilist) },
+                        onSimklClick = { onPageChange(SettingsPage.Simkl) },
+                        onOpenSubtitlesClick = { onPageChange(SettingsPage.OpenSubtitles) },
+                        onSubdlClick = { onPageChange(SettingsPage.Subdl) },
+                        onTmdbClick = { onPageChange(SettingsPage.TmdbEnrichment) },
+                        onMdbListClick = { onPageChange(SettingsPage.MdbListRatings) },
+                        onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
+                        onDebridClick = { onPageChange(SettingsPage.Debrid) },
+                    )
                     else -> {}
                 }
             }
