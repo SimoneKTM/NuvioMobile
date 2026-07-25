@@ -63,6 +63,7 @@ import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettingsStorage
 import com.nuvio.app.features.tvdb.TvdbSettingsStorage
 import com.nuvio.app.features.anime.metascreen.AnimeMetaScreenSettingsStorage
 import com.nuvio.app.features.anime.AnimeCollectionStorage
+import com.nuvio.app.features.anime.AnimeContinueWatchingPreferencesStorage
 import com.nuvio.app.features.opensubtitles.OpenSubtitlesSettingsStorage
 import com.nuvio.app.features.updater.AndroidAppUpdaterPlatform
 import com.nuvio.app.core.ui.CardDepthStyleStorage
