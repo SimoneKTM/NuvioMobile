@@ -67,6 +67,7 @@ import com.nuvio.app.features.debrid.DebridSettings
 import com.nuvio.app.features.debrid.DebridSettingsRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsItem
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
+import com.nuvio.app.features.home.HomeCatalogSettingsUiState
 import com.nuvio.app.features.livetv.LiveTvRepository
 import com.nuvio.app.features.mdblist.MdbListSettings
 import com.nuvio.app.features.mdblist.MdbListSettingsRepository
@@ -505,6 +506,7 @@ fun SettingsScreen(
                 onSoraModulesClick = onSoraModulesClick,
                 amoledSurfacesEnabled = amoledSurfacesEnabled,
                 onAmoledSurfacesToggle = ThemeSettingsRepository::setAmoledSurfaces,
+                animeHomescreenSettingsUiState = animeHomescreenSettingsUiState,
                 animeMetaScreenSettingsUiState = animeMetaScreenSettingsUiState,
                 animeTmdbSettings = animeTmdbSettings,
                 animeMdbListSettings = animeMdbListSettings,
@@ -593,6 +595,7 @@ fun SettingsScreen(
                 onSoraModulesClick = onSoraModulesClick,
                 amoledSurfacesEnabled = amoledSurfacesEnabled,
                 onAmoledSurfacesToggle = ThemeSettingsRepository::setAmoledSurfaces,
+                animeHomescreenSettingsUiState = animeHomescreenSettingsUiState,
                 animeMetaScreenSettingsUiState = animeMetaScreenSettingsUiState,
                 animeTmdbSettings = animeTmdbSettings,
                 animeMdbListSettings = animeMdbListSettings,
@@ -601,7 +604,7 @@ fun SettingsScreen(
         }
     }
 }
-
+ 
 @Composable
 private fun MobileSettingsScreen(
     page: SettingsPage,
@@ -685,6 +688,7 @@ private fun MobileSettingsScreen(
     onSoraModulesClick: () -> Unit = {},
     amoledSurfacesEnabled: Boolean,
     onAmoledSurfacesToggle: (Boolean) -> Unit,
+    animeHomescreenSettingsUiState: HomeCatalogSettingsUiState,
     animeMetaScreenSettingsUiState: MetaScreenSettingsUiState,
     animeTmdbSettings: AnimeTmdbSettings,
     animeMdbListSettings: AnimeMdbListSettings,
@@ -1215,6 +1219,7 @@ private fun TabletSettingsScreen(
     onSoraModulesClick: () -> Unit = {},
     amoledSurfacesEnabled: Boolean,
     onAmoledSurfacesToggle: (Boolean) -> Unit,
+    animeHomescreenSettingsUiState: HomeCatalogSettingsUiState,
     animeMetaScreenSettingsUiState: MetaScreenSettingsUiState,
     animeTmdbSettings: AnimeTmdbSettings,
     animeMdbListSettings: AnimeMdbListSettings,
