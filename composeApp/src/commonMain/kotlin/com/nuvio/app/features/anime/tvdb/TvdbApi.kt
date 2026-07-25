@@ -52,6 +52,18 @@ object TvdbApi {
         }.getOrNull().orEmpty()
     }
 
+    suspend fun searchByRemoteId(remoteId: String): List<TvdbSearchResult> {
+        val token = ensureAuthenticated() ?: return emptyList()
+        return runCatching {
+            val url = "$BASE_URL/search?remote_id=${encodeQuery(remoteId)}&type=series"
+            val responseText = httpGetTextWithHeaders(url, headers = authHeaders(token))
+            val response = json.decodeFromString<TvdbSearchResponse>(responseText)
+            response.data
+        }.onFailure { e ->
+            log.w { "TVDB remote search failed: ${e.message}" }
+        }.getOrNull().orEmpty()
+    }
+
     suspend fun getSeriesExtended(id: Int): TvdbSeriesExtended? {
         val token = ensureAuthenticated() ?: return null
         return runCatching {

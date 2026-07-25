@@ -72,6 +72,9 @@ object TvdbMetadataService {
     }
 
     private suspend fun findSeriesId(meta: MetaDetails, fallbackItemId: String): Int? {
+        val remoteResult = tryRemoteIdSearch(fallbackItemId)
+        if (remoteResult != null) return remoteResult
+
         val name = meta.name.takeIf { it.isNotBlank() } ?: return null
 
         val results = TvdbApi.searchSeries(name)
@@ -90,5 +93,15 @@ object TvdbMetadataService {
         }
 
         return null
+    }
+
+    private suspend fun tryRemoteIdSearch(itemId: String): Int? {
+        val remoteId = when {
+            itemId.matches(Regex("^tt\\d+$")) -> "imdb:$itemId"
+            itemId.matches(Regex("^\\d+$")) -> "tmdb:$itemId"
+            else -> return null
+        }
+        val results = TvdbApi.searchByRemoteId(remoteId)
+        return results.firstOrNull()?.id
     }
 }
