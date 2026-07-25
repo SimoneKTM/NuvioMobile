@@ -107,7 +107,16 @@ data class LicensesAttributionsSettingsRoute(override val title: String = "") : 
 data class CollectionsRoute(override val title: String = "") : SettingsDestinationRoute
 
 @Serializable
+data class AnimeCollectionsRoute(override val title: String = "") : SettingsDestinationRoute
+
+@Serializable
 data class CollectionEditorRoute(
+    val collectionId: String? = null,
+    override val title: String = "",
+) : AppRoute
+
+@Serializable
+data class AnimeCollectionEditorRoute(
     val collectionId: String? = null,
     override val title: String = "",
 ) : AppRoute

@@ -31,7 +31,7 @@ import org.jetbrains.compose.resources.getString
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-object CollectionRepository {
+object CollectionRepository : CollectionRepositoryContract {
     private val log = Logger.withTag("CollectionRepository")
     private val json = Json {
         ignoreUnknownKeys = true
@@ -74,16 +74,16 @@ object CollectionRepository {
         rawCollectionsJson = JsonArray(emptyList())
     }
 
-    fun getCollection(id: String): Collection? =
+    override fun getCollection(id: String): Collection? =
         _collections.value.find { it.id == id }
 
-    fun addCollection(collection: Collection) {
+    override fun addCollection(collection: Collection) {
         ensureLoaded()
         _collections.value = _collections.value + CollectionMobileSettingsRepository.applyToCollection(collection)
         persist()
     }
 
-    fun updateCollection(collection: Collection) {
+    override fun updateCollection(collection: Collection) {
         ensureLoaded()
         val decorated = CollectionMobileSettingsRepository.applyToCollection(collection)
         _collections.value = _collections.value.map {
@@ -92,13 +92,13 @@ object CollectionRepository {
         persist()
     }
 
-    fun removeCollection(collectionId: String) {
+    override fun removeCollection(collectionId: String) {
         ensureLoaded()
         _collections.value = _collections.value.filter { it.id != collectionId }
         persist()
     }
 
-    fun setCollections(collections: List<Collection>) {
+    override fun setCollections(collections: List<Collection>) {
         ensureLoaded()
         _collections.value = CollectionMobileSettingsRepository.applyToCollections(collections)
         persist()
@@ -112,7 +112,7 @@ object CollectionRepository {
         moveByIndex(index, index + 1)
     }
 
-    fun moveByIndex(fromIndex: Int, toIndex: Int) {
+    override fun moveByIndex(fromIndex: Int, toIndex: Int) {
         ensureLoaded()
         val list = _collections.value.toMutableList()
         if (fromIndex == toIndex) return
@@ -123,12 +123,12 @@ object CollectionRepository {
         persist()
     }
 
-    fun exportToJson(): String {
+    override fun exportToJson(): String {
         ensureLoaded()
         return mergedCollectionsJson().toString()
     }
 
-    fun importFromJson(jsonString: String): Result<List<Collection>> {
+    override fun importFromJson(jsonString: String): Result<List<Collection>> {
         return runCatching {
             val validation = validateJson(jsonString)
             if (!validation.valid) {
@@ -142,7 +142,7 @@ object CollectionRepository {
         }
     }
 
-    fun validateJson(jsonString: String): ValidationResult {
+    override fun validateJson(jsonString: String): ValidationResult {
         if (jsonString.isBlank()) {
             return ValidationResult(
                 valid = false,
@@ -170,9 +170,9 @@ object CollectionRepository {
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    fun generateId(): String = Uuid.random().toString()
+    override fun generateId(): String = Uuid.random().toString()
 
-    fun getAvailableCatalogs(): List<AvailableCatalog> {
+    override fun getAvailableCatalogs(): List<AvailableCatalog> {
         val addons = AddonRepository.uiState.value.addons.enabledAddons()
         return addons.mapNotNull { addon ->
             val manifest = addon.manifest ?: return@mapNotNull null
@@ -206,7 +206,7 @@ object CollectionRepository {
         _collections.value = CollectionMobileSettingsRepository.applyToCollections(_collections.value)
     }
 
-    private fun ensureLoaded() {
+    override fun ensureLoaded() {
         if (!hasLoaded) initialize()
     }
 

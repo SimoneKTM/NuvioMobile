@@ -92,12 +92,16 @@ object CollectionEditorRepository {
     private val _uiState = MutableStateFlow(CollectionEditorUiState())
     val uiState: StateFlow<CollectionEditorUiState> = _uiState.asStateFlow()
 
+    var collectionsRepository: CollectionRepositoryContract = CollectionRepository
+        private set
+
     @OptIn(ExperimentalUuidApi::class)
-    fun initialize(collectionId: String?) {
-        val catalogs = CollectionRepository.getAvailableCatalogs()
+    fun initialize(collectionId: String?, repository: CollectionRepositoryContract = CollectionRepository) {
+        collectionsRepository = repository
+        val catalogs = repository.getAvailableCatalogs()
 
         if (collectionId != null) {
-            val existing = CollectionRepository.getCollection(collectionId)
+            val existing = repository.getCollection(collectionId)
             if (existing != null) {
                 _uiState.value = CollectionEditorUiState(
                     isNew = false,
@@ -856,9 +860,9 @@ object CollectionEditorRepository {
         CollectionMobileSettingsRepository.replaceCollectionFolderGifSettings(collection.id, collection.folders)
 
         if (state.isNew) {
-            CollectionRepository.addCollection(collection)
+            collectionsRepository.addCollection(collection)
         } else {
-            CollectionRepository.updateCollection(collection)
+            collectionsRepository.updateCollection(collection)
         }
         return true
     }

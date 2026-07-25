@@ -248,6 +248,7 @@ import com.nuvio.app.features.watchprogress.WatchProgressRepository
 import com.nuvio.app.features.watchprogress.WatchProgressSourceCoordinator
 import com.nuvio.app.features.watchprogress.nextUpDismissKey
 import com.nuvio.app.features.watchprogress.toContinueWatchingItem
+import com.nuvio.app.features.anime.AnimeCollectionRepository
 import com.nuvio.app.features.anilist.AniListApi
 import com.nuvio.app.features.anilist.AniListAuthRepository
 import com.nuvio.app.features.anilist.AniListLibraryItem
@@ -301,7 +302,9 @@ private val navigationSavedStateConfiguration = SavedStateConfiguration {
             subclass(SupportersContributorsSettingsRoute::class, SupportersContributorsSettingsRoute.serializer())
             subclass(LicensesAttributionsSettingsRoute::class, LicensesAttributionsSettingsRoute.serializer())
             subclass(CollectionsRoute::class, CollectionsRoute.serializer())
+            subclass(AnimeCollectionsRoute::class, AnimeCollectionsRoute.serializer())
             subclass(CollectionEditorRoute::class, CollectionEditorRoute.serializer())
+            subclass(AnimeCollectionEditorRoute::class, AnimeCollectionEditorRoute.serializer())
             subclass(CollectionEditorPageRoute::class, CollectionEditorPageRoute.serializer())
             subclass(FolderDetailRoute::class, FolderDetailRoute.serializer())
             subclass(StreamRoute::class, StreamRoute.serializer())
@@ -396,6 +399,7 @@ fun disposeRoute(route: AppRoute) {
         }
 
         is CollectionEditorRoute -> CollectionEditorRepository.clear()
+        is AnimeCollectionEditorRoute -> CollectionEditorRepository.clear()
         is CollectionEditorPageRoute -> {
             runCatching { CollectionEditorPage.valueOf(route.pageName) }
                 .getOrNull()
@@ -2194,6 +2198,7 @@ private fun MainAppContent(
                                         },
                                         onCollectionsSettingsClick = { navController.navigate(CollectionsRoute(collectionsTitle)) },
                                         onTop10CatalogSettingsClick = { navController.navigate(Top10CatalogSettingsRoute) },
+                                        onAnimeCollectionsSettingsClick = { navController.navigate(AnimeCollectionsRoute(collectionsTitle)) },
                                         onAnimeProfileClick = { navController.navigate(AnimeProfileSettingsRoute(animeProfileTitle)) },
                                         onAnimeDetailClick = { type, id ->
                                             navController.navigate(DetailRoute(type = type, id = id, title = ""))
@@ -3250,6 +3255,9 @@ private fun MainAppContent(
                         onAnimeProfileClick = {
                             navController.navigate(AnimeProfileSettingsRoute(animeProfileTitle))
                         },
+                        onAnimeCollectionsClick = {
+                            navController.navigate(AnimeCollectionsRoute(collectionsTitle))
+                        },
                         onCheckForUpdatesClick = if (AppFeaturePolicy.inAppUpdaterEnabled) {
                             {
                                 appUpdaterController.checkForUpdates(
@@ -3384,12 +3392,60 @@ private fun MainAppContent(
                         onBack = onBack,
                     )
                 }
+                entry<AnimeCollectionsRoute> { route ->
+                    val onBack = rememberGuardedPopBackStack(
+                        navController = navController,
+                        route = route,
+                    )
+                    CollectionManagementScreen(
+                        onBack = onBack,
+                        repository = AnimeCollectionRepository,
+                        onNavigateToEditor = { collectionId ->
+                            val editorTitle = collectionId
+                                ?.let { id ->
+                                    AnimeCollectionRepository.collections.value.firstOrNull { it.id == id }?.title
+                                }
+                                .orEmpty()
+                            navController.navigate(
+                                AnimeCollectionEditorRoute(
+                                    collectionId = collectionId,
+                                    title = editorTitle.ifBlank { newCollectionTitle },
+                                )
+                            )
+                        },
+                    )
+                }
                 entry<CollectionEditorRoute> { route ->
                     val onBack = rememberGuardedPopBackStack(
                         navController = navController,
                         route = route,
                     )
                     CollectionEditorScreen(
+                        collectionId = route.collectionId,
+                        onBack = onBack,
+                        initialPage = if (useNativeNavigation) CollectionEditorPage.Root else null,
+                        onNavigateToPage = if (useNativeNavigation) {
+                            { page, title ->
+                                navController.navigate(
+                                    CollectionEditorPageRoute(
+                                        collectionId = route.collectionId,
+                                        pageName = page.name,
+                                        title = title,
+                                    )
+                                )
+                            }
+                        } else {
+                            null
+                        },
+                    )
+                }
+                entry<AnimeCollectionEditorRoute> { route ->
+                    val onBack = rememberGuardedPopBackStack(
+                        navController = navController,
+                        route = route,
+                    )
+                    CollectionEditorScreen(
+                        repository = AnimeCollectionRepository,
                         collectionId = route.collectionId,
                         onBack = onBack,
                         initialPage = if (useNativeNavigation) CollectionEditorPage.Root else null,
@@ -3893,6 +3949,7 @@ private fun AppTabHost(
     onCheckForUpdatesClick: (() -> Unit)? = null,
     onCollectionsSettingsClick: () -> Unit = {},
     onTop10CatalogSettingsClick: () -> Unit = {},
+    onAnimeCollectionsSettingsClick: () -> Unit = {},
     onAnimeProfileClick: () -> Unit = {},
     onFolderClick: ((collectionId: String, folderId: String) -> Unit)? = null,
     onAnimeDetailClick: ((type: String, id: String) -> Unit)? = null,
@@ -3982,6 +4039,7 @@ private fun AppTabHost(
                         onCollectionsClick = onCollectionsSettingsClick,
                         onTop10CatalogClick = onTop10CatalogSettingsClick,
                         onAnimeProfileClick = onAnimeProfileClick,
+                        onAnimeCollectionsClick = onAnimeCollectionsSettingsClick,
                     )
                 }
             }

@@ -67,8 +67,9 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 fun CollectionManagementScreen(
     onBack: () -> Unit,
     onNavigateToEditor: (String?) -> Unit,
+    repository: CollectionRepositoryContract = CollectionRepository,
 ) {
-    val collections by CollectionRepository.collections.collectAsState()
+    val collections by repository.collections.collectAsState()
     val clipboardManager = LocalClipboardManager.current
     var showImportDialog by remember { mutableStateOf(false) }
     var importText by remember { mutableStateOf("") }
@@ -82,7 +83,7 @@ fun CollectionManagementScreen(
                 onBack = onBack,
             ) {
                 IconButton(onClick = {
-                    val json = CollectionRepository.exportToJson()
+                    val json = repository.exportToJson()
                     clipboardManager.setText(AnnotatedString(json))
                 }) {
                     Icon(
@@ -131,6 +132,7 @@ fun CollectionManagementScreen(
                     collections = collections,
                     onEdit = { onNavigateToEditor(it) },
                     onDelete = { showDeleteConfirm = it },
+                    repository = repository,
                 )
             }
         }
@@ -172,9 +174,9 @@ fun CollectionManagementScreen(
                 importError = null
             },
             onConfirm = {
-                val result = CollectionRepository.validateJson(importText)
+                val result = repository.validateJson(importText)
                 if (result.valid) {
-                    CollectionRepository.importFromJson(importText)
+                    repository.importFromJson(importText)
                     showImportDialog = false
                     importText = ""
                     importError = null
@@ -200,7 +202,7 @@ fun CollectionManagementScreen(
         dismissText = stringResource(Res.string.action_cancel),
         onConfirm = {
             if (deleteId != null) {
-                CollectionRepository.removeCollection(deleteId)
+                repository.removeCollection(deleteId)
             }
             showDeleteConfirm = null
         },
@@ -213,6 +215,7 @@ private fun CollectionReorderableList(
     collections: List<Collection>,
     onEdit: (String) -> Unit,
     onDelete: (String) -> Unit,
+    repository: CollectionRepositoryContract,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val lazyListState = rememberLazyListState()
@@ -222,7 +225,7 @@ private fun CollectionReorderableList(
     val reorderableLazyListState = rememberReorderableLazyListState(
         lazyListState = lazyListState,
     ) { from, to ->
-        CollectionRepository.moveByIndex(from.index, to.index)
+        repository.moveByIndex(from.index, to.index)
         hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 

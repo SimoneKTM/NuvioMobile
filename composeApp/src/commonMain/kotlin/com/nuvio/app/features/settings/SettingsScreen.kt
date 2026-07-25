@@ -155,6 +155,7 @@ fun SettingsScreen(
     onAnimeRootClick: () -> Unit = {},
     onAnimeWebScraperClick: () -> Unit = {},
     onAnimeAdvancedClick: () -> Unit = {},
+    onAnimeCollectionsClick: () -> Unit = {},
     onTop10CatalogClick: () -> Unit = {},
 ) {
     BoxWithConstraints(
@@ -690,6 +691,7 @@ private fun MobileSettingsScreen(
     onCollectionsClick: () -> Unit = {},
     onTop10CatalogClick: () -> Unit = {},
     onAnimeProfileClick: () -> Unit = {},
+    onAnimeCollectionsClick: () -> Unit = {},
     amoledSurfacesEnabled: Boolean,
     onAmoledSurfacesToggle: (Boolean) -> Unit,
     animeHomescreenSettingsUiState: HomeCatalogSettingsUiState,
@@ -1054,9 +1056,9 @@ private fun MobileSettingsScreen(
                     hideCatalogUnderline = animeHomescreenSettingsUiState.hideCatalogUnderline,
                     items = animeHomescreenSettingsUiState.items,
                 )
-                SettingsPage.AnimeCollections -> animeCollectionsSettingsContent(
-                    isTablet = false,
-                )
+                SettingsPage.AnimeCollections -> {
+                    onAnimeCollectionsClick()
+                }
                 SettingsPage.AnimeContinueWatching -> continueWatchingSettingsContent(
                     isTablet = false,
                     isVisible = continueWatchingPreferencesUiState.isVisible,
@@ -1229,6 +1231,7 @@ private fun TabletSettingsScreen(
     onCollectionsClick: () -> Unit = {},
     onTop10CatalogClick: () -> Unit = {},
     onAnimeProfileClick: () -> Unit = {},
+    onAnimeCollectionsClick: () -> Unit = {},
     amoledSurfacesEnabled: Boolean,
     onAmoledSurfacesToggle: (Boolean) -> Unit,
     animeHomescreenSettingsUiState: HomeCatalogSettingsUiState,
@@ -1652,9 +1655,9 @@ private fun TabletSettingsScreen(
                         hideCatalogUnderline = animeHomescreenSettingsUiState.hideCatalogUnderline,
                         items = animeHomescreenSettingsUiState.items,
                     )
-                    SettingsPage.AnimeCollections -> animeCollectionsSettingsContent(
-                        isTablet = true,
-                    )
+                    SettingsPage.AnimeCollections -> {
+                        onAnimeCollectionsClick()
+                    }
                     SettingsPage.AnimeContinueWatching -> continueWatchingSettingsContent(
                         isTablet = true,
                         isVisible = continueWatchingPreferencesUiState.isVisible,

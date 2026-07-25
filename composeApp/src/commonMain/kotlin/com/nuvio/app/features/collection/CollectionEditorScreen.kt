@@ -114,14 +114,15 @@ fun CollectionEditorScreen(
     onBack: () -> Unit,
     initialPage: CollectionEditorPage? = null,
     initializeRepository: Boolean = true,
+    repository: CollectionRepositoryContract = CollectionRepository,
     onNavigateToPage: ((page: CollectionEditorPage, title: String) -> Unit)? = null,
 ) {
     val state by CollectionEditorRepository.uiState.collectAsState()
     val bottomInset = nuvioSafeBottomPadding()
 
-    LaunchedEffect(collectionId, initializeRepository) {
+    LaunchedEffect(collectionId, initializeRepository, repository) {
         if (initializeRepository) {
-            CollectionEditorRepository.initialize(collectionId)
+            CollectionEditorRepository.initialize(collectionId, repository)
         }
     }
 
