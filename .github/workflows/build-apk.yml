@@ -1,309 +1,308 @@
-name: Build All Releases (Windows, Android Mo bile) 
+name: Build All Releases (Windows, Android Mobile) 
 
 on:
   workflow_dispatch:
     inputs:
-       target_branch:
-        description: 'Br anch da compilare'
+      target_branch:
+        description: 'Branch da compilare'
         required: false
-         default: 'app/enhanced'
-        type: s tring
+        default: 'app/enhanced'
+        type: string
   push:
     branches:
-      - "app/enha nced"
+      - "app/enhanced"
 
 permissions:
   contents: write
 
 jobs:
-   build-android:
+  build-android:
     runs-on: ubuntu-latest
 
-     steps:
-      - name: Resolve target branc h
+    steps:
+      - name: Resolve target branch
         id: resolve_branch
         run: |
-           INPUT_BRANCH="${{ github.event.input s.target_branch }}"
-          if [ -z "$INPUT _BRANCH" ]; then
-            CHOSEN_BRANCH="$ {{ github.ref_name }}"
+          INPUT_BRANCH="${{ github.event.inputs.target_branch }}"
+          if [ -z "$INPUT_BRANCH" ]; then
+            CHOSEN_BRANCH="${{ github.ref_name }}"
           else
-             CHOSEN_BRANCH="$INPUT_BRANCH"
-           fi
-          echo "branch=$CHOSEN_BRANCH" >>  $GITHUB_OUTPUT
-          echo "Selected branc h: $CHOSEN_BRANCH"
+            CHOSEN_BRANCH="$INPUT_BRANCH"
+          fi
+          echo "branch=$CHOSEN_BRANCH" >> $GITHUB_OUTPUT
+          echo "Selected branch: $CHOSEN_BRANCH"
 
-      - name: Checkout ta rget branch code
-        uses: actions/checko ut@v4
+      - name: Checkout target branch code
+        uses: actions/checkout@v4
         with:
-          ref: ${{ steps. resolve_branch.outputs.branch }}
-          fe tch-depth: 0
+          ref: ${{ steps.resolve_branch.outputs.branch }}
+          fetch-depth: 0
           lfs: false
 
-      - na me: Read version.json
+      - name: Read version.json
         id: version
-         run: |
-          VERSION=$(jq -r '.versi on // empty' version.json)
-          if [ -z  "$VERSION" ]; then
-            echo "Error: v ersion.json missing 'version' key"
-             exit 1
+        run: |
+          VERSION=$(jq -r '.version // empty' version.json)
+          if [ -z "$VERSION" ]; then
+            echo "Error: version.json missing 'version' key"
+            exit 1
           fi
-          echo "name=$V ERSION" >> $GITHUB_OUTPUT
-          echo "cod e=$(echo "$VERSION" | tr -d '.')" >> $GITHUB_ OUTPUT
+          echo "name=$VERSION" >> $GITHUB_OUTPUT
+          echo "code=$(echo "$VERSION" | tr -d '.')" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
-       - name: Set up JDK 17
-        uses: actio ns/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          java -version: '17'
-          distribution: 'temur in'
+          java-version: '17'
+          distribution: 'temurin'
 
       - name: Set up Gradle
-        uses : gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v5
 
-      - nam e: Decode Keystore
+      - name: Decode Keystore
         run: |
-          e cho "${{ secrets.KEYSTORE_BASE64 }}" | base64  --decode > ${{ github.workspace }}/nuvio-rel ease.keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > ${{ github.workspace }}/nuvio-release.keystore
 
-      - name: Write local.prop erties
+      - name: Write local.properties
         run: |
-          printf 'SUPAB ASE_URL=%s\n' "${{ secrets.SUPABASE_URL }}" >  local.properties
-          printf 'SUPABASE_ ANON_KEY=%s\n' "${{ secrets.SUPABASE_ANON_KEY  }}" >> local.properties
-          printf 'TR AKT_CLIENT_ID=%s\n' "${{ secrets.TRAKT_CLIENT _ID }}" >> local.properties
-          printf  'TRAKT_CLIENT_SECRET=%s\n' "${{ secrets.TRAKT _CLIENT_SECRET }}" >> local.properties
-           printf 'TRAKT_REDIRECT_URI=%s\n' "${{ sec rets.TRAKT_REDIRECT_URI }}" >> local.properti es
-          printf 'ANILIST_CLIENT_ID=%s\n'  "${{ secrets.ANILIST_CLIENT_ID }}" >> local.p roperties
-          printf 'ANILIST_CLIENT_SE CRET=%s\n' "${{ secrets.ANILIST_CLIENT_SECRET  }}" >> local.properties
-          printf 'AN ILIST_REDIRECT_URI=%s\n' "${{ secrets.ANILIST _REDIRECT_URI }}" >> local.properties
-           printf 'MAL_CLIENT_ID=%s\n' "${{ secrets.M AL_CLIENT_ID }}" >> local.properties
-           printf 'MAL_REDIRECT_URI=%s\n' "${{ secrets .MAL_REDIRECT_URI }}" >> local.properties
-           printf 'INTRODB_API_URL=%s/\n' "${{ se crets.INTRODB_API_URL }}" >> local.properties 
-          printf 'TMDB_API_KEY=%s\n' "${{ se crets.TMDB_API_KEY }}" >> local.properties
-           printf 'NUVIO_RELEASE_STORE_FILE=%s/n uvio-release.keystore\n' "${{ github.workspac e }}" >> local.properties
-          printf 'N UVIO_RELEASE_STORE_PASSWORD=%s\n' "123"  >> local.properties
-          printf 'NUVIO_R ELEASE_KEY_ALIAS=%s\n' "nuvio-release" >> loc al.properties
-          printf 'NUVIO_RELEASE _KEY_PASSWORD=%s\n' "123" >> local.prope rties
-          printf 'DONATIONS_BASE_URL=%s \n' "https://donations.nuvioapp.space/" >> lo cal.properties
-          printf 'DONATIONS_DO NATE_URL=%s\n' "https://ko-fi.com/tapframe" > > local.properties
-          printf 'CONTRIBU TIONS_URL=%s\n' "${{ secrets.CONTRIBUTION_URL  }}" >> local.properties
-          printf 'DI RECT_DEBRID_API_BASE_URL=%s\n' "https://api.t orbox.app/v1/api" >> local.properties
+          printf 'SUPABASE_URL=%s\n' "${{ secrets.SUPABASE_URL }}" > local.properties
+          printf 'SUPABASE_ANON_KEY=%s\n' "${{ secrets.SUPABASE_ANON_KEY }}" >> local.properties
+          printf 'TRAKT_CLIENT_ID=%s\n' "${{ secrets.TRAKT_CLIENT_ID }}" >> local.properties
+          printf 'TRAKT_CLIENT_SECRET=%s\n' "${{ secrets.TRAKT_CLIENT_SECRET }}" >> local.properties
+          printf 'TRAKT_REDIRECT_URI=%s\n' "${{ secrets.TRAKT_REDIRECT_URI }}" >> local.properties
+          printf 'ANILIST_CLIENT_ID=%s\n' "${{ secrets.ANILIST_CLIENT_ID }}" >> local.properties
+          printf 'ANILIST_CLIENT_SECRET=%s\n' "${{ secrets.ANILIST_CLIENT_SECRET }}" >> local.properties
+          printf 'ANILIST_REDIRECT_URI=%s\n' "${{ secrets.ANILIST_REDIRECT_URI }}" >> local.properties
+          printf 'MAL_CLIENT_ID=%s\n' "${{ secrets.MAL_CLIENT_ID }}" >> local.properties
+          printf 'MAL_REDIRECT_URI=%s\n' "${{ secrets.MAL_REDIRECT_URI }}" >> local.properties
+          printf 'INTRODB_API_URL=%s/\n' "${{ secrets.INTRODB_API_URL }}" >> local.properties
+          printf 'TMDB_API_KEY=%s\n' "${{ secrets.TMDB_API_KEY }}" >> local.properties
+          printf 'NUVIO_RELEASE_STORE_FILE=%s/nuvio-release.keystore\n' "${{ github.workspace }}" >> local.properties
+          printf 'NUVIO_RELEASE_STORE_PASSWORD=%s\n' "123" >> local.properties
+          printf 'NUVIO_RELEASE_KEY_ALIAS=%s\n' "nuvio-release" >> local.properties
+          printf 'NUVIO_RELEASE_KEY_PASSWORD=%s\n' "123" >> local.properties
+          printf 'DONATIONS_BASE_URL=%s\n' "https://donations.nuvioapp.space/" >> local.properties
+          printf 'DONATIONS_DONATE_URL=%s\n' "https://ko-fi.com/tapframe" >> local.properties
+          printf 'CONTRIBUTIONS_URL=%s\n' "${{ secrets.CONTRIBUTION_URL }}" >> local.properties
+          printf 'DIRECT_DEBRID_API_BASE_URL=%s\n' "https://api.torbox.app/v1/api" >> local.properties
 
-       - name: Generate Changelog
-        id: change log
+      - name: Generate Changelog
+        id: changelog
         env:
-          GH_TOKEN: ${{ secr ets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-           PREV_TAG=$(gh release list --limit 1 --json t agName -q '.[0].tagName' 2>/dev/null || echo  "")
+          PREV_TAG=$(gh release list --limit 1 --json tagName -q '.[0].tagName' 2>/dev/null || echo "")
 
           if [ -n "$PREV_TAG" ]; then
-             COMMITS=$(git log "${PREV_TAG}..HEA D" --pretty=format:"- %s (%h)" --no-merges)
-           else
-            COMMITS=$(git log H EAD --pretty=format:"- %s (%h)" --no-merges - n 20)
+            COMMITS=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges)
+          else
+            COMMITS=$(git log HEAD --pretty=format:"- %s (%h)" --no-merges -n 20)
           fi
 
-          if [ -z "$COMMI TS" ]; then
-            COMMITS="- Nessuna mo difica rilevata rispetto alla release precede nte"
+          if [ -z "$COMMITS" ]; then
+            COMMITS="- Nessuna modifica rilevata rispetto alla release precedente"
           fi
 
           {
-            ec ho "## 🔨 Changes"
+            echo "## 🔨 Changes"
             echo ""
-             echo "$COMMITS"
-          } > release _body.md
+            echo "$COMMITS"
+          } > release_body.md
 
-      - name: Build Full Release AP K
+      - name: Build Full Release APK
         run: |
-          ./gradlew clean :c omposeApp:assembleFullRelease --no-build-cach e --no-configuration-cache
+          ./gradlew clean :composeApp:assembleFullRelease --no-build-cache --no-configuration-cache
 
-      - name: Ren ame APK
+      - name: Rename APK
         run: |
-          APK_DIR="com poseApp/build/outputs/apk"
-          find "$A PK_DIR" -name "*.apk" | while read apk; do
-             DIR=$(dirname "$apk")
-            m v "$apk" "$DIR/NuvioEnhanced-${{ steps.versio n.outputs.name }}.apk"
+          APK_DIR="composeApp/build/outputs/apk"
+          find "$APK_DIR" -name "*.apk" | while read apk; do
+            DIR=$(dirname "$apk")
+            mv "$apk" "$DIR/NuvioEnhanced-${{ steps.version.outputs.name }}.apk"
           done
 
-       - name: Create GitHub Release and Upload APK
-         env:
-          GH_TOKEN: ${{ secrets. GITHUB_TOKEN }}
+      - name: Create GitHub Release and Upload APK
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          RELE ASE_TAG="v${{ steps.version.outputs.name }}"
- 
-          if gh release view "$RELEASE_TAG"  --json id &>/dev/null; then
-            echo  "Release tag $RELEASE_TAG already exists, upl oading APK..."
-            find composeApp/bu ild/outputs/apk -name "*.apk" -exec gh releas e upload "$RELEASE_TAG" {} --clobber \;
-           else
-            echo "Creating release  $RELEASE_TAG..."
-            gh release creat e "$RELEASE_TAG" \
-              --title "Nuv io v${{ steps.version.outputs.name }}" \
-               --notes-file release_body.md \
-               --target ${{ steps.resolve_branch.o utputs.branch }}
-            find composeApp/ build/outputs/apk -name "*.apk" -exec gh rele ase upload "$RELEASE_TAG" {} --clobber \;
-           fi
+          RELEASE_TAG="v${{ steps.version.outputs.name }}"
 
-      - name: Send ntfy Notificati on
+          if gh release view "$RELEASE_TAG" --json id &>/dev/null; then
+            echo "Release tag $RELEASE_TAG already exists, uploading APK..."
+            find composeApp/build/outputs/apk -name "*.apk" -exec gh release upload "$RELEASE_TAG" {} --clobber \;
+          else
+            echo "Creating release $RELEASE_TAG..."
+            gh release create "$RELEASE_TAG" \
+              --title "Nuvio v${{ steps.version.outputs.name }}" \
+              --notes-file release_body.md \
+              --target ${{ steps.resolve_branch.outputs.branch }}
+            find composeApp/build/outputs/apk -name "*.apk" -exec gh release upload "$RELEASE_TAG" {} --clobber \;
+          fi
+
+      - name: Send ntfy Notification
         run: |
           curl \
-             -H "Title: 🎉 Android Build Completata!"  \
+            -H "Title: 🎉 Android Build Completata!" \
             -H "Priority: high" \
-             -H "Tags: rocket,android" \
-            -H  "Click: https://github.com/${{ github.reposi tory }}/releases/tag/v${{ steps.version.outpu ts.name }}" \
-            -d "Build **Android  v${{ steps.version.outputs.name }}** pronta!  🚀 APK caricato." \
-            https://nt fy.sh/nuvio_builds
+            -H "Tags: rocket,android" \
+            -H "Click: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.name }}" \
+            -d "Build **Android v${{ steps.version.outputs.name }}** pronta! 🚀 APK caricato." \
+            https://ntfy.sh/nuvio_builds
 
   build-desktop:
-    runs -on: windows-latest
+    runs-on: windows-latest
     needs: build-android
- 
+
     steps:
-      - name: Resolve target bran ch
+      - name: Resolve target branch
         id: resolve_branch
         run: |
-           $inputBranch = "${{ github.event.in puts.target_branch }}"
-          if ([string] ::IsNullOrEmpty($inputBranch)) {
-             $chosenBranch = "${{ github.ref_name }}"
-           } else {
-            $chosenBranch = $i nputBranch
+          $inputBranch = "${{ github.event.inputs.target_branch }}"
+          if ([string]::IsNullOrEmpty($inputBranch)) {
+            $chosenBranch = "${{ github.ref_name }}"
+          } else {
+            $chosenBranch = $inputBranch
           }
-          echo "branch =$chosenBranch" | Out-File -FilePath $env:GIT HUB_OUTPUT -Encoding utf8 -Append
-          e cho "Selected branch: $chosenBranch"
+          echo "branch=$chosenBranch" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          echo "Selected branch: $chosenBranch"
 
-      -  name: Checkout target branch code
-        us es: actions/checkout@v4
+      - name: Checkout target branch code
+        uses: actions/checkout@v4
         with:
-           ref: ${{ steps.resolve_branch.outputs.bran ch }}
+          ref: ${{ steps.resolve_branch.outputs.branch }}
           fetch-depth: 0
-          lfs:  false
+          lfs: false
 
       - name: Read version.json
-         id: version
+        id: version
         shell: pwsh
-        ru n: |
-          $json = Get-Content -Raw versi on.json | ConvertFrom-Json
-          $version  = $json.version
-          if ([string]::IsNu llOrEmpty($version)) {
-            Write-Host  "Error: version.json missing 'version' key"
-             exit 1
+        run: |
+          $json = Get-Content -Raw version.json | ConvertFrom-Json
+          $version = $json.version
+          if ([string]::IsNullOrEmpty($version)) {
+            Write-Host "Error: version.json missing 'version' key"
+            exit 1
           }
-          echo  "name=$version" | Out-File -FilePath $env:GI THUB_OUTPUT -Encoding utf8 -Append
-           echo "code=$($version -replace '\.', '')" | O ut-File -FilePath $env:GITHUB_OUTPUT -Encodin g utf8 -Append
-          Write-Host "Version:  $version"
+          echo "name=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          echo "code=$($version -replace '\.', '')" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          Write-Host "Version: $version"
 
       - name: Set up JDK 17
-         uses: actions/setup-java@v4
+        uses: actions/setup-java@v4
         with:
-           java-version: '17'
-          distri bution: 'temurin'
+          java-version: '17'
+          distribution: 'temurin'
 
-      - name: Set up Gradl e
-        uses: gradle/actions/setup-gradle@v 5
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Write local.properties
-         shell: pwsh
+        shell: pwsh
         run: |
           @"
-           SUPABASE_URL=${{ secrets.SUPABASE_URL  }}
-          SUPABASE_ANON_KEY=${{ secrets.S UPABASE_ANON_KEY }}
-          TRAKT_CLIENT_ID =${{ secrets.TRAKT_CLIENT_ID }}
-          TRA KT_CLIENT_SECRET=${{ secrets.TRAKT_CLIENT_SEC RET }}
-          TRAKT_REDIRECT_URI=${{ secre ts.TRAKT_REDIRECT_URI }}
-          ANILIST_CL IENT_ID=${{ secrets.ANILIST_CLIENT_ID }}
-           ANILIST_CLIENT_SECRET=${{ secrets.ANILI ST_CLIENT_SECRET }}
-          ANILIST_REDIREC T_URI=${{ secrets.ANILIST_REDIRECT_URI }}
-           MAL_CLIENT_ID=${{ secrets.MAL_CLIENT_I D }}
-          MAL_REDIRECT_URI=${{ secrets.M AL_REDIRECT_URI }}
-          INTRODB_API_URL= ${{ secrets.INTRODB_API_URL }}/
-          TMD B_API_KEY=${{ secrets.TMDB_API_KEY }}
-           DONATIONS_BASE_URL=https://donations.nuvio app.space/
-          DONATIONS_DONATE_URL=htt ps://ko-fi.com/tapframe
-          CONTRIBUTIO NS_URL=${{ secrets.CONTRIBUTION_URL }}
-           DIRECT_DEBRID_API_BASE_URL=https://api.to rbox.app/v1/api
-          "@ | Out-File -File Path local.properties -Encoding utf8
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          TRAKT_CLIENT_ID=${{ secrets.TRAKT_CLIENT_ID }}
+          TRAKT_CLIENT_SECRET=${{ secrets.TRAKT_CLIENT_SECRET }}
+          TRAKT_REDIRECT_URI=${{ secrets.TRAKT_REDIRECT_URI }}
+          ANILIST_CLIENT_ID=${{ secrets.ANILIST_CLIENT_ID }}
+          ANILIST_CLIENT_SECRET=${{ secrets.ANILIST_CLIENT_SECRET }}
+          ANILIST_REDIRECT_URI=${{ secrets.ANILIST_REDIRECT_URI }}
+          MAL_CLIENT_ID=${{ secrets.MAL_CLIENT_ID }}
+          MAL_REDIRECT_URI=${{ secrets.MAL_REDIRECT_URI }}
+          INTRODB_API_URL=${{ secrets.INTRODB_API_URL }}/
+          TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+          DONATIONS_BASE_URL=https://donations.nuvioapp.space/
+          DONATIONS_DONATE_URL=https://ko-fi.com/tapframe
+          CONTRIBUTIONS_URL=${{ secrets.CONTRIBUTION_URL }}
+          DIRECT_DEBRID_API_BASE_URL=https://api.torbox.app/v1/api
+          "@ | Out-File -FilePath local.properties -Encoding utf8
 
-      -  name: Install WebView2 SDK (NuGet)
-        s hell: pwsh
-        run: |
-          nuget ins tall Microsoft.Web.WebView2 -OutputDirectory  $env:UserProfile\.nuget\packages
-          ec ho "WebView2 SDK installed"
-
-      - name: Do wnload libmpv-2.dll
+      - name: Install WebView2 SDK (NuGet)
         shell: pwsh
-         run: |
-          $dllDir = "composeApp/src /desktopMain/native/windows/runtime"
-           New-Item -ItemType Directory -Force -Path $ dllDir | Out-Null
-          $dllPath = Join-P ath $dllDir "libmpv-2.dll"
-          Write-Ho st "Downloading libmpv-2.dll from NuvioDeskto p..."
-          Invoke-WebRequest -Uri "https ://github.com/NuvioMedia/NuvioDesktop/raw/ref s/heads/Dev/composeApp/src/desktopMain/native /windows/runtime/libmpv-2.dll" -OutFile $dllP ath -UseBasicParsing
-          $size = (Get-I tem $dllPath).Length
-          Write-Host "Do wnloaded: $([math]::Round($size/1MB, 1)) MB"
- 
-      - name: Build Windows MSI
-        shel l: pwsh
         run: |
-          ./gradlew cl ean :composeApp:packageReleaseMsi --no-build- cache --no-configuration-cache
+          nuget install Microsoft.Web.WebView2 -OutputDirectory $env:UserProfile\.nuget\packages
+          echo "WebView2 SDK installed"
 
-      - name:  Locate MSI artifact
-        id: msi
-         shell: pwsh
+      - name: Download libmpv-2.dll
+        shell: pwsh
         run: |
-          $release MsiDir = "composeApp/build/compose/release-ms is"
-          $binaryDir = "composeApp/build/ compose/binaries/main-release/msi"
-           if (Test-Path $releaseMsiDir) {
-            $ msi = Get-ChildItem -Path $releaseMsiDir -Fil ter "*.msi" | Select-Object -First 1
-             if ($msi) {
-              echo "msi-path= $($msi.FullName)" | Out-File -FilePath $env:G ITHUB_OUTPUT -Encoding utf8 -Append
-               echo "msi-name=$($msi.Name)" | Out-File  -FilePath $env:GITHUB_OUTPUT -Encoding utf8 - Append
-              Write-Host "Found MSI at : $($msi.FullName)"
-              exit 0
-             }
-          }
-          if (Test-Path  $binaryDir) {
-            $msi = Get-ChildIt em -Path $binaryDir -Filter "*.msi" | Select- Object -First 1
+          $dllDir = "composeApp/src/desktopMain/native/windows/runtime"
+          New-Item -ItemType Directory -Force -Path $dllDir | Out-Null
+          $dllPath = Join-Path $dllDir "libmpv-2.dll"
+          Write-Host "Downloading libmpv-2.dll from NuvioDesktop..."
+          Invoke-WebRequest -Uri "https://github.com/NuvioMedia/NuvioDesktop/raw/refs/heads/Dev/composeApp/src/desktopMain/native/windows/runtime/libmpv-2.dll" -OutFile $dllPath -UseBasicParsing
+          $size = (Get-Item $dllPath).Length
+          Write-Host "Downloaded: $([math]::Round($size/1MB, 1)) MB"
+
+      - name: Build Windows MSI
+        shell: pwsh
+        run: |
+          ./gradlew clean :composeApp:packageReleaseMsi --no-build-cache --no-configuration-cache
+
+      - name: Locate MSI artifact
+        id: msi
+        shell: pwsh
+        run: |
+          $releaseMsiDir = "composeApp/build/compose/release-msis"
+          $binaryDir = "composeApp/build/compose/binaries/main-release/msi"
+          if (Test-Path $releaseMsiDir) {
+            $msi = Get-ChildItem -Path $releaseMsiDir -Filter "*.msi" | Select-Object -First 1
             if ($msi) {
-               echo "msi-path=$($msi.FullName)" | O ut-File -FilePath $env:GITHUB_OUTPUT -Encodin g utf8 -Append
-              echo "msi-name=$ ($msi.Name)" | Out-File -FilePath $env:GITHUB _OUTPUT -Encoding utf8 -Append
-               Write-Host "Found MSI at: $($msi.FullName)"
-               exit 0
+              echo "msi-path=$($msi.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+              echo "msi-name=$($msi.Name)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+              Write-Host "Found MSI at: $($msi.FullName)"
+              exit 0
             }
-          } 
-          Write-Host "No MSI found in expect ed paths"
-          Get-ChildItem -Recurse -P ath "composeApp/build" -Filter "*.msi" | ForE ach-Object {
-            Write-Host "  Found:  $($_.FullName)"
           }
-          exit 1 
+          if (Test-Path $binaryDir) {
+            $msi = Get-ChildItem -Path $binaryDir -Filter "*.msi" | Select-Object -First 1
+            if ($msi) {
+              echo "msi-path=$($msi.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+              echo "msi-name=$($msi.Name)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+              Write-Host "Found MSI at: $($msi.FullName)"
+              exit 0
+            }
+          }
+          Write-Host "No MSI found in expected paths"
+          Get-ChildItem -Recurse -Path "composeApp/build" -Filter "*.msi" | ForEach-Object {
+            Write-Host "  Found: $($_.FullName)"
+          }
+          exit 1
 
       - name: Upload MSI to Release
-         shell: pwsh
+        shell: pwsh
         env:
-          GH_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-           $releaseTag = "v${{ steps.version.ou tputs.name }}"
-          $msiPath = "${{ step s.msi.outputs.msi-path }}"
+          $releaseTag = "v${{ steps.version.outputs.name }}"
+          $msiPath = "${{ steps.msi.outputs.msi-path }}"
 
-          Write-H ost "Uploading $msiPath to tag $releaseTag... "
+          Write-Host "Uploading $msiPath to tag $releaseTag..."
 
           $maxRetries = 30
-          $retr y = 0
-          while ($retry -lt $maxRetries ) {
-            $release = gh release view "$ releaseTag" --json id 2>$null
-            if  ($release) {
-              Write-Host "Releas e found, uploading..."
-              gh relea se upload "$releaseTag" "$msiPath" --clobber
-               if ($LASTEXITCODE -eq 0) {
-                 Write-Host "MSI uploaded successf ully!"
+          $retry = 0
+          while ($retry -lt $maxRetries) {
+            $release = gh release view "$releaseTag" --json id 2>$null
+            if ($release) {
+              Write-Host "Release found, uploading..."
+              gh release upload "$releaseTag" "$msiPath" --clobber
+              if ($LASTEXITCODE -eq 0) {
+                Write-Host "MSI uploaded successfully!"
                 exit 0
-              } 
-              Write-Host "Upload failed, ret rying..."
+              }
+              Write-Host "Upload failed, retrying..."
             } else {
-               Write-Host "Release not yet created, retry $r etry/$maxRetries..."
+              Write-Host "Release not yet created, retry $retry/$maxRetries..."
             }
-             $retry++
-            Start-Sleep -Seconds 1 0
+            $retry++
+            Start-Sleep -Seconds 10
           }
-          Write-Host "Timeout w aiting for Android release"
+          Write-Host "Timeout waiting for Android release"
           exit 1
- 
+
       - name: Send ntfy Notification
-         shell: pwsh
+        shell: pwsh
         run: |
-          curl.ex e -H "Title: 🎉 Desktop Build Completata!"  -H "Priority: high" -H "Tags: rocket,windows"  -H "Click: https://github.com/${{ github.rep ository }}/releases/tag/v${{ steps.version.ou tputs.name }}" -d "Build **Desktop Windows v$ {{ steps.version.outputs.name }}** pronta! � �� MSI caricato." https://ntfy.sh/nuvio_build s
- 
+          curl.exe -H "Title: 🎉 Desktop Build Completata!" -H "Priority: high" -H "Tags: rocket,windows" -H "Click: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.name }}" -d "Build **Desktop Windows v${{ steps.version.outputs.name }}** pronta! 🚀 MSI caricato." https://ntfy.sh/nuvio_builds
