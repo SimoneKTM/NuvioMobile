@@ -21,6 +21,19 @@ internal actual object TvdbSettingsStorage {
 
     actual fun saveApiKey(apiKey: String) { store.putString("tvdb_api_key", apiKey) }
 
+    actual fun loadUseTrailers(): Boolean? = bool("tvdb_use_trailers")
+    actual fun saveUseTrailers(enabled: Boolean) { store.putBoolean("tvdb_use_trailers", enabled) }
+    actual fun loadUseArtwork(): Boolean? = bool("tvdb_use_artwork")
+    actual fun saveUseArtwork(enabled: Boolean) { store.putBoolean("tvdb_use_artwork", enabled) }
+    actual fun loadUseBasicInfo(): Boolean? = bool("tvdb_use_basic_info")
+    actual fun saveUseBasicInfo(enabled: Boolean) { store.putBoolean("tvdb_use_basic_info", enabled) }
+    actual fun loadUseCredits(): Boolean? = bool("tvdb_use_credits")
+    actual fun saveUseCredits(enabled: Boolean) { store.putBoolean("tvdb_use_credits", enabled) }
+    actual fun loadUseEpisodes(): Boolean? = bool("tvdb_use_episodes")
+    actual fun saveUseEpisodes(enabled: Boolean) { store.putBoolean("tvdb_use_episodes", enabled) }
+    actual fun loadUseSeasonPosters(): Boolean? = bool("tvdb_use_season_posters")
+    actual fun saveUseSeasonPosters(enabled: Boolean) { store.putBoolean("tvdb_use_season_posters", enabled) }
+
     private fun extractBoolean(element: JsonElement?): Boolean? =
         (element as? JsonPrimitive)?.content?.toBooleanStrictOrNull()
 

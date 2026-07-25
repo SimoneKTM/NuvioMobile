@@ -38,6 +38,8 @@ import nuvio.composeapp.generated.resources.settings_integrations_section_subtit
 import nuvio.composeapp.generated.resources.settings_integrations_simkl_description
 import nuvio.composeapp.generated.resources.settings_integrations_subdl_description
 import nuvio.composeapp.generated.resources.settings_integrations_tmdb_description
+import nuvio.composeapp.generated.resources.settings_integrations_tvdb_description
+import nuvio.composeapp.generated.resources.compose_settings_page_tvdb_enrichment
 import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.integrationsContent(
@@ -79,8 +81,8 @@ internal fun LazyListScope.integrationsContent(
                 )
                 SettingsGroupDivider(isTablet = isTablet)
                 SettingsNavigationRow(
-                    title = "TVDB",
-                    description = "Enrich metadata from TheTVDB",
+                    title = stringResource(Res.string.compose_settings_page_tvdb_enrichment),
+                    description = stringResource(Res.string.settings_integrations_tvdb_description),
                     iconPainter = integrationLogoPainter(IntegrationLogo.Tvdb),
                     isTablet = isTablet,
                     onClick = onTvdbClick,

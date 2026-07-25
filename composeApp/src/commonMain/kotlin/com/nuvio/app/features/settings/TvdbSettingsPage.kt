@@ -30,13 +30,28 @@ import nuvio.composeapp.generated.resources.settings_tvdb_api_key_title
 import nuvio.composeapp.generated.resources.settings_tvdb_enable
 import nuvio.composeapp.generated.resources.settings_tvdb_enable_description
 import nuvio.composeapp.generated.resources.settings_tvdb_section_api_key
+import nuvio.composeapp.generated.resources.settings_tvdb_section_modules
 import nuvio.composeapp.generated.resources.settings_tvdb_section_title
+import nuvio.composeapp.generated.resources.settings_tvdb_module_artwork
+import nuvio.composeapp.generated.resources.settings_tvdb_module_artwork_description
+import nuvio.composeapp.generated.resources.settings_tvdb_module_basic_info
+import nuvio.composeapp.generated.resources.settings_tvdb_module_basic_info_description
+import nuvio.composeapp.generated.resources.settings_tvdb_module_credits
+import nuvio.composeapp.generated.resources.settings_tvdb_module_credits_description
+import nuvio.composeapp.generated.resources.settings_tvdb_module_episodes
+import nuvio.composeapp.generated.resources.settings_tvdb_module_episodes_description
+import nuvio.composeapp.generated.resources.settings_tvdb_module_season_posters
+import nuvio.composeapp.generated.resources.settings_tvdb_module_season_posters_description
+import nuvio.composeapp.generated.resources.settings_tvdb_module_trailers
+import nuvio.composeapp.generated.resources.settings_tvdb_module_trailers_description
 import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.tvdbSettingsContent(
     isTablet: Boolean,
     settings: TvdbSettings,
 ) {
+    val enrichmentControlsEnabled = settings.enabled && settings.hasApiKey
+
     item {
         SettingsSection(
             title = stringResource(Res.string.settings_tvdb_section_title),
@@ -72,6 +87,69 @@ internal fun LazyListScope.tvdbSettingsContent(
                     isTablet = isTablet,
                     value = settings.apiKey,
                     onApiKeyCommitted = TvdbSettingsRepository::setApiKey,
+                )
+            }
+        }
+    }
+
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_tvdb_section_modules),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_tvdb_module_trailers),
+                    description = stringResource(Res.string.settings_tvdb_module_trailers_description),
+                    checked = settings.useTrailers,
+                    enabled = enrichmentControlsEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = TvdbSettingsRepository::setUseTrailers,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_tvdb_module_artwork),
+                    description = stringResource(Res.string.settings_tvdb_module_artwork_description),
+                    checked = settings.useArtwork,
+                    enabled = enrichmentControlsEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = TvdbSettingsRepository::setUseArtwork,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_tvdb_module_basic_info),
+                    description = stringResource(Res.string.settings_tvdb_module_basic_info_description),
+                    checked = settings.useBasicInfo,
+                    enabled = enrichmentControlsEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = TvdbSettingsRepository::setUseBasicInfo,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_tvdb_module_credits),
+                    description = stringResource(Res.string.settings_tvdb_module_credits_description),
+                    checked = settings.useCredits,
+                    enabled = enrichmentControlsEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = TvdbSettingsRepository::setUseCredits,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_tvdb_module_episodes),
+                    description = stringResource(Res.string.settings_tvdb_module_episodes_description),
+                    checked = settings.useEpisodes,
+                    enabled = enrichmentControlsEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = TvdbSettingsRepository::setUseEpisodes,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_tvdb_module_season_posters),
+                    description = stringResource(Res.string.settings_tvdb_module_season_posters_description),
+                    checked = settings.useSeasonPosters,
+                    enabled = enrichmentControlsEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = TvdbSettingsRepository::setUseSeasonPosters,
                 )
             }
         }
