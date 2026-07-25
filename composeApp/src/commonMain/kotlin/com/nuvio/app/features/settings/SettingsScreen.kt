@@ -252,6 +252,10 @@ fun SettingsScreen(
             HomeCatalogSettingsRepository.snapshot()
             HomeCatalogSettingsRepository.uiState
         }.collectAsStateWithLifecycle()
+        val animeHomescreenSettingsUiState by remember {
+            AnimeHomeCatalogSettingsRepository.ensureLoaded()
+            AnimeHomeCatalogSettingsRepository.uiState
+        }.collectAsStateWithLifecycle()
         val collections by CollectionRepository.collections.collectAsStateWithLifecycle()
         val metaScreenSettingsUiState by remember {
             MetaScreenSettingsRepository.ensureLoaded()
@@ -1025,20 +1029,14 @@ private fun MobileSettingsScreen(
                 SettingsPage.AnimePlugins -> if (AppFeaturePolicy.pluginsEnabled) pluginsSettingsContent() else addonsSettingsContent()
                 SettingsPage.AnimeWebScraper -> animeWebScraperSettingsContent(isTablet = false)
                 SettingsPage.AnimeAdvanced -> animeAdvancedSettingsContent(isTablet = false)
-                SettingsPage.AnimeHomescreen -> {
-                    val animeHomescreenUiState by remember {
-                        AnimeHomeCatalogSettingsRepository.ensureLoaded()
-                        AnimeHomeCatalogSettingsRepository.uiState
-                    }.collectAsStateWithLifecycle()
-                    animeHomescreenSettingsContent(
-                        isTablet = false,
-                        heroEnabled = animeHomescreenUiState.heroEnabled,
-                        showCatalogType = animeHomescreenUiState.showCatalogType,
-                        hideUnreleasedContent = animeHomescreenUiState.hideUnreleasedContent,
-                        hideCatalogUnderline = animeHomescreenUiState.hideCatalogUnderline,
-                        items = animeHomescreenUiState.items,
-                    )
-                }
+                SettingsPage.AnimeHomescreen -> animeHomescreenSettingsContent(
+                    isTablet = false,
+                    heroEnabled = animeHomescreenSettingsUiState.heroEnabled,
+                    showCatalogType = animeHomescreenSettingsUiState.showCatalogType,
+                    hideUnreleasedContent = animeHomescreenSettingsUiState.hideUnreleasedContent,
+                    hideCatalogUnderline = animeHomescreenSettingsUiState.hideCatalogUnderline,
+                    items = animeHomescreenSettingsUiState.items,
+                )
                 SettingsPage.AnimeCollections -> animeCollectionsSettingsContent(
                     isTablet = false,
                 )
@@ -1620,20 +1618,14 @@ private fun TabletSettingsScreen(
                     SettingsPage.AnimePlugins -> if (AppFeaturePolicy.pluginsEnabled) pluginsSettingsContent() else addonsSettingsContent()
                     SettingsPage.AnimeWebScraper -> animeWebScraperSettingsContent(isTablet = true)
                     SettingsPage.AnimeAdvanced -> animeAdvancedSettingsContent(isTablet = true)
-                    SettingsPage.AnimeHomescreen -> {
-                        val animeHomescreenUiState by remember {
-                            AnimeHomeCatalogSettingsRepository.ensureLoaded()
-                            AnimeHomeCatalogSettingsRepository.uiState
-                        }.collectAsStateWithLifecycle()
-                        animeHomescreenSettingsContent(
-                            isTablet = true,
-                            heroEnabled = animeHomescreenUiState.heroEnabled,
-                            showCatalogType = animeHomescreenUiState.showCatalogType,
-                            hideUnreleasedContent = animeHomescreenUiState.hideUnreleasedContent,
-                            hideCatalogUnderline = animeHomescreenUiState.hideCatalogUnderline,
-                            items = animeHomescreenUiState.items,
-                        )
-                    }
+                    SettingsPage.AnimeHomescreen -> animeHomescreenSettingsContent(
+                        isTablet = true,
+                        heroEnabled = animeHomescreenSettingsUiState.heroEnabled,
+                        showCatalogType = animeHomescreenSettingsUiState.showCatalogType,
+                        hideUnreleasedContent = animeHomescreenSettingsUiState.hideUnreleasedContent,
+                        hideCatalogUnderline = animeHomescreenSettingsUiState.hideCatalogUnderline,
+                        items = animeHomescreenSettingsUiState.items,
+                    )
                     SettingsPage.AnimeCollections -> animeCollectionsSettingsContent(
                         isTablet = true,
                     )
