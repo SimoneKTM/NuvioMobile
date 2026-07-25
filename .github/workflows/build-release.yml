@@ -1,4 +1,4 @@
-name: Build All Releases (Windows, Android Mobile)
+name: Build All Releases (Windows, Android Mobile) 
 
 on:
   workflow_dispatch:
@@ -58,7 +58,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Decode Keystore
         run: |
@@ -71,17 +71,12 @@ jobs:
           printf 'TRAKT_CLIENT_ID=%s\n' "${{ secrets.TRAKT_CLIENT_ID }}" >> local.properties
           printf 'TRAKT_CLIENT_SECRET=%s\n' "${{ secrets.TRAKT_CLIENT_SECRET }}" >> local.properties
           printf 'TRAKT_REDIRECT_URI=%s\n' "${{ secrets.TRAKT_REDIRECT_URI }}" >> local.properties
-          printf 'ANILIST_CLIENT_ID=%s\n' "${{ secrets.ANILIST_CLIENT_ID }}" >> local.properties
-          printf 'ANILIST_CLIENT_SECRET=%s\n' "${{ secrets.ANILIST_CLIENT_SECRET }}" >> local.properties
-          printf 'ANILIST_REDIRECT_URI=%s\n' "${{ secrets.ANILIST_REDIRECT_URI }}" >> local.properties
-          printf 'MAL_CLIENT_ID=%s\n' "${{ secrets.MAL_CLIENT_ID }}" >> local.properties
-          printf 'MAL_REDIRECT_URI=%s\n' "${{ secrets.MAL_REDIRECT_URI }}" >> local.properties
           printf 'INTRODB_API_URL=%s/\n' "${{ secrets.INTRODB_API_URL }}" >> local.properties
           printf 'TMDB_API_KEY=%s\n' "${{ secrets.TMDB_API_KEY }}" >> local.properties
           printf 'NUVIO_RELEASE_STORE_FILE=%s/nuvio-release.keystore\n' "${{ github.workspace }}" >> local.properties
-          printf 'NUVIO_RELEASE_STORE_PASSWORD=%s\n' ${{ secrets.NUVIO_RELEASE_STORE_PASSWORD }} >> local.properties
+          printf 'NUVIO_RELEASE_STORE_PASSWORD=%s\n' "nuvio1234" >> local.properties
           printf 'NUVIO_RELEASE_KEY_ALIAS=%s\n' "nuvio-release" >> local.properties
-          printf 'NUVIO_RELEASE_KEY_PASSWORD=%s\n' ${{ secrets.NUVIO_RELEASE_STORE_PASSWORD }} >> local.properties
+          printf 'NUVIO_RELEASE_KEY_PASSWORD=%s\n' "nuvio1234" >> local.properties
           printf 'DONATIONS_BASE_URL=%s\n' "https://donations.nuvioapp.space/" >> local.properties
           printf 'DONATIONS_DONATE_URL=%s\n' "https://ko-fi.com/tapframe" >> local.properties
           printf 'CONTRIBUTIONS_URL=%s\n' "${{ secrets.CONTRIBUTION_URL }}" >> local.properties
@@ -105,14 +100,14 @@ jobs:
           fi
 
           {
-            echo "## ?? Changes"
+            echo "## 🔨 Changes"
             echo ""
             echo "$COMMITS"
           } > release_body.md
 
       - name: Build Full Release APK
         run: |
-          ./gradlew clean :composeApp:assembleFullRelease --no-build-cache --no-configuration-cache
+          ./gradlew :composeApp:assembleFullRelease
 
       - name: Rename APK
         run: |
@@ -121,14 +116,6 @@ jobs:
             DIR=$(dirname "$apk")
             mv "$apk" "$DIR/NuvioEnhanced-${{ steps.version.outputs.name }}.apk"
           done
-
-      - name: Debug generated configs
-        run: |
-          echo "=== TraktConfig.kt ==="
-          cat composeApp/build/generated/runtime-config/kotlin/com/nuvio/app/features/trakt/TraktConfig.kt 2>/dev/null || echo "File not found"
-          echo ""
-          echo "=== local.properties ==="
-          grep -E "TRAKT|ANILIST|MAL" local.properties 2>/dev/null || echo "No secrets found"
 
       - name: Create GitHub Release and Upload APK
         env:
@@ -151,11 +138,11 @@ jobs:
       - name: Send ntfy Notification
         run: |
           curl \
-            -H "Title: ?? Android Build Completata!" \
+            -H "Title: 🎉 Android Build Completata!" \
             -H "Priority: high" \
             -H "Tags: rocket,android" \
             -H "Click: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.name }}" \
-            -d "Build **Android v${{ steps.version.outputs.name }}** pronta! ?? APK caricato." \
+            -d "Build **Android v${{ steps.version.outputs.name }}** pronta! 🚀 APK caricato." \
             https://ntfy.sh/nuvio_builds
 
   build-desktop:
@@ -203,7 +190,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Write local.properties
         shell: pwsh
@@ -214,11 +201,6 @@ jobs:
           TRAKT_CLIENT_ID=${{ secrets.TRAKT_CLIENT_ID }}
           TRAKT_CLIENT_SECRET=${{ secrets.TRAKT_CLIENT_SECRET }}
           TRAKT_REDIRECT_URI=${{ secrets.TRAKT_REDIRECT_URI }}
-          ANILIST_CLIENT_ID=${{ secrets.ANILIST_CLIENT_ID }}
-          ANILIST_CLIENT_SECRET=${{ secrets.ANILIST_CLIENT_SECRET }}
-          ANILIST_REDIRECT_URI=${{ secrets.ANILIST_REDIRECT_URI }}
-          MAL_CLIENT_ID=${{ secrets.MAL_CLIENT_ID }}
-          MAL_REDIRECT_URI=${{ secrets.MAL_REDIRECT_URI }}
           INTRODB_API_URL=${{ secrets.INTRODB_API_URL }}/
           TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
           DONATIONS_BASE_URL=https://donations.nuvioapp.space/
@@ -247,7 +229,7 @@ jobs:
       - name: Build Windows MSI
         shell: pwsh
         run: |
-          ./gradlew clean :composeApp:packageReleaseMsi --no-build-cache --no-configuration-cache
+          ./gradlew :composeApp:packageReleaseMsi
 
       - name: Locate MSI artifact
         id: msi
@@ -313,4 +295,4 @@ jobs:
       - name: Send ntfy Notification
         shell: pwsh
         run: |
-          curl.exe -H "Title: ?? Desktop Build Completata!" -H "Priority: high" -H "Tags: rocket,windows" -H "Click: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.name }}" -d "Build **Desktop Windows v${{ steps.version.outputs.name }}** pronta! ?? MSI caricato." https://ntfy.sh/nuvio_builds
+          curl.exe -H "Title: 🎉 Desktop Build Completata!" -H "Priority: high" -H "Tags: rocket,windows" -H "Click: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.name }}" -d "Build **Desktop Windows v${{ steps.version.outputs.name }}** pronta! 🚀 MSI caricato." https://ntfy.sh/nuvio_builds
