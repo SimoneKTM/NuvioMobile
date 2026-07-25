@@ -105,6 +105,7 @@ import com.nuvio.app.features.details.components.TrailerPlayerPopup
 import com.nuvio.app.features.details.components.AiAssistantSheet
 import com.nuvio.app.features.ai.AiAssistantSettings
 import com.nuvio.app.features.ai.AiAssistantSettingsRepository
+import com.nuvio.app.features.anime.metascreen.AnimeMetaScreenSettingsRepository
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.library.LibraryRepository
 import com.nuvio.app.features.library.toLibraryItem
@@ -158,9 +159,15 @@ fun MetaDetailsScreen(
     val uiState by MetaDetailsRepository.uiState.collectAsStateWithLifecycle()
     val displayedMeta = uiState.meta?.takeIf { it.type == type && it.id == id }
         ?: MetaDetailsRepository.peek(type, id)
-    val metaScreenSettingsUiState by remember {
-        MetaScreenSettingsRepository.ensureLoaded()
-        MetaScreenSettingsRepository.uiState
+    val isAnimeMetaScreen = type.startsWith("anime", ignoreCase = true)
+    val metaScreenSettingsUiState by remember(isAnimeMetaScreen) {
+        if (isAnimeMetaScreen) {
+            AnimeMetaScreenSettingsRepository.ensureLoaded()
+            AnimeMetaScreenSettingsRepository.uiState
+        } else {
+            MetaScreenSettingsRepository.ensureLoaded()
+            MetaScreenSettingsRepository.uiState
+        }
     }.collectAsStateWithLifecycle()
     val traktAuthUiState by remember {
         TraktAuthRepository.ensureLoaded()

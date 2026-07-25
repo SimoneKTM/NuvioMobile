@@ -255,6 +255,9 @@ internal fun LazyListScope.animeMetaScreenSettingsContent(
                     items = uiState.items,
                     isTablet = isTablet,
                     tabLayout = uiState.tabLayout,
+                    onMoveByIndex = AnimeMetaScreenSettingsRepository::moveByIndex,
+                    onEnabledChange = AnimeMetaScreenSettingsRepository::setEnabled,
+                    onTabGroupChange = AnimeMetaScreenSettingsRepository::setTabGroup,
                 )
             }
         }
@@ -327,17 +330,20 @@ private fun MetaBackgroundModeSelector(
 }
 
 @Composable
-private fun MetaSectionReorderableList(
+internal fun MetaSectionReorderableList(
     items: List<MetaScreenSectionItem>,
     isTablet: Boolean,
     tabLayout: Boolean,
+    onMoveByIndex: (Int, Int) -> Unit = MetaScreenSettingsRepository::moveByIndex,
+    onEnabledChange: (MetaScreenSectionKey, Boolean) -> Unit = MetaScreenSettingsRepository::setEnabled,
+    onTabGroupChange: (MetaScreenSectionKey, Int?) -> Unit = MetaScreenSettingsRepository::setTabGroup,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val lazyListState = rememberLazyListState()
     val reorderableLazyListState = rememberReorderableLazyListState(
         lazyListState = lazyListState,
     ) { from, to ->
-        MetaScreenSettingsRepository.moveByIndex(from.index, to.index)
+        onMoveByIndex(from.index, to.index)
         hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
@@ -368,8 +374,8 @@ private fun MetaSectionReorderableList(
                             isTablet = isTablet,
                             tabLayout = tabLayout,
                             groupCounts = groupCounts,
-                            onEnabledChange = { MetaScreenSettingsRepository.setEnabled(item.key, it) },
-                            onTabGroupChange = { MetaScreenSettingsRepository.setTabGroup(item.key, it) },
+                            onEnabledChange = { onEnabledChange(item.key, it) },
+                            onTabGroupChange = { onTabGroupChange(item.key, it) },
                             dragHandleScope = this@ReorderableItem,
                         )
                     }

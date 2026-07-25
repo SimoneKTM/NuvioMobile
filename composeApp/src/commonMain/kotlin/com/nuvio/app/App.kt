@@ -33,7 +33,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.rounded.Animation
+import androidx.compose.material.icons.rounded.FilterDrama
 import androidx.compose.material.icons.rounded.LiveTv
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material.icons.filled.Info
@@ -1998,7 +1998,7 @@ private fun MainAppContent(
                                             NavItem(
                                                 selected = selectedTab == AppScreenTab.Anime,
                                                 onClick = { handleRootTabClick(AppScreenTab.Anime) },
-                                                icon = Icons.Rounded.Animation,
+                                                icon = Icons.Rounded.FilterDrama,
                                                 contentDescription = stringResource(Res.string.compose_nav_anime),
                                             )
                                             NavItem(
@@ -4055,7 +4055,7 @@ private fun TabletFloatingTopBar(
                     onClick = { onTabSelected(AppScreenTab.Anime) },
                     icon = {
                         Icon(
-                            imageVector = Icons.Rounded.Animation,
+                            imageVector = Icons.Rounded.FilterDrama,
                             contentDescription = stringResource(Res.string.compose_nav_anime),
                             modifier = Modifier.size(NuvioTokens.Space.s18),
                             tint = if (selectedTab == AppScreenTab.Anime) {

@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.features.anime.AnimeCollectionRepository
+import com.nuvio.app.features.anime.AnimeHomeCatalogSettingsRepository
 import com.nuvio.app.features.collection.Collection
 import kotlin.uuid.ExperimentalUuidApi
 import com.nuvio.app.core.build.AppFeaturePolicy
@@ -51,6 +52,7 @@ import com.nuvio.app.core.ui.NuvioSectionLabel
 import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioSurfaceCard
 import com.nuvio.app.core.ui.NuvioTokens
+import com.nuvio.app.features.home.HomeCatalogSettingsItem
 import com.nuvio.app.features.vezie.EasyProxyAddonBridge
 import com.nuvio.app.features.vezie.VeezieEasyProxy
 import com.nuvio.app.features.vezie.VeezieStorage
@@ -79,40 +81,78 @@ import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.animeRootSettingsContent(
     isTablet: Boolean,
-    showPluginsEntry: Boolean,
-    onAddonsClick: () -> Unit,
-    onPluginsClick: () -> Unit,
-    onHomescreenClick: () -> Unit,
-    onCollectionsClick: () -> Unit,
-    onContinueWatchingClick: () -> Unit,
-    onIntegrationsClick: () -> Unit,
-    onStreamsClick: () -> Unit = {},
-    onMetaScreenClick: () -> Unit = {},
+    onContentDiscoveryClick: () -> Unit,
+    onLayoutClick: () -> Unit,
 ) {
     item {
         SettingsGroup(isTablet = isTablet) {
             SettingsNavigationRow(
-                title = stringResource(Res.string.compose_settings_page_addons),
-                description = "Gestisci i componenti aggiuntivi per la scheda Anime",
+                title = stringResource(Res.string.compose_settings_page_content_discovery),
+                description = "Gestisci componenti aggiuntivi e plugin per la scheda Anime",
                 icon = Icons.Rounded.Extension,
                 isTablet = isTablet,
-                onClick = onAddonsClick,
+                onClick = onContentDiscoveryClick,
             )
-            if (showPluginsEntry) {
-                SettingsGroupDivider(isTablet = isTablet)
-                SettingsNavigationRow(
-                    title = stringResource(Res.string.compose_settings_page_plugins),
-                    description = "Gestisci i plugin per la scheda Anime",
-                    icon = Icons.Rounded.Extension,
-                    isTablet = isTablet,
-                    onClick = onPluginsClick,
-                )
-            }
         }
     }
     item {
+        SettingsGroup(isTablet = isTablet) {
+            SettingsNavigationRow(
+                title = stringResource(Res.string.compose_settings_page_anime_layout),
+                description = "Layout Home, raccolte, streaming e altro per la scheda Anime",
+                icon = Icons.Rounded.Home,
+                isTablet = isTablet,
+                onClick = onLayoutClick,
+            )
+        }
+    }
+}
+
+internal fun LazyListScope.animeContentDiscoveryContent(
+    isTablet: Boolean,
+    showPluginsEntry: Boolean,
+    onAddonsClick: () -> Unit,
+    onPluginsClick: () -> Unit,
+) {
+    item {
         SettingsSection(
-            title = "Layout Anime",
+            title = stringResource(Res.string.settings_content_discovery_section_sources),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.compose_settings_page_addons),
+                    description = "Gestisci i componenti aggiuntivi per la scheda Anime",
+                    icon = Icons.Rounded.Extension,
+                    isTablet = isTablet,
+                    onClick = onAddonsClick,
+                )
+                if (showPluginsEntry) {
+                    SettingsGroupDivider(isTablet = isTablet)
+                    SettingsNavigationRow(
+                        title = stringResource(Res.string.compose_settings_page_plugins),
+                        description = "Gestisci i plugin per la scheda Anime",
+                        icon = Icons.Rounded.Extension,
+                        isTablet = isTablet,
+                        onClick = onPluginsClick,
+                    )
+                }
+            }
+        }
+    }
+}
+
+internal fun LazyListScope.animeLayoutSettingsContent(
+    isTablet: Boolean,
+    onHomescreenClick: () -> Unit,
+    onCollectionsClick: () -> Unit,
+    onContinueWatchingClick: () -> Unit,
+    onStreamsClick: () -> Unit = {},
+    onMetaScreenClick: () -> Unit = {},
+) {
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.compose_settings_page_anime_layout).uppercase(),
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
@@ -141,41 +181,77 @@ internal fun LazyListScope.animeRootSettingsContent(
                 )
                 SettingsGroupDivider(isTablet = isTablet)
                 SettingsNavigationRow(
-                    title = "Integrazioni",
-                    description = "Gestisci le integrazioni per la scheda Anime",
-                    icon = Icons.Rounded.Link,
-                    isTablet = isTablet,
-                    onClick = onIntegrationsClick,
-                )
-            }
-        }
-    }
-    item {
-        SettingsSection(
-            title = stringResource(Res.string.compose_settings_page_streams).uppercase(),
-            isTablet = isTablet,
-        ) {
-            SettingsGroup(isTablet = isTablet) {
-                SettingsNavigationRow(
                     title = stringResource(Res.string.compose_settings_page_streams),
                     description = stringResource(Res.string.compose_settings_root_streams_description),
                     isTablet = isTablet,
                     onClick = onStreamsClick,
                 )
-            }
-        }
-    }
-    item {
-        SettingsSection(
-            title = stringResource(Res.string.compose_settings_page_meta_screen).uppercase(),
-            isTablet = isTablet,
-        ) {
-            SettingsGroup(isTablet = isTablet) {
+                SettingsGroupDivider(isTablet = isTablet)
                 SettingsNavigationRow(
                     title = stringResource(Res.string.compose_settings_page_meta_screen),
                     description = stringResource(Res.string.settings_content_discovery_meta_screen_description),
                     isTablet = isTablet,
                     onClick = onMetaScreenClick,
+                )
+            }
+        }
+    }
+}
+
+internal fun LazyListScope.animeHomescreenSettingsContent(
+    isTablet: Boolean,
+    heroEnabled: Boolean,
+    showCatalogType: Boolean,
+    hideUnreleasedContent: Boolean,
+    hideCatalogUnderline: Boolean,
+    items: List<HomeCatalogSettingsItem>,
+) {
+    val selectedHeroSourceCount = items.count { it.heroSourceEnabled }
+    val enabledCatalogCount = items.count { it.enabled }
+    item {
+        HomescreenSummaryCard(
+            isTablet = isTablet,
+            enabledCatalogCount = enabledCatalogCount,
+            totalCatalogCount = items.size,
+            selectedHeroSourceCount = selectedHeroSourceCount,
+        )
+    }
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_homescreen_section_hero),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_homescreen_show_hero),
+                    description = stringResource(Res.string.settings_homescreen_show_hero_description),
+                    checked = heroEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = AnimeHomeCatalogSettingsRepository::setHeroEnabled,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.layout_catalog_type),
+                    description = stringResource(Res.string.layout_catalog_type_sub),
+                    checked = showCatalogType,
+                    isTablet = isTablet,
+                    onCheckedChange = AnimeHomeCatalogSettingsRepository::setShowCatalogType,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.layout_hide_unreleased),
+                    description = stringResource(Res.string.layout_hide_unreleased_sub),
+                    checked = hideUnreleasedContent,
+                    isTablet = isTablet,
+                    onCheckedChange = AnimeHomeCatalogSettingsRepository::setHideUnreleasedContent,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_homescreen_hide_catalog_underline),
+                    description = stringResource(Res.string.settings_homescreen_hide_catalog_underline_description),
+                    checked = hideCatalogUnderline,
+                    isTablet = isTablet,
+                    onCheckedChange = AnimeHomeCatalogSettingsRepository::setHideCatalogUnderline,
                 )
             }
         }

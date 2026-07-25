@@ -183,7 +183,7 @@ internal fun LazyListScope.homescreenSettingsContent(
 }
 
 @Composable
-private fun HeroSourcesDropdown(
+internal fun HeroSourcesDropdown(
     isTablet: Boolean,
     items: List<HomeCatalogSettingsItem>,
     selectedHeroSourceCount: Int,
@@ -261,7 +261,7 @@ private fun HeroSourcesDropdown(
 }
 
 @Composable
-private fun HomescreenSummaryCard(
+internal fun HomescreenSummaryCard(
     isTablet: Boolean,
     enabledCatalogCount: Int,
     totalCatalogCount: Int,
@@ -298,7 +298,7 @@ private fun HomescreenSummaryCard(
 }
 
 @Composable
-private fun HomescreenCatalogList(
+internal fun HomescreenCatalogList(
     isTablet: Boolean,
     items: List<HomeCatalogSettingsItem>,
     onPinnedDragAttempt: () -> Unit,

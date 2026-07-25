@@ -462,6 +462,7 @@
     <string name="compose_settings_page_anime_profile">Anime</string>
     <string name="compose_settings_page_anime_addons">Anime Addons</string>
     <string name="compose_settings_page_anime_plugins">Anime Plugins</string>
+    <string name="compose_settings_page_anime_layout">Anime Layout</string>
     <string name="compose_settings_page_anime_web_scraper">Anime Web Scraper</string>
     <string name="compose_settings_page_anime_advanced">Anime Advanced</string>
     <string name="compose_settings_page_veezie_channels">Veezie Channels</string>

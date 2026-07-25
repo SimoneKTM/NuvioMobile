@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Animation
+import androidx.compose.material.icons.rounded.FilterDrama
 import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.VpnKey
@@ -147,7 +147,7 @@ private fun AnimePluginsListContent(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
                     ) {
                         Icon(
-                            Icons.Rounded.Animation,
+                            Icons.Rounded.FilterDrama,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(24.dp),

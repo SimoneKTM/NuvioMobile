@@ -44,6 +44,7 @@ import nuvio.composeapp.generated.resources.compose_settings_page_opensubtitles
 import nuvio.composeapp.generated.resources.compose_settings_page_subdl
 import nuvio.composeapp.generated.resources.collections_header
 import nuvio.composeapp.generated.resources.compose_settings_page_anime_profile
+import nuvio.composeapp.generated.resources.compose_settings_page_anime_layout
 import nuvio.composeapp.generated.resources.compose_settings_root_downloads_title
 import nuvio.composeapp.generated.resources.settings_account
 import nuvio.composeapp.generated.resources.compose_settings_page_network
@@ -242,6 +243,16 @@ internal enum class SettingsPage(
     ),
     AnimeWebScraper(
         titleRes = Res.string.compose_settings_page_anime_profile,
+        category = SettingsCategory.Anime,
+        parentPage = AnimeRoot,
+    ),
+    AnimeContentDiscovery(
+        titleRes = Res.string.compose_settings_page_content_discovery,
+        category = SettingsCategory.Anime,
+        parentPage = AnimeRoot,
+    ),
+    AnimeLayout(
+        titleRes = Res.string.compose_settings_page_anime_layout,
         category = SettingsCategory.Anime,
         parentPage = AnimeRoot,
     ),

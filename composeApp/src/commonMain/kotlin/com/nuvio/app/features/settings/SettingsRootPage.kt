@@ -83,14 +83,8 @@ internal fun LazyListScope.settingsRootContent(
     showSupportersContributorsPage: Boolean = true,
     onAnimeProfileClick: () -> Unit = {},
     onAnimeRootClick: () -> Unit = {},
-    onAnimeAddonsClick: () -> Unit = {},
-    onAnimePluginsClick: () -> Unit = {},
-    onAnimeHomescreenClick: () -> Unit = {},
-    onAnimeCollectionsClick: () -> Unit = {},
-    onAnimeContinueWatchingClick: () -> Unit = {},
-    onAnimeIntegrationsClick: () -> Unit = {},
-    onAnimeStreamsClick: () -> Unit = {},
-    onAnimeMetaScreenClick: () -> Unit = {},
+    onAnimeContentDiscoveryClick: () -> Unit = {},
+    onAnimeLayoutClick: () -> Unit = {},
 ) {
     if (showAccountSection) {
         item {
@@ -123,15 +117,8 @@ internal fun LazyListScope.settingsRootContent(
     if (showAnimeSection) {
         animeRootSettingsContent(
             isTablet = isTablet,
-            showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
-            onAddonsClick = onAnimeAddonsClick,
-            onPluginsClick = onAnimePluginsClick,
-            onHomescreenClick = onAnimeHomescreenClick,
-            onCollectionsClick = onAnimeCollectionsClick,
-            onContinueWatchingClick = onAnimeContinueWatchingClick,
-            onIntegrationsClick = onAnimeIntegrationsClick,
-            onStreamsClick = onAnimeStreamsClick,
-            onMetaScreenClick = onAnimeMetaScreenClick,
+            onContentDiscoveryClick = onAnimeContentDiscoveryClick,
+            onLayoutClick = onAnimeLayoutClick,
         )
     }
     if (showGeneralSection) {

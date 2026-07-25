@@ -55,6 +55,7 @@ import com.nuvio.app.core.ui.isLiquidGlassNativeTabBarSupported
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.details.MetaScreenSettingsRepository
 import com.nuvio.app.features.details.MetaScreenSettingsUiState
+import com.nuvio.app.features.anime.AnimeHomeCatalogSettingsRepository
 import com.nuvio.app.features.anime.metascreen.AnimeMetaScreenSettingsRepository
 import com.nuvio.app.core.ui.PosterCardStyleRepository
 import com.nuvio.app.core.ui.PosterCardStyleUiState
@@ -149,8 +150,6 @@ fun SettingsScreen(
     onCollectionsClick: () -> Unit = {},
     onAnimeProfileClick: () -> Unit = {},
     onAnimeRootClick: () -> Unit = {},
-    onAnimeAddonsClick: () -> Unit = {},
-    onAnimePluginsClick: () -> Unit = {},
     onAnimeWebScraperClick: () -> Unit = {},
     onAnimeAdvancedClick: () -> Unit = {},
     onTop10CatalogClick: () -> Unit = {},
@@ -803,14 +802,8 @@ private fun MobileSettingsScreen(
                                 onAccountClick = onAccountClick,
                                 onSwitchProfileClick = onSwitchProfile,
                                 showSupportersContributorsPage = AppFeaturePolicy.supportersContributorsPageEnabled,
-                                onAnimeAddonsClick = { onPageChange(SettingsPage.AnimeAddons) },
-                                onAnimePluginsClick = { onPageChange(SettingsPage.AnimePlugins) },
-                                onAnimeHomescreenClick = { onPageChange(SettingsPage.AnimeHomescreen) },
-                                onAnimeCollectionsClick = { onPageChange(SettingsPage.AnimeCollections) },
-                                onAnimeContinueWatchingClick = { onPageChange(SettingsPage.AnimeContinueWatching) },
-                                onAnimeIntegrationsClick = { onPageChange(SettingsPage.AnimeIntegrations) },
-                                onAnimeStreamsClick = { onPageChange(SettingsPage.AnimeStreams) },
-                                onAnimeMetaScreenClick = { onPageChange(SettingsPage.AnimeMetaScreen) },
+                                onAnimeContentDiscoveryClick = { onPageChange(SettingsPage.AnimeContentDiscovery) },
+                                onAnimeLayoutClick = { onPageChange(SettingsPage.AnimeLayout) },
                             )
                         }
                     }
@@ -1003,43 +996,49 @@ private fun MobileSettingsScreen(
                 SettingsPage.AnimeProfile -> {
                     animeRootSettingsContent(
                         isTablet = false,
-                        showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
-                        onAddonsClick = { onPageChange(SettingsPage.AnimeAddons) },
-                        onPluginsClick = { onPageChange(SettingsPage.AnimePlugins) },
-                        onHomescreenClick = { onPageChange(SettingsPage.AnimeHomescreen) },
-                        onCollectionsClick = { onPageChange(SettingsPage.AnimeCollections) },
-                        onContinueWatchingClick = { onPageChange(SettingsPage.AnimeContinueWatching) },
-                        onIntegrationsClick = { onPageChange(SettingsPage.AnimeIntegrations) },
-                        onStreamsClick = { onPageChange(SettingsPage.AnimeStreams) },
-                        onMetaScreenClick = { onPageChange(SettingsPage.AnimeMetaScreen) },
+                        onContentDiscoveryClick = { onPageChange(SettingsPage.AnimeContentDiscovery) },
+                        onLayoutClick = { onPageChange(SettingsPage.AnimeLayout) },
                     )
                 }
                 SettingsPage.AnimeRoot -> {
                     animeRootSettingsContent(
                         isTablet = false,
-                        showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
-                        onAddonsClick = { onPageChange(SettingsPage.AnimeAddons) },
-                        onPluginsClick = { onPageChange(SettingsPage.AnimePlugins) },
-                        onHomescreenClick = { onPageChange(SettingsPage.AnimeHomescreen) },
-                        onCollectionsClick = { onPageChange(SettingsPage.AnimeCollections) },
-                        onContinueWatchingClick = { onPageChange(SettingsPage.AnimeContinueWatching) },
-                        onIntegrationsClick = { onPageChange(SettingsPage.AnimeIntegrations) },
-                        onStreamsClick = { onPageChange(SettingsPage.AnimeStreams) },
-                        onMetaScreenClick = { onPageChange(SettingsPage.AnimeMetaScreen) },
+                        onContentDiscoveryClick = { onPageChange(SettingsPage.AnimeContentDiscovery) },
+                        onLayoutClick = { onPageChange(SettingsPage.AnimeLayout) },
                     )
                 }
+                SettingsPage.AnimeContentDiscovery -> animeContentDiscoveryContent(
+                    isTablet = false,
+                    showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
+                    onAddonsClick = { onPageChange(SettingsPage.AnimeAddons) },
+                    onPluginsClick = { onPageChange(SettingsPage.AnimePlugins) },
+                )
+                SettingsPage.AnimeLayout -> animeLayoutSettingsContent(
+                    isTablet = false,
+                    onHomescreenClick = { onPageChange(SettingsPage.AnimeHomescreen) },
+                    onCollectionsClick = { onPageChange(SettingsPage.AnimeCollections) },
+                    onContinueWatchingClick = { onPageChange(SettingsPage.AnimeContinueWatching) },
+                    onStreamsClick = { onPageChange(SettingsPage.AnimeStreams) },
+                    onMetaScreenClick = { onPageChange(SettingsPage.AnimeMetaScreen) },
+                )
                 SettingsPage.AnimeAddons -> animeAddonsSettingsContent()
                 SettingsPage.AnimePlugins -> if (AppFeaturePolicy.pluginsEnabled) pluginsSettingsContent() else addonsSettingsContent()
                 SettingsPage.AnimeWebScraper -> animeWebScraperSettingsContent(isTablet = false)
                 SettingsPage.AnimeAdvanced -> animeAdvancedSettingsContent(isTablet = false)
-                SettingsPage.AnimeHomescreen -> homescreenSettingsContent(
-                    isTablet = false,
-                    heroEnabled = homescreenHeroEnabled,
-                    showCatalogType = homescreenShowCatalogType,
-                    hideUnreleasedContent = homescreenHideUnreleasedContent,
-                    hideCatalogUnderline = homescreenHideCatalogUnderline,
-                    items = homescreenItems,
-                )
+                SettingsPage.AnimeHomescreen -> {
+                    val animeHomescreenUiState by remember {
+                        AnimeHomeCatalogSettingsRepository.ensureLoaded()
+                        AnimeHomeCatalogSettingsRepository.uiState
+                    }.collectAsStateWithLifecycle()
+                    animeHomescreenSettingsContent(
+                        isTablet = false,
+                        heroEnabled = animeHomescreenUiState.heroEnabled,
+                        showCatalogType = animeHomescreenUiState.showCatalogType,
+                        hideUnreleasedContent = animeHomescreenUiState.hideUnreleasedContent,
+                        hideCatalogUnderline = animeHomescreenUiState.hideCatalogUnderline,
+                        items = animeHomescreenUiState.items,
+                    )
+                }
                 SettingsPage.AnimeCollections -> animeCollectionsSettingsContent(
                     isTablet = false,
                 )
@@ -1402,14 +1401,8 @@ private fun TabletSettingsScreen(
                                 showAboutSection = activeCategory == SettingsCategory.About,
                                 showAdvancedSection = activeCategory == SettingsCategory.Advanced,
                                 showSupportersContributorsPage = AppFeaturePolicy.supportersContributorsPageEnabled,
-                                onAnimeAddonsClick = { openInlinePage(SettingsPage.AnimeAddons) },
-                                onAnimePluginsClick = { openInlinePage(SettingsPage.AnimePlugins) },
-                                onAnimeHomescreenClick = { openInlinePage(SettingsPage.AnimeHomescreen) },
-                                onAnimeCollectionsClick = { openInlinePage(SettingsPage.AnimeCollections) },
-                                onAnimeContinueWatchingClick = { openInlinePage(SettingsPage.AnimeContinueWatching) },
-                                onAnimeIntegrationsClick = { openInlinePage(SettingsPage.AnimeIntegrations) },
-                                onAnimeStreamsClick = { openInlinePage(SettingsPage.AnimeStreams) },
-                                onAnimeMetaScreenClick = { openInlinePage(SettingsPage.AnimeMetaScreen) },
+                                onAnimeContentDiscoveryClick = { openInlinePage(SettingsPage.AnimeContentDiscovery) },
+                                onAnimeLayoutClick = { openInlinePage(SettingsPage.AnimeLayout) },
                             )
                         }
                     }
@@ -1599,42 +1592,48 @@ private fun TabletSettingsScreen(
                     SettingsPage.Network -> networkSettingsContent(
                         isTablet = true,
                     )
-                    SettingsPage.AnimeProfile -> animeRootSettingsContent(
+                     SettingsPage.AnimeProfile -> animeRootSettingsContent(
                         isTablet = true,
-                        showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
-                        onAddonsClick = { openInlinePage(SettingsPage.AnimeAddons) },
-                        onPluginsClick = { openInlinePage(SettingsPage.AnimePlugins) },
-                        onHomescreenClick = { openInlinePage(SettingsPage.AnimeHomescreen) },
-                        onCollectionsClick = { openInlinePage(SettingsPage.AnimeCollections) },
-                        onContinueWatchingClick = { openInlinePage(SettingsPage.AnimeContinueWatching) },
-                        onIntegrationsClick = { openInlinePage(SettingsPage.AnimeIntegrations) },
-                        onStreamsClick = { openInlinePage(SettingsPage.AnimeStreams) },
-                        onMetaScreenClick = { openInlinePage(SettingsPage.AnimeMetaScreen) },
+                        onContentDiscoveryClick = { openInlinePage(SettingsPage.AnimeContentDiscovery) },
+                        onLayoutClick = { openInlinePage(SettingsPage.AnimeLayout) },
                     )
                     SettingsPage.AnimeRoot -> animeRootSettingsContent(
                         isTablet = true,
-                        showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
-                        onAddonsClick = { openInlinePage(SettingsPage.AnimeAddons) },
-                        onPluginsClick = { openInlinePage(SettingsPage.AnimePlugins) },
-                        onHomescreenClick = { openInlinePage(SettingsPage.AnimeHomescreen) },
-                        onCollectionsClick = { openInlinePage(SettingsPage.AnimeCollections) },
-                        onContinueWatchingClick = { openInlinePage(SettingsPage.AnimeContinueWatching) },
-                        onIntegrationsClick = { openInlinePage(SettingsPage.AnimeIntegrations) },
-                        onStreamsClick = { openInlinePage(SettingsPage.AnimeStreams) },
-                        onMetaScreenClick = { openInlinePage(SettingsPage.AnimeMetaScreen) },
+                        onContentDiscoveryClick = { openInlinePage(SettingsPage.AnimeContentDiscovery) },
+                        onLayoutClick = { openInlinePage(SettingsPage.AnimeLayout) },
                     )
+                SettingsPage.AnimeContentDiscovery -> animeContentDiscoveryContent(
+                    isTablet = true,
+                    showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
+                    onAddonsClick = { openInlinePage(SettingsPage.AnimeAddons) },
+                    onPluginsClick = { openInlinePage(SettingsPage.AnimePlugins) },
+                )
+                SettingsPage.AnimeLayout -> animeLayoutSettingsContent(
+                    isTablet = true,
+                    onHomescreenClick = { openInlinePage(SettingsPage.AnimeHomescreen) },
+                    onCollectionsClick = { openInlinePage(SettingsPage.AnimeCollections) },
+                    onContinueWatchingClick = { openInlinePage(SettingsPage.AnimeContinueWatching) },
+                    onStreamsClick = { openInlinePage(SettingsPage.AnimeStreams) },
+                    onMetaScreenClick = { openInlinePage(SettingsPage.AnimeMetaScreen) },
+                )
                 SettingsPage.AnimeAddons -> animeAddonsSettingsContent()
                     SettingsPage.AnimePlugins -> if (AppFeaturePolicy.pluginsEnabled) pluginsSettingsContent() else addonsSettingsContent()
                     SettingsPage.AnimeWebScraper -> animeWebScraperSettingsContent(isTablet = true)
                     SettingsPage.AnimeAdvanced -> animeAdvancedSettingsContent(isTablet = true)
-                    SettingsPage.AnimeHomescreen -> homescreenSettingsContent(
-                        isTablet = true,
-                        heroEnabled = homescreenHeroEnabled,
-                        showCatalogType = homescreenShowCatalogType,
-                        hideUnreleasedContent = homescreenHideUnreleasedContent,
-                        hideCatalogUnderline = homescreenHideCatalogUnderline,
-                        items = homescreenItems,
-                    )
+                    SettingsPage.AnimeHomescreen -> {
+                        val animeHomescreenUiState by remember {
+                            AnimeHomeCatalogSettingsRepository.ensureLoaded()
+                            AnimeHomeCatalogSettingsRepository.uiState
+                        }.collectAsStateWithLifecycle()
+                        animeHomescreenSettingsContent(
+                            isTablet = true,
+                            heroEnabled = animeHomescreenUiState.heroEnabled,
+                            showCatalogType = animeHomescreenUiState.showCatalogType,
+                            hideUnreleasedContent = animeHomescreenUiState.hideUnreleasedContent,
+                            hideCatalogUnderline = animeHomescreenUiState.hideCatalogUnderline,
+                            items = animeHomescreenUiState.items,
+                        )
+                    }
                     SettingsPage.AnimeCollections -> animeCollectionsSettingsContent(
                         isTablet = true,
                     )
