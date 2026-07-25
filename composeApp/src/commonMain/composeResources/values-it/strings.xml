@@ -897,6 +897,14 @@
     <string name="settings_fusion_badge_other_group_title">Altri badge Fusion</string>
     <string name="settings_debrid_key_valid">Chiave API convalidata.</string>
     <string name="settings_debrid_key_invalid">Impossibile convalidare questa chiave API.</string>
+    <string name="settings_tvdb_enable">Abilita arricchimento TVDB</string>
+    <string name="settings_tvdb_enable_description">Arricchisci i metadati Anime con dati TVDB (descrizioni, artwork, trailer)</string>
+    <string name="settings_tvdb_add_api_key_first">Aggiungi la tua chiave API TVDB qui sotto prima di abilitare l'arricchimento.</string>
+    <string name="settings_tvdb_api_key_title">Chiave API</string>
+    <string name="settings_tvdb_api_key_description">Necessaria per recuperare i metadati da TheTVDB</string>
+    <string name="settings_tvdb_api_key_label">Chiave API</string>
+    <string name="settings_tvdb_section_title">TVDB</string>
+    <string name="settings_tvdb_section_api_key">Chiave API</string>
     <string name="settings_mdb_add_api_key_first">Aggiungi la tua chiave API MDBList qui sotto prima di attivare le valutazioni.</string>
     <string name="settings_mdb_api_key_description">Necessaria per recuperare le valutazioni da MDBList</string>
     <string name="settings_mdb_api_key_label">Chiave API</string>

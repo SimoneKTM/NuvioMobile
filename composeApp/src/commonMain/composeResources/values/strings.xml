@@ -899,6 +899,14 @@
     <string name="settings_fusion_badge_other_group_title">Other Fusion badges</string>
     <string name="settings_debrid_key_valid">API key validated.</string>
     <string name="settings_debrid_key_invalid">Could not validate this API key.</string>
+    <string name="settings_tvdb_enable">Enable TVDB Enrichment</string>
+    <string name="settings_tvdb_enable_description">Enrich anime metadata with TVDB data (descriptions, artwork, trailers)</string>
+    <string name="settings_tvdb_add_api_key_first">Add your TVDB API key below before enabling enrichment.</string>
+    <string name="settings_tvdb_api_key_title">API Key</string>
+    <string name="settings_tvdb_api_key_description">Required to fetch metadata from TheTVDB</string>
+    <string name="settings_tvdb_api_key_label">API Key</string>
+    <string name="settings_tvdb_section_title">TVDB</string>
+    <string name="settings_tvdb_section_api_key">API Key</string>
     <string name="settings_mdb_add_api_key_first">Add your MDBList API key below before turning ratings on.</string>
     <string name="settings_mdb_api_key_description">Required to fetch ratings from MDBList</string>
     <string name="settings_mdb_api_key_label">API Key</string>

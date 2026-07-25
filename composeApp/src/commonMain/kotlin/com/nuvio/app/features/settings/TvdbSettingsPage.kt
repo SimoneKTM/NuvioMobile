@@ -21,12 +21,14 @@ import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettings
 import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettingsRepository
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_save
-import nuvio.composeapp.generated.resources.settings_mdb_add_api_key_first
-import nuvio.composeapp.generated.resources.settings_mdb_api_key_description
-import nuvio.composeapp.generated.resources.settings_mdb_api_key_label
-import nuvio.composeapp.generated.resources.settings_mdb_api_key_title
-import nuvio.composeapp.generated.resources.settings_mdb_enable_ratings
-import nuvio.composeapp.generated.resources.settings_mdb_enable_ratings_description
+import nuvio.composeapp.generated.resources.settings_tvdb_add_api_key_first
+import nuvio.composeapp.generated.resources.settings_tvdb_api_key_description
+import nuvio.composeapp.generated.resources.settings_tvdb_api_key_label
+import nuvio.composeapp.generated.resources.settings_tvdb_api_key_title
+import nuvio.composeapp.generated.resources.settings_tvdb_enable
+import nuvio.composeapp.generated.resources.settings_tvdb_enable_description
+import nuvio.composeapp.generated.resources.settings_tvdb_section_api_key
+import nuvio.composeapp.generated.resources.settings_tvdb_section_title
 import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.animeTvdbSettingsContent(
@@ -35,13 +37,13 @@ internal fun LazyListScope.animeTvdbSettingsContent(
 ) {
     item {
         SettingsSection(
-            title = "TVDB",
+            title = stringResource(Res.string.settings_tvdb_section_title),
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
                 SettingsSwitchRow(
-                    title = stringResource(Res.string.settings_mdb_enable_ratings),
-                    description = stringResource(Res.string.settings_mdb_enable_ratings_description),
+                    title = stringResource(Res.string.settings_tvdb_enable),
+                    description = stringResource(Res.string.settings_tvdb_enable_description),
                     checked = settings.enabled,
                     enabled = settings.hasApiKey,
                     isTablet = isTablet,
@@ -51,7 +53,7 @@ internal fun LazyListScope.animeTvdbSettingsContent(
                     SettingsGroupDivider(isTablet = isTablet)
                     TvdbInfoRow(
                         isTablet = isTablet,
-                        text = stringResource(Res.string.settings_mdb_add_api_key_first),
+                        text = stringResource(Res.string.settings_tvdb_add_api_key_first),
                     )
                 }
             }
@@ -60,7 +62,7 @@ internal fun LazyListScope.animeTvdbSettingsContent(
 
     item {
         SettingsSection(
-            title = "API Key",
+            title = stringResource(Res.string.settings_tvdb_section_api_key),
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
@@ -93,13 +95,13 @@ private fun TvdbApiKeyRow(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = stringResource(Res.string.settings_mdb_api_key_title),
+                    text = stringResource(Res.string.settings_tvdb_api_key_title),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Medium,
             )
             Text(
-                text = stringResource(Res.string.settings_mdb_api_key_description),
+                text = stringResource(Res.string.settings_tvdb_api_key_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -111,7 +113,7 @@ private fun TvdbApiKeyRow(
                 draft = it
             },
             modifier = Modifier.fillMaxWidth(),
-            label = stringResource(Res.string.settings_mdb_api_key_label),
+            label = stringResource(Res.string.settings_tvdb_api_key_label),
         )
 
         Row(modifier = Modifier.fillMaxWidth()) {
