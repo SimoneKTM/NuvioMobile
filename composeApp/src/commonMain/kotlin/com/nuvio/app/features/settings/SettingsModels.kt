@@ -267,7 +267,7 @@ internal enum class SettingsPage(
         parentPage = AnimeRoot,
     ),
     AnimeHomescreen(
-        titleRes = Res.string.compose_settings_page_homescreen,
+        titleRes = Res.string.compose_settings_page_homescreen_anime,
         category = SettingsCategory.Anime,
         parentPage = AnimeRoot,
     ),

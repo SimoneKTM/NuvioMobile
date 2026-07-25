@@ -1,6 +1,7 @@
 package com.nuvio.app.features.player
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.core.ContentType
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.buildAddonResourceUrl
@@ -206,7 +207,7 @@ object PlayerStreamsRepository {
                 val manifest = addon.manifest ?: return@mapNotNull null
                 val supportsRequestedStream = manifest.resources.any { resource ->
                     resource.name == "stream" &&
-                        resource.types.contains(type) &&
+                        resource.types.contains(ContentType.streamMatchKey(type)) &&
                         (resource.idPrefixes.isEmpty() ||
                             resource.idPrefixes.any { videoId.startsWith(it) })
                 }

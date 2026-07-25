@@ -13,7 +13,6 @@ import com.nuvio.app.features.plugins.runtime.network.FetchBridge
 import co.touchlab.kermit.Logger
 import com.nuvio.app.features.plugins.runtime.network.UrlBridge
 import com.nuvio.app.features.plugins.runtime.wasm.WasmBridge
-import com.nuvio.app.features.sora.SoraRuntimeAdapter
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -38,12 +37,6 @@ private val log = Logger.withTag("PluginRuntime")
 
 internal object PluginRuntime {
     private val json = Json { ignoreUnknownKeys = true }
-
-    init {
-        SoraRuntimeAdapter.registerExecutor { wrappedCode, _ ->
-            executeSoraScript(wrappedCode, "")
-        }
-    }
 
     suspend fun executePlugin(
         code: String,
@@ -204,29 +197,6 @@ internal object PluginRuntime {
             return parseJsonResults(deferred.await())
         } finally {
             domBridge.clear()
-        }
-    }
-
-    suspend fun executeSoraScript(
-        wrappedCode: String,
-        functionName: String,
-    ): String? = withContext(Dispatchers.Default) {
-        withTimeout(PLUGIN_TIMEOUT_MS) {
-            try {
-                val jsRuntime = JsRuntime()
-                jsRuntime.use {
-                    val polyfillCode = JsBindings.buildPolyfillCode(
-                        scraperIdJson = JsonPrimitive("sora").toString(),
-                        settingsJson = "{}"
-                    )
-                    evaluate<Any?>(polyfillCode)
-                    val result = evaluate<String?>(wrappedCode)
-                    result
-                }
-            } catch (e: Exception) {
-                log.e(e) { "Sora script execution failed for $functionName: ${e.message}" }
-                null
-            }
         }
     }
 

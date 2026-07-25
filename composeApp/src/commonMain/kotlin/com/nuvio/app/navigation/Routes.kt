@@ -157,5 +157,4 @@ data class AnimeProfileSettingsRoute(override val title: String = "") : Settings
 @Serializable
 data class LocalArtworkSettingsRoute(override val title: String = "") : SettingsDestinationRoute
 
-@Serializable
-data class SoraSettingsRoute(override val title: String = "") : SettingsDestinationRoute
+

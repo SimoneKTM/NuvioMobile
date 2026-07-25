@@ -107,12 +107,6 @@ fun AnimeProfileSettingsPageContent(
                         Spacer(Modifier.width(8.dp))
                         Text("Imposta EasyProxy")
                     }
-                    Spacer(Modifier.height(12.dp))
-                    Button(onClick = { /* Installa Add-on Sora */ }) {
-                        Icon(Icons.Rounded.Cloud, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Installa Sora Provider")
-                    }
                 }
             } else {
                 AnimePluginsListContent(

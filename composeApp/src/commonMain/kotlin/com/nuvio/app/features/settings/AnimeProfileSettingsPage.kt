@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.CollectionsBookmark
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Star
@@ -16,9 +15,9 @@ import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.collections_header
 import nuvio.composeapp.generated.resources.compose_settings_page_addons
 import nuvio.composeapp.generated.resources.compose_settings_page_homescreen
+import nuvio.composeapp.generated.resources.compose_settings_page_homescreen_anime
 import nuvio.composeapp.generated.resources.compose_settings_page_meta_screen
 import nuvio.composeapp.generated.resources.compose_settings_page_plugins
-import nuvio.composeapp.generated.resources.compose_settings_page_sora
 import nuvio.composeapp.generated.resources.settings_content_discovery_addons_description
 import nuvio.composeapp.generated.resources.settings_content_discovery_addons_description_appstore
 import nuvio.composeapp.generated.resources.settings_content_discovery_collections_description
@@ -40,7 +39,6 @@ internal fun LazyListScope.animeProfileSettingsContent(
     onMetaScreenClick: () -> Unit,
     onCollectionsClick: () -> Unit = {},
     onTop10CatalogClick: () -> Unit = {},
-    onSoraModulesClick: () -> Unit = {},
 ) {
     item {
         SettingsSection(
@@ -80,7 +78,7 @@ internal fun LazyListScope.animeProfileSettingsContent(
         ) {
             SettingsGroup(isTablet = isTablet) {
                 SettingsNavigationRow(
-                    title = stringResource(Res.string.compose_settings_page_homescreen),
+                    title = stringResource(Res.string.compose_settings_page_homescreen_anime),
                     description = stringResource(Res.string.settings_content_discovery_homescreen_description),
                     icon = Icons.Rounded.Home,
                     isTablet = isTablet,
@@ -109,14 +107,6 @@ internal fun LazyListScope.animeProfileSettingsContent(
                     icon = Icons.Rounded.Star,
                     isTablet = isTablet,
                     onClick = onTop10CatalogClick,
-                )
-                SettingsGroupDivider(isTablet = isTablet)
-                SettingsNavigationRow(
-                    title = stringResource(Res.string.compose_settings_page_sora),
-                    description = stringResource(Res.string.compose_settings_page_sora),
-                    icon = Icons.Rounded.AutoAwesome,
-                    isTablet = isTablet,
-                    onClick = onSoraModulesClick,
                 )
             }
         }

@@ -1,16 +1,13 @@
 package com.nuvio.app.features.animeprofile
 
 import com.nuvio.app.features.plugins.PluginRepository
-import com.nuvio.app.features.sora.SoraPluginRepository
 
 class AnimePluginRegistry(
     private val animeProfileRepository: AnimeProfileRepository = AnimeProfileRepository,
     private val pluginRepository: PluginRepository = PluginRepository,
-    private val soraPluginRepository: SoraPluginRepository = SoraPluginRepository,
 ) {
     fun getAvailableAnimePluginsFromSandbox(): List<AnimePluginItem> {
         animeProfileRepository.initialize()
-        soraPluginRepository.initialize()
         pluginRepository.initialize()
 
         val config = animeProfileRepository.state.value.config
@@ -62,19 +59,6 @@ class AnimePluginRegistry(
             ),
         )
 
-        val soraState = soraPluginRepository.uiState.value
-        if (soraState.soraEnabled) {
-            items.add(
-                AnimePluginItem(
-                    id = "sora_modules",
-                    name = "Sora Modules",
-                    description = "${soraState.modules.size} modules from ${soraState.repositories.size} repositories",
-                    isEnabled = soraState.modules.any { it.enabled },
-                    hasConfiguration = true,
-                ),
-            )
-        }
-
         val pluginState = pluginRepository.uiState.value
         val enabledPluginRepos = config.enabledPluginRepos
         for (repo in pluginState.repositories) {
@@ -110,9 +94,6 @@ class AnimePluginRegistry(
             }
             pluginId == "kitsu_metadata" -> {
                 animeProfileRepository.setUseKitsu(isEnabled)
-            }
-            pluginId == "sora_modules" -> {
-                soraPluginRepository.toggleSoraEnabled(isEnabled)
             }
             pluginId.startsWith("plugin_repo:") -> {
                 val repoUrl = pluginId.removePrefix("plugin_repo:")

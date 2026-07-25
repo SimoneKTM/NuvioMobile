@@ -189,7 +189,11 @@ internal fun HeroSourcesDropdown(
     selectedHeroSourceCount: Int,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
+    selectionLimit: Int = HomeCatalogSettingsRepository.HERO_SOURCE_SELECTION_LIMIT,
+    onHeroSourceEnabledChange: ((String, Boolean) -> Unit)? = null,
 ) {
+    val setHeroSourceEnabled = onHeroSourceEnabledChange
+        ?: { key, enabled -> HomeCatalogSettingsRepository.setHeroSourceEnabled(key, enabled) }
     val noSourcesSelected = stringResource(Res.string.settings_homescreen_no_sources_selected)
     SettingsGroup(isTablet = isTablet) {
         Row(
@@ -207,7 +211,7 @@ internal fun HeroSourcesDropdown(
                     text = stringResource(
                         Res.string.settings_homescreen_selected_count,
                         selectedHeroSourceCount,
-                        HomeCatalogSettingsRepository.HERO_SOURCE_SELECTION_LIMIT,
+                        selectionLimit,
                     ),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -238,21 +242,21 @@ internal fun HeroSourcesDropdown(
                     SettingsSwitchRow(
                         title = item.displayTitle,
                         description = if (!item.heroSourceEnabled &&
-                            selectedHeroSourceCount >= HomeCatalogSettingsRepository.HERO_SOURCE_SELECTION_LIMIT
+                            selectedHeroSourceCount >= selectionLimit
                         ) {
                             stringResource(
                                 Res.string.settings_homescreen_limit_reached,
                                 item.addonName,
-                                HomeCatalogSettingsRepository.HERO_SOURCE_SELECTION_LIMIT,
+                                selectionLimit,
                             )
                         } else {
                             item.addonName
                         },
                         checked = item.heroSourceEnabled,
                         enabled = item.heroSourceEnabled ||
-                            selectedHeroSourceCount < HomeCatalogSettingsRepository.HERO_SOURCE_SELECTION_LIMIT,
+                            selectedHeroSourceCount < selectionLimit,
                         isTablet = isTablet,
-                        onCheckedChange = { HomeCatalogSettingsRepository.setHeroSourceEnabled(item.key, it) },
+                        onCheckedChange = { setHeroSourceEnabled(item.key, it) },
                     )
                 }
             }
@@ -302,10 +306,14 @@ internal fun HomescreenCatalogList(
     isTablet: Boolean,
     items: List<HomeCatalogSettingsItem>,
     onPinnedDragAttempt: () -> Unit,
+    onMoveByIndex: ((Int, Int) -> Unit)? = null,
+    onCustomTitleChange: ((String, String) -> Unit)? = null,
+    onEnabledChange: ((String, Boolean) -> Unit)? = null,
 ) {
     var expandedKey by remember { mutableStateOf<String?>(null) }
     val hapticFeedback = LocalHapticFeedback.current
     val lazyListState = rememberLazyListState()
+    val moveByIndex = onMoveByIndex ?: { from, to -> HomeCatalogSettingsRepository.moveByIndex(from, to) }
     val reorderableLazyListState = rememberReorderableLazyListState(
         lazyListState = lazyListState,
     ) { from, to ->
@@ -314,7 +322,7 @@ internal fun HomescreenCatalogList(
         if (fromItem?.isPinnedToTop == true || toItem?.isPinnedToTop == true) {
             return@rememberReorderableLazyListState
         }
-        HomeCatalogSettingsRepository.moveByIndex(from.index, to.index)
+        moveByIndex(from.index, to.index)
         hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
@@ -338,6 +346,10 @@ internal fun HomescreenCatalogList(
                             if (index > 0) {
                                 SettingsGroupDivider(isTablet = isTablet)
                             }
+                            val customTitleChange = onCustomTitleChange
+                                ?: { key, title -> HomeCatalogSettingsRepository.setCustomTitle(key, title) }
+                            val enabledChange = onEnabledChange
+                                ?: { key, enabled -> HomeCatalogSettingsRepository.setEnabled(key, enabled) }
                             HomescreenCatalogRow(
                                 item = item,
                                 isTablet = isTablet,
@@ -345,8 +357,8 @@ internal fun HomescreenCatalogList(
                                 onExpandedChange = { shouldExpand ->
                                     expandedKey = if (shouldExpand) item.key else null
                                 },
-                                onTitleChange = { HomeCatalogSettingsRepository.setCustomTitle(item.key, it) },
-                                onEnabledChange = { HomeCatalogSettingsRepository.setEnabled(item.key, it) },
+                                onTitleChange = { customTitleChange(item.key, it) },
+                                onEnabledChange = { enabledChange(item.key, it) },
                                 dragHandleScope = this@ReorderableItem,
                                 onPinnedDragAttempt = onPinnedDragAttempt,
                             )

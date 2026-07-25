@@ -213,7 +213,6 @@ import com.nuvio.app.features.settings.LicensesAttributionsSettingsScreen
 import com.nuvio.app.features.settings.ThemeSettingsRepository
 import com.nuvio.app.features.settings.Top10CatalogSettingsScreen
 import com.nuvio.app.features.settings.AnimeProfileSettingsScreen
-import com.nuvio.app.features.settings.SoraSettingsScreen
 import com.nuvio.app.features.collection.CollectionManagementScreen
 import com.nuvio.app.features.collection.CollectionEditorScreen
 import com.nuvio.app.features.collection.CollectionEditorRepository
@@ -309,7 +308,6 @@ private val navigationSavedStateConfiguration = SavedStateConfiguration {
             subclass(CatalogRoute::class, CatalogRoute.serializer())
             subclass(PlayerRoute::class, PlayerRoute.serializer())
             subclass(AnimeProfileSettingsRoute::class, AnimeProfileSettingsRoute.serializer())
-            subclass(SoraSettingsRoute::class, SoraSettingsRoute.serializer())
         }
     }
 }
@@ -965,7 +963,6 @@ private fun MainAppContent(
     val collectionsTitle = stringResource(Res.string.collections_header)
     val newCollectionTitle = stringResource(Res.string.collections_new)
     val animeProfileTitle = stringResource(Res.string.compose_settings_page_anime_profile)
-    val soraTitle = stringResource(Res.string.compose_settings_page_sora)
     val detailsFallbackTitle = stringResource(Res.string.meta_section_details_title)
     val isTraktLibrarySource = libraryUiState.sourceMode == LibrarySourceMode.TRAKT
     val isAniListLibrarySource = libraryUiState.sourceMode == LibrarySourceMode.ANILIST
@@ -2197,7 +2194,6 @@ private fun MainAppContent(
                                         },
                                         onCollectionsSettingsClick = { navController.navigate(CollectionsRoute(collectionsTitle)) },
                                         onTop10CatalogSettingsClick = { navController.navigate(Top10CatalogSettingsRoute) },
-                                        onSoraModulesSettingsClick = { navController.navigate(SoraSettingsRoute(soraTitle)) },
                                         onAnimeProfileClick = { navController.navigate(AnimeProfileSettingsRoute(animeProfileTitle)) },
                                         onAnimeDetailClick = { type, id ->
                                             navController.navigate(DetailRoute(type = type, id = id, title = ""))
@@ -3388,15 +3384,6 @@ private fun MainAppContent(
                         onBack = onBack,
                     )
                 }
-                entry<SoraSettingsRoute> { route ->
-                    val onBack = rememberGuardedPopBackStack(
-                        navController = navController,
-                        route = route,
-                    )
-                    SoraSettingsScreen(
-                        onBack = onBack,
-                    )
-                }
                 entry<CollectionEditorRoute> { route ->
                     val onBack = rememberGuardedPopBackStack(
                         navController = navController,
@@ -3906,7 +3893,6 @@ private fun AppTabHost(
     onCheckForUpdatesClick: (() -> Unit)? = null,
     onCollectionsSettingsClick: () -> Unit = {},
     onTop10CatalogSettingsClick: () -> Unit = {},
-    onSoraModulesSettingsClick: () -> Unit = {},
     onAnimeProfileClick: () -> Unit = {},
     onFolderClick: ((collectionId: String, folderId: String) -> Unit)? = null,
     onAnimeDetailClick: ((type: String, id: String) -> Unit)? = null,
@@ -3995,7 +3981,6 @@ private fun AppTabHost(
                         onCheckForUpdatesClick = onCheckForUpdatesClick,
                         onCollectionsClick = onCollectionsSettingsClick,
                         onTop10CatalogClick = onTop10CatalogSettingsClick,
-                        onSoraModulesClick = onSoraModulesSettingsClick,
                         onAnimeProfileClick = onAnimeProfileClick,
                     )
                 }

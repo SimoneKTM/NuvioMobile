@@ -439,6 +439,7 @@
     <string name="compose_settings_page_debrid">Connected Services</string>
     <string name="compose_settings_page_live_tv">Live TV</string>
     <string name="compose_settings_page_homescreen">Home Layout</string>
+    <string name="compose_settings_page_homescreen_anime">Layout</string>
     <string name="compose_settings_page_integrations">Integrations</string>
     <string name="compose_settings_page_licenses_attributions">Licenses &amp; Attribution</string>
     <string name="compose_settings_page_mdblist_ratings">MDBList Ratings</string>
@@ -467,7 +468,6 @@
     <string name="compose_settings_page_anime_advanced">Anime Advanced</string>
     <string name="compose_settings_page_veezie_channels">Veezie Channels</string>
     <string name="compose_settings_page_local_artwork">Local Artwork</string>
-    <string name="compose_settings_page_sora">Sora Modules</string>
     <string name="compose_settings_root_about_section">ABOUT</string>
     <string name="compose_settings_root_account_description">Account and sync status</string>
     <string name="compose_settings_root_account_section">ACCOUNT</string>

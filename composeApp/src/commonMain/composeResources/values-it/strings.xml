@@ -438,6 +438,7 @@
     <string name="compose_settings_page_debrid">Servizi connessi</string>
     <string name="compose_settings_page_live_tv">TV Live</string>
     <string name="compose_settings_page_homescreen">Layout Home</string>
+    <string name="compose_settings_page_homescreen_anime">Layout</string>
     <string name="compose_settings_page_integrations">Integrazioni</string>
     <string name="compose_settings_page_licenses_attributions">Licenze e attribuzioni</string>
     <string name="compose_settings_page_mdblist_ratings">Valutazioni MDBList</string>
@@ -465,7 +466,6 @@
     <string name="compose_settings_page_anime_advanced">Impostazioni Avanzate Anime</string>
     <string name="compose_settings_page_veezie_channels">Canali Veezie</string>
     <string name="compose_settings_page_local_artwork">Opere locali</string>
-    <string name="compose_settings_page_sora">Moduli Sora</string>
     <string name="compose_settings_root_about_section">INFORMAZIONI</string>
     <string name="compose_settings_root_account_description">Stato dell'account e sincronizzazione</string>
     <string name="compose_settings_root_account_section">ACCOUNT</string>

@@ -1,15 +1,22 @@
 package com.nuvio.app.features.settings
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CollectionsBookmark
@@ -32,11 +39,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -44,15 +54,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.features.anime.AnimeCollectionRepository
 import com.nuvio.app.features.anime.AnimeHomeCatalogSettingsRepository
 import com.nuvio.app.features.collection.Collection
+import com.nuvio.app.core.ui.NuvioActionLabel
+import com.nuvio.app.core.ui.NuvioToastController
+import com.nuvio.app.features.home.HomeCatalogSettingsItem
+import com.nuvio.app.features.home.components.HomeEmptyStateCard
 import kotlin.uuid.ExperimentalUuidApi
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.ui.NuvioInputField
 import com.nuvio.app.core.ui.NuvioPrimaryButton
+import sh.calvin.reorderable.ReorderableCollectionItemScope
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import com.nuvio.app.core.ui.NuvioSectionLabel
 import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioSurfaceCard
 import com.nuvio.app.core.ui.NuvioTokens
-import com.nuvio.app.features.home.HomeCatalogSettingsItem
 import com.nuvio.app.features.vezie.EasyProxyAddonBridge
 import com.nuvio.app.features.vezie.VeezieEasyProxy
 import com.nuvio.app.features.vezie.VeezieStorage
@@ -69,6 +85,7 @@ import nuvio.composeapp.generated.resources.compose_settings_page_anime_profile
 import nuvio.composeapp.generated.resources.compose_settings_page_content_discovery
 import nuvio.composeapp.generated.resources.compose_settings_page_continue_watching
 import nuvio.composeapp.generated.resources.compose_settings_page_homescreen
+import nuvio.composeapp.generated.resources.compose_settings_page_homescreen_anime
 import nuvio.composeapp.generated.resources.compose_settings_page_integrations
 import nuvio.composeapp.generated.resources.compose_settings_page_meta_screen
 import nuvio.composeapp.generated.resources.compose_settings_page_plugins
@@ -88,6 +105,14 @@ import nuvio.composeapp.generated.resources.settings_homescreen_hide_catalog_und
 import nuvio.composeapp.generated.resources.settings_homescreen_section_hero
 import nuvio.composeapp.generated.resources.settings_homescreen_show_hero
 import nuvio.composeapp.generated.resources.settings_homescreen_show_hero_description
+import nuvio.composeapp.generated.resources.settings_homescreen_section_hero_sources
+import nuvio.composeapp.generated.resources.settings_homescreen_empty_title
+import nuvio.composeapp.generated.resources.settings_homescreen_empty_message
+import nuvio.composeapp.generated.resources.settings_homescreen_section_catalogs_collections
+import nuvio.composeapp.generated.resources.settings_homescreen_section_collections
+import nuvio.composeapp.generated.resources.settings_homescreen_section_catalogs
+import nuvio.composeapp.generated.resources.action_reset
+import nuvio.composeapp.generated.resources.settings_homescreen_pin_to_move_toast
 import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.animeRootSettingsContent(
@@ -179,7 +204,7 @@ internal fun LazyListScope.animeLayoutSettingsContent(
         ) {
             SettingsGroup(isTablet = isTablet) {
                 SettingsNavigationRow(
-                    title = stringResource(Res.string.compose_settings_page_homescreen),
+                    title = stringResource(Res.string.compose_settings_page_homescreen_anime),
                     description = stringResource(Res.string.settings_content_discovery_homescreen_description),
                     icon = Icons.Rounded.Home,
                     isTablet = isTablet,
@@ -274,6 +299,76 @@ internal fun LazyListScope.animeHomescreenSettingsContent(
                     checked = hideCatalogUnderline,
                     isTablet = isTablet,
                     onCheckedChange = AnimeHomeCatalogSettingsRepository::setHideCatalogUnderline,
+                )
+            }
+        }
+    }
+    item {
+        val catalogOnlyItems = items.filter { !it.isCollection }
+        if (heroEnabled && catalogOnlyItems.isNotEmpty()) {
+            var heroSourcesExpanded by remember { mutableStateOf(false) }
+            SettingsSection(
+                title = stringResource(Res.string.settings_homescreen_section_hero_sources),
+                isTablet = isTablet,
+            ) {
+                HeroSourcesDropdown(
+                    isTablet = isTablet,
+                    items = catalogOnlyItems,
+                    selectedHeroSourceCount = selectedHeroSourceCount,
+                    expanded = heroSourcesExpanded,
+                    onExpandedChange = { heroSourcesExpanded = it },
+                    selectionLimit = AnimeHomeCatalogSettingsRepository.HERO_SOURCE_SELECTION_LIMIT,
+                    onHeroSourceEnabledChange = { key, enabled ->
+                        AnimeHomeCatalogSettingsRepository.setHeroSourceEnabled(key, enabled)
+                    },
+                )
+            }
+        }
+    }
+    item {
+        if (items.isEmpty()) {
+            HomeEmptyStateCard(
+                modifier = Modifier.fillMaxWidth(),
+                title = stringResource(Res.string.settings_homescreen_empty_title),
+                message = stringResource(Res.string.settings_homescreen_empty_message),
+            )
+        } else {
+            val catalogCount = items.count { !it.isCollection }
+            val collectionCount = items.count { it.isCollection }
+            val sectionTitle = when {
+                collectionCount > 0 && catalogCount > 0 -> stringResource(Res.string.settings_homescreen_section_catalogs_collections)
+                collectionCount > 0 -> stringResource(Res.string.settings_homescreen_section_collections)
+                else -> stringResource(Res.string.settings_homescreen_section_catalogs)
+            }
+            SettingsSection(
+                title = sectionTitle,
+                isTablet = isTablet,
+                actions = {
+                    NuvioActionLabel(
+                        text = stringResource(Res.string.action_reset),
+                        onClick = AnimeHomeCatalogSettingsRepository::resetToDefaults,
+                    )
+                },
+            ) {
+                val hapticFeedback = LocalHapticFeedback.current
+                val pinToMoveToast = stringResource(Res.string.settings_homescreen_pin_to_move_toast)
+
+                HomescreenCatalogList(
+                    isTablet = isTablet,
+                    items = items,
+                    onPinnedDragAttempt = {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                        NuvioToastController.show(pinToMoveToast)
+                    },
+                    onMoveByIndex = { from, to ->
+                        AnimeHomeCatalogSettingsRepository.moveByIndex(from, to)
+                    },
+                    onCustomTitleChange = { key, title ->
+                        AnimeHomeCatalogSettingsRepository.setCustomTitle(key, title)
+                    },
+                    onEnabledChange = { key, enabled ->
+                        AnimeHomeCatalogSettingsRepository.setEnabled(key, enabled)
+                    },
                 )
             }
         }

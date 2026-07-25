@@ -4,7 +4,6 @@ import co.touchlab.kermit.Logger
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.plugins.PluginRepository
 import com.nuvio.app.features.plugins.PluginRuntimeResult
-import com.nuvio.app.features.sora.SoraPluginRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -126,16 +125,6 @@ object AnimeProfileRepository {
                 } catch (e: Exception) {
                     log.e(e) { "Anime plugin execution failed: ${scraper.name}" }
                 }
-            }
-        }
-
-        val soraModules = SoraPluginRepository.getEnabledModulesForType(mediaType)
-        for (module in soraModules) {
-            try {
-                val result = SoraPluginRepository.executeSoraModule(module, tmdbId, mediaType, season, episode)
-                results.addAll(result)
-            } catch (e: Exception) {
-                log.e(e) { "Sora module execution failed: ${module.id}" }
             }
         }
 
