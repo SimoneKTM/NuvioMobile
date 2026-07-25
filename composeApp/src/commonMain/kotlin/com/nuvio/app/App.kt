@@ -2201,7 +2201,7 @@ private fun MainAppContent(
                                         onAnimeCollectionsSettingsClick = { navController.navigate(AnimeCollectionsRoute(collectionsTitle)) },
                                         onAnimeProfileClick = { navController.navigate(AnimeProfileSettingsRoute(animeProfileTitle)) },
                                         onAnimeDetailClick = { type, id ->
-                                            navController.navigate(DetailRoute(type = type, id = id, title = ""))
+                                            navController.navigate(DetailRoute(type = type, id = id, title = "", isAnime = true))
                                         },
                                         onAnimeSettingsClick = {
                                             requestedSettingsPageName = "AnimeProfile"
@@ -2251,6 +2251,7 @@ private fun MainAppContent(
                     MetaDetailsScreen(
                         type = route.type,
                         id = route.id,
+                        isAnime = route.isAnime,
                         onBack = onBack,
                         onPlay = onPlay,
                         onPlayManually = onPlayManually,
@@ -3984,6 +3985,9 @@ private fun AppTabHost(
                         scrollToTopRequests = animeScrollToTopRequests,
                         onNavigateToDetail = onAnimeDetailClick ?: { _: String, _: String -> },
                         onNavigateToSettings = onAnimeSettingsClick ?: {},
+                        onContinueWatchingClick = { item ->
+                            onAnimeDetailClick?.invoke(item.parentMetaType, item.parentMetaId)
+                        },
                     )
                 }
 

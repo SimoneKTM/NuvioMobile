@@ -38,7 +38,10 @@ data class DetailRoute(
     val type: String,
     val id: String,
     override val title: String? = null,
-) : AppRoute
+    val isAnime: Boolean = false,
+) : AppRoute {
+    val isAnimeMetaScreen: Boolean get() = isAnime || type.startsWith("anime", ignoreCase = true)
+}
 
 @Serializable
 data class PersonDetailRoute(

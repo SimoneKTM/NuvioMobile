@@ -147,6 +147,7 @@ fun MetaDetailsScreen(
     type: String,
     id: String,
     onBack: () -> Unit,
+    isAnime: Boolean = false,
     onPlay: ((type: String, videoId: String, parentMetaId: String, parentMetaType: String, title: String, logo: String?, poster: String?, background: String?, seasonNumber: Int?, episodeNumber: Int?, episodeTitle: String?, episodeThumbnail: String?, pauseDescription: String?, resumePositionMs: Long?) -> Unit)? = null,
     onPlayManually: ((type: String, videoId: String, parentMetaId: String, parentMetaType: String, title: String, logo: String?, poster: String?, background: String?, seasonNumber: Int?, episodeNumber: Int?, episodeTitle: String?, episodeThumbnail: String?, pauseDescription: String?, resumePositionMs: Long?) -> Unit)? = null,
     onOpenMeta: ((MetaPreview) -> Unit)? = null,
@@ -159,7 +160,7 @@ fun MetaDetailsScreen(
     val uiState by MetaDetailsRepository.uiState.collectAsStateWithLifecycle()
     val displayedMeta = uiState.meta?.takeIf { it.type == type && it.id == id }
         ?: MetaDetailsRepository.peek(type, id)
-    val isAnimeMetaScreen = type.startsWith("anime", ignoreCase = true)
+    val isAnimeMetaScreen = isAnime || type.startsWith("anime", ignoreCase = true)
     val metaScreenSettingsUiState by remember(isAnimeMetaScreen) {
         if (isAnimeMetaScreen) {
             AnimeMetaScreenSettingsRepository.ensureLoaded()

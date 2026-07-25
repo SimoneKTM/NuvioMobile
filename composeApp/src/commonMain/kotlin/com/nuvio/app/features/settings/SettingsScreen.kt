@@ -96,6 +96,7 @@ import com.nuvio.app.features.mal.MalAuthRepository
 import com.nuvio.app.features.mal.MalAuthUiState
 import com.nuvio.app.features.tmdb.TmdbSettings
 import com.nuvio.app.features.tmdb.TmdbSettingsRepository
+import com.nuvio.app.features.anime.AnimeContinueWatchingPreferencesRepository
 import com.nuvio.app.features.watchprogress.ContinueWatchingPreferencesRepository
 import com.nuvio.app.features.watchprogress.ContinueWatchingPreferencesUiState
 import com.nuvio.app.navigation.LocalUseNativeNavigation
@@ -275,6 +276,10 @@ fun SettingsScreen(
         val continueWatchingPreferencesUiState by remember {
             ContinueWatchingPreferencesRepository.ensureLoaded()
             ContinueWatchingPreferencesRepository.uiState
+        }.collectAsStateWithLifecycle()
+        val animeContinueWatchingPreferencesUiState by remember {
+            AnimeContinueWatchingPreferencesRepository.ensureLoaded()
+            AnimeContinueWatchingPreferencesRepository.uiState
         }.collectAsStateWithLifecycle()
         val posterCardStyleUiState by remember {
             PosterCardStyleRepository.ensureLoaded()
@@ -1061,14 +1066,22 @@ private fun MobileSettingsScreen(
                 }
                 SettingsPage.AnimeContinueWatching -> continueWatchingSettingsContent(
                     isTablet = false,
-                    isVisible = continueWatchingPreferencesUiState.isVisible,
-                    style = continueWatchingPreferencesUiState.style,
-                    upNextFromFurthestEpisode = continueWatchingPreferencesUiState.upNextFromFurthestEpisode,
-                    useEpisodeThumbnails = continueWatchingPreferencesUiState.useEpisodeThumbnails,
-                    showUnairedNextUp = continueWatchingPreferencesUiState.showUnairedNextUp,
-                    blurNextUp = continueWatchingPreferencesUiState.blurNextUp,
-                    showResumePromptOnLaunch = continueWatchingPreferencesUiState.showResumePromptOnLaunch,
-                    sortMode = continueWatchingPreferencesUiState.sortMode,
+                    isVisible = animeContinueWatchingPreferencesUiState.isVisible,
+                    style = animeContinueWatchingPreferencesUiState.style,
+                    upNextFromFurthestEpisode = animeContinueWatchingPreferencesUiState.upNextFromFurthestEpisode,
+                    useEpisodeThumbnails = animeContinueWatchingPreferencesUiState.useEpisodeThumbnails,
+                    showUnairedNextUp = animeContinueWatchingPreferencesUiState.showUnairedNextUp,
+                    blurNextUp = animeContinueWatchingPreferencesUiState.blurNextUp,
+                    showResumePromptOnLaunch = animeContinueWatchingPreferencesUiState.showResumePromptOnLaunch,
+                    sortMode = animeContinueWatchingPreferencesUiState.sortMode,
+                    onVisibleChange = AnimeContinueWatchingPreferencesRepository::setVisible,
+                    onStyleSelected = AnimeContinueWatchingPreferencesRepository::setStyle,
+                    onUseEpisodeThumbnailsChange = AnimeContinueWatchingPreferencesRepository::setUseEpisodeThumbnails,
+                    onUpNextFromFurthestEpisodeChange = AnimeContinueWatchingPreferencesRepository::setUpNextFromFurthestEpisode,
+                    onShowUnairedNextUpChange = AnimeContinueWatchingPreferencesRepository::setShowUnairedNextUp,
+                    onBlurNextUpChange = AnimeContinueWatchingPreferencesRepository::setBlurNextUp,
+                    onShowResumePromptOnLaunchChange = AnimeContinueWatchingPreferencesRepository::setShowResumePromptOnLaunch,
+                    onSortModeChange = AnimeContinueWatchingPreferencesRepository::setSortMode,
                 )
                 SettingsPage.AnimeIntegrations -> integrationsContent(
                     isTablet = false,
@@ -1660,14 +1673,22 @@ private fun TabletSettingsScreen(
                     }
                     SettingsPage.AnimeContinueWatching -> continueWatchingSettingsContent(
                         isTablet = true,
-                        isVisible = continueWatchingPreferencesUiState.isVisible,
-                        style = continueWatchingPreferencesUiState.style,
-                        upNextFromFurthestEpisode = continueWatchingPreferencesUiState.upNextFromFurthestEpisode,
-                        useEpisodeThumbnails = continueWatchingPreferencesUiState.useEpisodeThumbnails,
-                        showUnairedNextUp = continueWatchingPreferencesUiState.showUnairedNextUp,
-                        blurNextUp = continueWatchingPreferencesUiState.blurNextUp,
-                        showResumePromptOnLaunch = continueWatchingPreferencesUiState.showResumePromptOnLaunch,
-                        sortMode = continueWatchingPreferencesUiState.sortMode,
+                        isVisible = animeContinueWatchingPreferencesUiState.isVisible,
+                        style = animeContinueWatchingPreferencesUiState.style,
+                        upNextFromFurthestEpisode = animeContinueWatchingPreferencesUiState.upNextFromFurthestEpisode,
+                        useEpisodeThumbnails = animeContinueWatchingPreferencesUiState.useEpisodeThumbnails,
+                        showUnairedNextUp = animeContinueWatchingPreferencesUiState.showUnairedNextUp,
+                        blurNextUp = animeContinueWatchingPreferencesUiState.blurNextUp,
+                        showResumePromptOnLaunch = animeContinueWatchingPreferencesUiState.showResumePromptOnLaunch,
+                        sortMode = animeContinueWatchingPreferencesUiState.sortMode,
+                        onVisibleChange = AnimeContinueWatchingPreferencesRepository::setVisible,
+                        onStyleSelected = AnimeContinueWatchingPreferencesRepository::setStyle,
+                        onUseEpisodeThumbnailsChange = AnimeContinueWatchingPreferencesRepository::setUseEpisodeThumbnails,
+                        onUpNextFromFurthestEpisodeChange = AnimeContinueWatchingPreferencesRepository::setUpNextFromFurthestEpisode,
+                        onShowUnairedNextUpChange = AnimeContinueWatchingPreferencesRepository::setShowUnairedNextUp,
+                        onBlurNextUpChange = AnimeContinueWatchingPreferencesRepository::setBlurNextUp,
+                        onShowResumePromptOnLaunchChange = AnimeContinueWatchingPreferencesRepository::setShowResumePromptOnLaunch,
+                        onSortModeChange = AnimeContinueWatchingPreferencesRepository::setSortMode,
                     )
                     SettingsPage.AnimeIntegrations -> integrationsContent(
                         isTablet = true,

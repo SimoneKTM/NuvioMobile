@@ -20,12 +20,15 @@ import com.nuvio.app.core.ui.NuvioShelfSection
 import com.nuvio.app.core.ui.NuvioViewAllPillSize
 import com.nuvio.app.features.anime.AnimeAddonRepository
 import com.nuvio.app.features.anime.AnimeCollectionRepository
+import com.nuvio.app.features.anime.AnimeContinueWatchingPreferencesRepository
 import com.nuvio.app.features.anime.AnimeHomeCatalogSettingsRepository
 import com.nuvio.app.features.anime.AnimeHomeRepository
 import com.nuvio.app.features.home.HomeCatalogSection
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.canOpenCatalog
 import com.nuvio.app.features.home.components.HomeCollectionRowSection
+import com.nuvio.app.features.home.components.HomeContinueWatchingSection
+import com.nuvio.app.features.home.components.HomeContinueWatchingSectionBottomPadding
 import com.nuvio.app.features.home.components.HomeEmptyStateCard
 import com.nuvio.app.features.home.components.HomeHeroSection
 import com.nuvio.app.features.home.components.HomeHeroReservedSpace
@@ -33,7 +36,12 @@ import com.nuvio.app.features.home.components.HomeSkeletonHero
 import com.nuvio.app.features.home.components.HomeSkeletonRow
 import com.nuvio.app.features.home.components.homeSectionHorizontalPaddingForWidth
 import com.nuvio.app.features.home.components.HomePosterCard
+import com.nuvio.app.features.home.components.rememberContinueWatchingLayout
 import com.nuvio.app.features.home.stableKey
+import com.nuvio.app.features.watchprogress.ContinueWatchingItem
+import com.nuvio.app.features.watchprogress.WatchProgressRepository
+import com.nuvio.app.features.watchprogress.continueWatchingEntries
+import com.nuvio.app.features.watchprogress.toContinueWatchingItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
@@ -46,6 +54,7 @@ fun AnimeHomeScreen(
     onCatalogClick: ((HomeCatalogSection) -> Unit)? = null,
     onPosterClick: ((MetaPreview) -> Unit)? = null,
     onPosterLongClick: ((MetaPreview) -> Unit)? = null,
+    onContinueWatchingClick: ((ContinueWatchingItem) -> Unit)? = null,
     onFolderClick: ((collectionId: String, folderId: String) -> Unit)? = null,
     onNavigateToSettings: (() -> Unit)? = null,
 ) {
@@ -57,10 +66,17 @@ fun AnimeHomeScreen(
     }.collectAsStateWithLifecycle()
     val collections by AnimeCollectionRepository.collections.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
+    val continueWatchingListState = rememberLazyListState()
+    val continueWatchingPreferences by remember {
+        AnimeContinueWatchingPreferencesRepository.ensureLoaded()
+        AnimeContinueWatchingPreferencesRepository.uiState
+    }.collectAsStateWithLifecycle()
+    val watchProgressUiState by WatchProgressRepository.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         AnimeAddonRepository.initialize()
         AnimeCollectionRepository.ensureLoaded()
+        WatchProgressRepository.ensureLoaded()
     }
 
     LaunchedEffect(scrollToTopRequests) {
@@ -112,6 +128,21 @@ fun AnimeHomeScreen(
     val hasRenderableCollectionRows = remember(enabledHomeItems, collectionsMap) {
         enabledHomeItems.any { item ->
             item.isCollection && collectionsMap[item.key] != null
+        }
+    }
+
+    val animeContinueWatchingItems = remember(watchProgressUiState.entries, continueWatchingPreferences.isVisible) {
+        if (!continueWatchingPreferences.isVisible) {
+            emptyList()
+        } else {
+            val animeEntries = watchProgressUiState.entries.filter { entry ->
+                entry.parentMetaType.startsWith("anime", ignoreCase = true)
+            }
+            animeEntries
+                .continueWatchingEntries()
+                .map { entry ->
+                    entry.toContinueWatchingItem()
+                }
         }
     }
 
@@ -181,6 +212,21 @@ fun AnimeHomeScreen(
                 }
 
                 else -> {
+                    if (animeContinueWatchingItems.isNotEmpty()) {
+                        item(key = "anime_continue_watching") {
+                            HomeContinueWatchingSection(
+                                items = animeContinueWatchingItems,
+                                style = continueWatchingPreferences.style,
+                                useEpisodeThumbnails = continueWatchingPreferences.useEpisodeThumbnails,
+                                blurNextUp = continueWatchingPreferences.blurNextUp,
+                                modifier = Modifier.padding(bottom = HomeContinueWatchingSectionBottomPadding),
+                                sectionPadding = homeSectionPadding,
+                                layout = rememberContinueWatchingLayout(maxWidth.value),
+                                listState = continueWatchingListState,
+                                onItemClick = onContinueWatchingClick,
+                            )
+                        }
+                    }
                     enabledHomeItems.forEach { settingsItem ->
                         if (settingsItem.isCollection) {
                             val collection = collectionsMap[settingsItem.key]

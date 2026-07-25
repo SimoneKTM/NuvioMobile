@@ -168,6 +168,7 @@ class MainActivity : AppCompatActivity() {
         TraktLibraryStorage.initialize(applicationContext)
         TraktSettingsStorage.initialize(applicationContext)
         ContinueWatchingPreferencesStorage.initialize(applicationContext)
+        AnimeContinueWatchingPreferencesStorage.initialize(applicationContext)
         ResumePromptStorage.initialize(applicationContext)
         ContinueWatchingEnrichmentStorage.initialize(applicationContext)
         EpisodeReleaseNotificationsStorage.initialize(applicationContext)

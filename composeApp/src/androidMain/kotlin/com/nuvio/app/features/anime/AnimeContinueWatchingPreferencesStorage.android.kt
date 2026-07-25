@@ -2,6 +2,7 @@ package com.nuvio.app.features.anime
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.nuvio.app.core.storage.ProfileScopedKey
 
 actual object AnimeContinueWatchingPreferencesStorage {
     private const val preferencesName = "nuvio_anime_continue_watching_preferences"
@@ -14,12 +15,12 @@ actual object AnimeContinueWatchingPreferencesStorage {
     }
 
     actual fun loadPayload(): String? =
-        preferences?.getString(payloadKey, null)
+        preferences?.getString(ProfileScopedKey.of(payloadKey), null)
 
     actual fun savePayload(payload: String) {
         preferences
             ?.edit()
-            ?.putString(payloadKey, payload)
+            ?.putString(ProfileScopedKey.of(payloadKey), payload)
             ?.apply()
     }
 }
