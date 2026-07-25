@@ -85,6 +85,7 @@ internal fun LazyListScope.settingsRootContent(
     onAnimeRootClick: () -> Unit = {},
     onAnimeContentDiscoveryClick: () -> Unit = {},
     onAnimeLayoutClick: () -> Unit = {},
+    onAnimeIntegrationsClick: () -> Unit = {},
 ) {
     if (showAccountSection) {
         item {
@@ -119,6 +120,7 @@ internal fun LazyListScope.settingsRootContent(
             isTablet = isTablet,
             onContentDiscoveryClick = onAnimeContentDiscoveryClick,
             onLayoutClick = onAnimeLayoutClick,
+            onIntegrationsClick = onAnimeIntegrationsClick,
         )
     }
     if (showGeneralSection) {

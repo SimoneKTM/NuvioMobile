@@ -812,6 +812,7 @@ private fun MobileSettingsScreen(
                                 showSupportersContributorsPage = AppFeaturePolicy.supportersContributorsPageEnabled,
                                 onAnimeContentDiscoveryClick = { onPageChange(SettingsPage.AnimeContentDiscovery) },
                                 onAnimeLayoutClick = { onPageChange(SettingsPage.AnimeLayout) },
+                                onAnimeIntegrationsClick = { onPageChange(SettingsPage.AnimeIntegrations) },
                             )
                         }
                     }
@@ -1408,6 +1409,7 @@ private fun TabletSettingsScreen(
                                 showSupportersContributorsPage = AppFeaturePolicy.supportersContributorsPageEnabled,
                                 onAnimeContentDiscoveryClick = { openInlinePage(SettingsPage.AnimeContentDiscovery) },
                                 onAnimeLayoutClick = { openInlinePage(SettingsPage.AnimeLayout) },
+                                onAnimeIntegrationsClick = { openInlinePage(SettingsPage.AnimeIntegrations) },
                             )
                         }
                     }
