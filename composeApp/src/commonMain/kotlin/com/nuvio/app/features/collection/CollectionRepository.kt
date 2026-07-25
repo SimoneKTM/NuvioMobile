@@ -39,7 +39,7 @@ object CollectionRepository : CollectionRepositoryContract {
     }
 
     private val _collections = MutableStateFlow<List<Collection>>(emptyList())
-    val collections: StateFlow<List<Collection>> = _collections.asStateFlow()
+    override val collections: StateFlow<List<Collection>> = _collections.asStateFlow()
     private val _localChangeEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     internal val localChangeEvents: SharedFlow<Unit> = _localChangeEvents.asSharedFlow()
     private var rawCollectionsJson: JsonElement = JsonArray(emptyList())
