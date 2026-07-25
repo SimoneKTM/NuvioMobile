@@ -14,9 +14,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import nuvio.composeapp.generated.resources.Res
-import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.getString
 
 @Serializable
 private data class StoredAnimeMetaScreenSectionPreference(
@@ -43,8 +40,8 @@ private data class StoredAnimeMetaScreenSettingsPayload(
 
 private data class AnimeMetaScreenSectionDefinition(
     val key: MetaScreenSectionKey,
-    val titleRes: StringResource,
-    val descriptionRes: StringResource,
+    val title: String,
+    val description: String,
 )
 
 object AnimeMetaScreenSettingsRepository {
@@ -56,53 +53,53 @@ object AnimeMetaScreenSettingsRepository {
     private val definitions = listOf(
         AnimeMetaScreenSectionDefinition(
             key = MetaScreenSectionKey.ACTIONS,
-            titleRes = Res.string.meta_section_actions_title,
-            descriptionRes = Res.string.meta_section_actions_description,
+            title = "Actions",
+            description = "Play and save controls.",
         ),
         AnimeMetaScreenSectionDefinition(
             key = MetaScreenSectionKey.OVERVIEW,
-            titleRes = Res.string.meta_section_overview_title,
-            descriptionRes = Res.string.meta_section_overview_description,
+            title = "Overview",
+            description = "Summary and key details.",
         ),
         AnimeMetaScreenSectionDefinition(
             key = MetaScreenSectionKey.PRODUCTION,
-            titleRes = Res.string.meta_section_production_title,
-            descriptionRes = Res.string.meta_section_production_description,
+            title = "Production",
+            description = "Studio and production info.",
         ),
         AnimeMetaScreenSectionDefinition(
             key = MetaScreenSectionKey.CAST,
-            titleRes = Res.string.settings_meta_cast,
-            descriptionRes = Res.string.meta_section_cast_description,
+            title = "Cast",
+            description = "Principal cast list.",
         ),
         AnimeMetaScreenSectionDefinition(
             key = MetaScreenSectionKey.COMMENTS,
-            titleRes = Res.string.settings_meta_comments,
-            descriptionRes = Res.string.meta_section_comments_description,
+            title = "Comments",
+            description = "Reviews from Trakt",
         ),
         AnimeMetaScreenSectionDefinition(
             key = MetaScreenSectionKey.TRAILERS,
-            titleRes = Res.string.settings_meta_trailers,
-            descriptionRes = Res.string.meta_section_trailers_description,
+            title = "Trailers",
+            description = "Show trailers.",
         ),
         AnimeMetaScreenSectionDefinition(
             key = MetaScreenSectionKey.EPISODES,
-            titleRes = Res.string.settings_meta_episodes,
-            descriptionRes = Res.string.meta_section_episodes_description,
+            title = "Episodes",
+            description = "Episode list.",
         ),
         AnimeMetaScreenSectionDefinition(
             key = MetaScreenSectionKey.DETAILS,
-            titleRes = Res.string.meta_section_details_title,
-            descriptionRes = Res.string.meta_section_details_description,
+            title = "Details",
+            description = "Additional metadata.",
         ),
         AnimeMetaScreenSectionDefinition(
             key = MetaScreenSectionKey.COLLECTION,
-            titleRes = Res.string.meta_section_collection_title,
-            descriptionRes = Res.string.meta_section_collection_description,
+            title = "Collection",
+            description = "Part of a collection.",
         ),
         AnimeMetaScreenSectionDefinition(
             key = MetaScreenSectionKey.MORE_LIKE_THIS,
-            titleRes = Res.string.meta_section_more_like_this_title,
-            descriptionRes = Res.string.meta_section_more_like_this_description,
+            title = "More Like This",
+            description = "Similar content suggestions.",
         ),
     )
 
@@ -117,7 +114,7 @@ object AnimeMetaScreenSettingsRepository {
     private var episodeCardStyle: MetaEpisodeCardStyle = MetaEpisodeCardStyle.Horizontal
     private var blurUnwatchedEpisodes: Boolean = false
 
-    private fun localizedString(resource: StringResource): String = runBlocking { getString(resource) }
+    private fun localizedString(text: String): String = text
 
     fun ensureLoaded() {
         if (hasLoaded) return
@@ -277,8 +274,8 @@ object AnimeMetaScreenSettingsRepository {
                     val preference = preferences[definition.key]
                     MetaScreenSectionItem(
                         key = definition.key,
-                        title = localizedString(definition.titleRes),
-                        description = localizedString(definition.descriptionRes),
+                        title = localizedString(definition.title),
+                        description = localizedString(definition.description),
                         enabled = preference?.enabled ?: true,
                         order = preference?.order ?: 0,
                         tabGroup = preference?.tabGroup,
