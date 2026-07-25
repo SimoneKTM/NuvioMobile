@@ -69,8 +69,11 @@ import com.nuvio.app.features.home.HomeCatalogSettingsRepository
 import com.nuvio.app.features.livetv.LiveTvRepository
 import com.nuvio.app.features.mdblist.MdbListSettings
 import com.nuvio.app.features.mdblist.MdbListSettingsRepository
+import com.nuvio.app.features.anime.tmdb.AnimeTmdbSettings
 import com.nuvio.app.features.anime.tmdb.AnimeTmdbSettingsRepository
+import com.nuvio.app.features.anime.mdblist.AnimeMdbListSettings
 import com.nuvio.app.features.anime.mdblist.AnimeMdbListSettingsRepository
+import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettings
 import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettingsRepository
 import com.nuvio.app.features.notifications.EpisodeReleaseNotificationsRepository
 import com.nuvio.app.features.opensubtitles.OpenSubtitlesSettings
@@ -499,6 +502,10 @@ fun SettingsScreen(
                 onSoraModulesClick = onSoraModulesClick,
                 amoledSurfacesEnabled = amoledSurfacesEnabled,
                 onAmoledSurfacesToggle = ThemeSettingsRepository::setAmoledSurfaces,
+                animeMetaScreenSettingsUiState = animeMetaScreenSettingsUiState,
+                animeTmdbSettings = animeTmdbSettings,
+                animeMdbListSettings = animeMdbListSettings,
+                animeTvdbSettings = animeTvdbSettings,
             )
         } else {
             MobileSettingsScreen(
@@ -583,6 +590,10 @@ fun SettingsScreen(
                 onSoraModulesClick = onSoraModulesClick,
                 amoledSurfacesEnabled = amoledSurfacesEnabled,
                 onAmoledSurfacesToggle = ThemeSettingsRepository::setAmoledSurfaces,
+                animeMetaScreenSettingsUiState = animeMetaScreenSettingsUiState,
+                animeTmdbSettings = animeTmdbSettings,
+                animeMdbListSettings = animeMdbListSettings,
+                animeTvdbSettings = animeTvdbSettings,
             )
         }
     }
@@ -671,6 +682,10 @@ private fun MobileSettingsScreen(
     onSoraModulesClick: () -> Unit = {},
     amoledSurfacesEnabled: Boolean,
     onAmoledSurfacesToggle: (Boolean) -> Unit,
+    animeMetaScreenSettingsUiState: MetaScreenSettingsUiState,
+    animeTmdbSettings: AnimeTmdbSettings,
+    animeMdbListSettings: AnimeMdbListSettings,
+    animeTvdbSettings: AnimeTvdbSettings,
 ) {
     val saveableStateHolder = rememberSaveableStateHolder()
     saveableStateHolder.SaveableStateProvider("settings_mobile") {
@@ -1203,6 +1218,10 @@ private fun TabletSettingsScreen(
     onSoraModulesClick: () -> Unit = {},
     amoledSurfacesEnabled: Boolean,
     onAmoledSurfacesToggle: (Boolean) -> Unit,
+    animeMetaScreenSettingsUiState: MetaScreenSettingsUiState,
+    animeTmdbSettings: AnimeTmdbSettings,
+    animeMdbListSettings: AnimeMdbListSettings,
+    animeTvdbSettings: AnimeTvdbSettings,
 ) {
     var selectedCategory by rememberSaveable { mutableStateOf(SettingsCategory.General.name) }
     val activeCategory = SettingsCategory.valueOf(selectedCategory)

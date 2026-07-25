@@ -255,16 +255,6 @@ internal enum class SettingsPage(
         category = SettingsCategory.Anime,
         parentPage = AnimeRoot,
     ),
-    AnimeAddons(
-        titleRes = Res.string.compose_settings_page_addons,
-        category = SettingsCategory.Anime,
-        parentPage = AnimeRoot,
-    ),
-    AnimePlugins(
-        titleRes = Res.string.compose_settings_page_plugins,
-        category = SettingsCategory.Anime,
-        parentPage = AnimeRoot,
-    ),
     AnimeHomescreen(
         titleRes = Res.string.compose_settings_page_homescreen,
         category = SettingsCategory.Anime,
@@ -277,6 +267,16 @@ internal enum class SettingsPage(
     ),
     AnimeContinueWatching(
         titleRes = Res.string.compose_settings_page_continue_watching,
+        category = SettingsCategory.Anime,
+        parentPage = AnimeRoot,
+    ),
+    AnimeStreams(
+        titleRes = Res.string.compose_settings_page_streams,
+        category = SettingsCategory.Anime,
+        parentPage = AnimeRoot,
+    ),
+    AnimeMetaScreen(
+        titleRes = Res.string.compose_settings_page_meta_screen,
         category = SettingsCategory.Anime,
         parentPage = AnimeRoot,
     ),
