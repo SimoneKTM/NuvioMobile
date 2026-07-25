@@ -774,7 +774,7 @@
     <string name="settings_integrations_section_title">Integrazioni</string>
     <string name="settings_integrations_tmdb_description">Controlli di arricchimento dei metadati</string>
     <string name="settings_integrations_mdblist_description">Fornitori di valutazioni esterne</string>
-    <string name="settings_integrations_tvdb_description">Arricchisci i metadati da TheTVDB</string>
+    <string name="settings_integrations_tvdb_description">Controlli di arricchimento dei metadati da TheTVDB</string>
     <string name="settings_integrations_debrid_description">Connetti account per link e accesso alla libreria</string>
     <string name="settings_integrations_live_tv_description">Aggiungi una playlist M3U per canali live.</string>
     <string name="settings_integrations_mal_description">Sincronizza la tua watchlist anime con MyAnimeList</string>
