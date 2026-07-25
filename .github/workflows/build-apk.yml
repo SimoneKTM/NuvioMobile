@@ -76,7 +76,7 @@ jobs:
           printf 'NUVIO_RELEASE_STORE_FIL E=%s/nuvio-release.keystore\n' "${{ github.wo rkspace }}" >> local.properties
           pri ntf 'NUVIO_RELEASE_STORE_PASSWORD=%s\n' "nuvi o123" >> local.properties
           printf 'N UVIO_RELEASE_KEY_ALIAS=%s\n' "nuvio-release"  >> local.properties
-          printf 'NUVIO_R ELEASE_KEY_PASSWORD=%s\n' "Nuvio123" >> local .properties
+          printf 'NUVIO_R ELEASE_KEY_PASSWORD=%s\n' ${{ secrets.NUVIO_RELEASE_STORE_PASSWORD }} >> local .properties
           printf 'DONATIONS_BASE_ URL=%s\n' "https://donations.nuvioapp.space/"  >> local.properties
           printf 'DONATI ONS_DONATE_URL=%s\n' "https://ko-fi.com/tapfr ame" >> local.properties
           printf 'CO NTRIBUTIONS_URL=%s\n' "${{ secrets.CONTRIBUTI ON_URL }}" >> local.properties
