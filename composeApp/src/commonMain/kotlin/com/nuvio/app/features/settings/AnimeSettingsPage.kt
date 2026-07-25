@@ -69,6 +69,7 @@ import nuvio.composeapp.generated.resources.compose_settings_page_anime_profile
 import nuvio.composeapp.generated.resources.compose_settings_page_content_discovery
 import nuvio.composeapp.generated.resources.compose_settings_page_continue_watching
 import nuvio.composeapp.generated.resources.compose_settings_page_homescreen
+import nuvio.composeapp.generated.resources.compose_settings_page_integrations
 import nuvio.composeapp.generated.resources.compose_settings_page_meta_screen
 import nuvio.composeapp.generated.resources.compose_settings_page_plugins
 import nuvio.composeapp.generated.resources.compose_settings_page_streams
@@ -93,27 +94,38 @@ internal fun LazyListScope.animeRootSettingsContent(
     isTablet: Boolean,
     onContentDiscoveryClick: () -> Unit,
     onLayoutClick: () -> Unit,
+    onIntegrationsClick: () -> Unit,
 ) {
     item {
-        SettingsGroup(isTablet = isTablet) {
-            SettingsNavigationRow(
-                title = stringResource(Res.string.compose_settings_page_content_discovery),
-                description = "Gestisci componenti aggiuntivi e plugin per la scheda Anime",
-                icon = Icons.Rounded.Extension,
-                isTablet = isTablet,
-                onClick = onContentDiscoveryClick,
-            )
-        }
-    }
-    item {
-        SettingsGroup(isTablet = isTablet) {
-            SettingsNavigationRow(
-                title = stringResource(Res.string.compose_settings_page_anime_layout),
-                description = "Layout Home, raccolte, streaming e altro per la scheda Anime",
-                icon = Icons.Rounded.Home,
-                isTablet = isTablet,
-                onClick = onLayoutClick,
-            )
+        SettingsSection(
+            title = "GENERALI",
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.compose_settings_page_content_discovery),
+                    description = "Gestisci componenti aggiuntivi e plugin per la scheda Anime",
+                    icon = Icons.Rounded.Extension,
+                    isTablet = isTablet,
+                    onClick = onContentDiscoveryClick,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.compose_settings_page_anime_layout),
+                    description = "Layout Home, raccolte, streaming e altro per la scheda Anime",
+                    icon = Icons.Rounded.Home,
+                    isTablet = isTablet,
+                    onClick = onLayoutClick,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.compose_settings_page_integrations),
+                    description = "Gestisci le integrazioni per la scheda Anime",
+                    icon = Icons.Rounded.Link,
+                    isTablet = isTablet,
+                    onClick = onIntegrationsClick,
+                )
+            }
         }
     }
 }

@@ -1006,6 +1006,7 @@ private fun MobileSettingsScreen(
                         isTablet = false,
                         onContentDiscoveryClick = { onPageChange(SettingsPage.AnimeContentDiscovery) },
                         onLayoutClick = { onPageChange(SettingsPage.AnimeLayout) },
+                        onIntegrationsClick = { onPageChange(SettingsPage.AnimeIntegrations) },
                     )
                 }
                 SettingsPage.AnimeRoot -> {
@@ -1013,6 +1014,7 @@ private fun MobileSettingsScreen(
                         isTablet = false,
                         onContentDiscoveryClick = { onPageChange(SettingsPage.AnimeContentDiscovery) },
                         onLayoutClick = { onPageChange(SettingsPage.AnimeLayout) },
+                        onIntegrationsClick = { onPageChange(SettingsPage.AnimeIntegrations) },
                     )
                 }
                 SettingsPage.AnimeContentDiscovery -> animeContentDiscoveryContent(
@@ -1599,11 +1601,13 @@ private fun TabletSettingsScreen(
                         isTablet = true,
                         onContentDiscoveryClick = { openInlinePage(SettingsPage.AnimeContentDiscovery) },
                         onLayoutClick = { openInlinePage(SettingsPage.AnimeLayout) },
+                        onIntegrationsClick = { openInlinePage(SettingsPage.AnimeIntegrations) },
                     )
                     SettingsPage.AnimeRoot -> animeRootSettingsContent(
                         isTablet = true,
                         onContentDiscoveryClick = { openInlinePage(SettingsPage.AnimeContentDiscovery) },
                         onLayoutClick = { openInlinePage(SettingsPage.AnimeLayout) },
+                        onIntegrationsClick = { openInlinePage(SettingsPage.AnimeIntegrations) },
                     )
                 SettingsPage.AnimeContentDiscovery -> animeContentDiscoveryContent(
                     isTablet = true,
