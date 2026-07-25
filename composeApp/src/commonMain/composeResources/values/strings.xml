@@ -451,6 +451,7 @@
     <string name="compose_settings_page_streams">Streams</string>
     <string name="compose_settings_page_supporters_contributors">Supporters &amp; Contributors</string>
     <string name="compose_settings_page_tmdb_enrichment">TMDB Enrichment</string>
+    <string name="compose_settings_page_tvdb_enrichment">TVDB Enrichment</string>
     <string name="compose_settings_page_trakt">Trakt</string>
     <string name="compose_settings_page_mal">MAL</string>
     <string name="compose_settings_page_kitsu">Kitsu</string>

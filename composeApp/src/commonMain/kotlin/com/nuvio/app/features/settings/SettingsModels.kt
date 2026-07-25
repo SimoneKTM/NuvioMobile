@@ -2,7 +2,7 @@ package com.nuvio.app.features.settings
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.Animation
+import androidx.compose.material.icons.rounded.FilterDrama
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Settings
@@ -34,6 +34,7 @@ import nuvio.composeapp.generated.resources.compose_settings_page_root
 import nuvio.composeapp.generated.resources.compose_settings_page_streams
 import nuvio.composeapp.generated.resources.compose_settings_page_supporters_contributors
 import nuvio.composeapp.generated.resources.compose_settings_page_tmdb_enrichment
+import nuvio.composeapp.generated.resources.compose_settings_page_tvdb_enrichment
 import nuvio.composeapp.generated.resources.compose_settings_page_trakt
 import nuvio.composeapp.generated.resources.compose_settings_page_mal
 import nuvio.composeapp.generated.resources.compose_settings_page_kitsu
@@ -41,6 +42,7 @@ import nuvio.composeapp.generated.resources.compose_settings_page_anilist
 import nuvio.composeapp.generated.resources.compose_settings_page_simkl
 import nuvio.composeapp.generated.resources.compose_settings_page_opensubtitles
 import nuvio.composeapp.generated.resources.compose_settings_page_subdl
+import nuvio.composeapp.generated.resources.collections_header
 import nuvio.composeapp.generated.resources.compose_settings_page_anime_profile
 import nuvio.composeapp.generated.resources.compose_settings_root_downloads_title
 import nuvio.composeapp.generated.resources.settings_account
@@ -53,7 +55,7 @@ internal enum class SettingsCategory(
 ) {
     Account(Res.string.settings_account, Icons.Rounded.AccountCircle),
     General(Res.string.compose_settings_category_general, Icons.Rounded.Settings),
-    Anime(Res.string.compose_settings_page_anime_profile, Icons.Rounded.Animation),
+    Anime(Res.string.compose_settings_page_anime_profile, Icons.Rounded.FilterDrama),
     About(Res.string.compose_settings_category_about, Icons.Rounded.Info),
     Advanced(Res.string.compose_settings_page_advanced, Icons.Rounded.Tune),
 }
@@ -253,8 +255,23 @@ internal enum class SettingsPage(
         category = SettingsCategory.Anime,
         parentPage = AnimeRoot,
     ),
+    AnimeAddons(
+        titleRes = Res.string.compose_settings_page_addons,
+        category = SettingsCategory.Anime,
+        parentPage = AnimeRoot,
+    ),
+    AnimePlugins(
+        titleRes = Res.string.compose_settings_page_plugins,
+        category = SettingsCategory.Anime,
+        parentPage = AnimeRoot,
+    ),
     AnimeHomescreen(
         titleRes = Res.string.compose_settings_page_homescreen,
+        category = SettingsCategory.Anime,
+        parentPage = AnimeRoot,
+    ),
+    AnimeCollections(
+        titleRes = Res.string.collections_header,
         category = SettingsCategory.Anime,
         parentPage = AnimeRoot,
     ),
@@ -267,6 +284,21 @@ internal enum class SettingsPage(
         titleRes = Res.string.compose_settings_page_integrations,
         category = SettingsCategory.Anime,
         parentPage = AnimeRoot,
+    ),
+    AnimeTmdbEnrichment(
+        titleRes = Res.string.compose_settings_page_tmdb_enrichment,
+        category = SettingsCategory.Anime,
+        parentPage = AnimeIntegrations,
+    ),
+    AnimeMdbListRatings(
+        titleRes = Res.string.compose_settings_page_mdblist_ratings,
+        category = SettingsCategory.Anime,
+        parentPage = AnimeIntegrations,
+    ),
+    AnimeTvdb(
+        titleRes = Res.string.compose_settings_page_tvdb_enrichment,
+        category = SettingsCategory.Anime,
+        parentPage = AnimeIntegrations,
     ),
 }
 

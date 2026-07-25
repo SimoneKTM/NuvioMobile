@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import com.nuvio.app.features.tmdb.TmdbSettings
 import com.nuvio.app.features.tmdb.TmdbSettingsRepository
 import com.nuvio.app.features.tmdb.normalizeLanguage
+import com.nuvio.app.features.anime.tmdb.AnimeTmdbSettings
+import com.nuvio.app.features.anime.tmdb.AnimeTmdbSettingsRepository
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_save
 import nuvio.composeapp.generated.resources.settings_tmdb_add_api_key_first
@@ -368,6 +370,178 @@ private fun TmdbInfoRow(
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+internal fun LazyListScope.animeTmdbSettingsContent(
+    isTablet: Boolean,
+    settings: AnimeTmdbSettings,
+) {
+    val enrichmentControlsEnabled = settings.enabled && settings.hasApiKey
+    val localizationEnabled = settings.hasApiKey
+
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_tmdb_section_title),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_tmdb_enable_enrichment),
+                    description = stringResource(Res.string.settings_tmdb_enable_enrichment_description),
+                    checked = settings.enabled,
+                    enabled = settings.hasApiKey,
+                    isTablet = isTablet,
+                    onCheckedChange = AnimeTmdbSettingsRepository::setEnabled,
+                )
+                if (!settings.hasApiKey) {
+                    SettingsGroupDivider(isTablet = isTablet)
+                    TmdbInfoRow(
+                        isTablet = isTablet,
+                        text = stringResource(Res.string.settings_tmdb_add_api_key_first),
+                    )
+                }
+            }
+        }
+    }
+
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_tmdb_section_credentials),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                TmdbApiKeyRow(
+                    isTablet = isTablet,
+                    value = settings.apiKey,
+                    onApiKeyCommitted = AnimeTmdbSettingsRepository::setApiKey,
+                )
+            }
+        }
+    }
+
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_tmdb_section_localization),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                TmdbLanguageRow(
+                    isTablet = isTablet,
+                    value = settings.language,
+                    enabled = localizationEnabled,
+                    onLanguageCommitted = AnimeTmdbSettingsRepository::setLanguage,
+                )
+            }
+        }
+    }
+
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_tmdb_section_modules),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                TmdbToggleRow(
+                    isTablet = isTablet,
+                    title = stringResource(Res.string.settings_tmdb_module_trailers),
+                    description = stringResource(Res.string.settings_tmdb_module_trailers_description),
+                    checked = settings.useTrailers,
+                    enabled = enrichmentControlsEnabled,
+                    onCheckedChange = AnimeTmdbSettingsRepository::setUseTrailers,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                TmdbToggleRow(
+                    isTablet = isTablet,
+                    title = stringResource(Res.string.settings_tmdb_module_artwork),
+                    description = stringResource(Res.string.settings_tmdb_module_artwork_description),
+                    checked = settings.useArtwork,
+                    enabled = enrichmentControlsEnabled,
+                    onCheckedChange = AnimeTmdbSettingsRepository::setUseArtwork,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                TmdbToggleRow(
+                    isTablet = isTablet,
+                    title = stringResource(Res.string.settings_tmdb_module_basic_info),
+                    description = stringResource(Res.string.settings_tmdb_module_basic_info_description),
+                    checked = settings.useBasicInfo,
+                    enabled = enrichmentControlsEnabled,
+                    onCheckedChange = AnimeTmdbSettingsRepository::setUseBasicInfo,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                TmdbToggleRow(
+                    isTablet = isTablet,
+                    title = stringResource(Res.string.settings_tmdb_module_details),
+                    description = stringResource(Res.string.settings_tmdb_module_details_description),
+                    checked = settings.useDetails,
+                    enabled = enrichmentControlsEnabled,
+                    onCheckedChange = AnimeTmdbSettingsRepository::setUseDetails,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                TmdbToggleRow(
+                    isTablet = isTablet,
+                    title = stringResource(Res.string.settings_tmdb_module_credits),
+                    description = stringResource(Res.string.settings_tmdb_module_credits_description),
+                    checked = settings.useCredits,
+                    enabled = enrichmentControlsEnabled,
+                    onCheckedChange = AnimeTmdbSettingsRepository::setUseCredits,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                TmdbToggleRow(
+                    isTablet = isTablet,
+                    title = stringResource(Res.string.settings_tmdb_module_production_companies),
+                    description = stringResource(Res.string.settings_tmdb_module_production_companies_description),
+                    checked = settings.useProductions,
+                    enabled = enrichmentControlsEnabled,
+                    onCheckedChange = AnimeTmdbSettingsRepository::setUseProductions,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                TmdbToggleRow(
+                    isTablet = isTablet,
+                    title = stringResource(Res.string.settings_tmdb_module_networks),
+                    description = stringResource(Res.string.settings_tmdb_module_networks_description),
+                    checked = settings.useNetworks,
+                    enabled = enrichmentControlsEnabled,
+                    onCheckedChange = AnimeTmdbSettingsRepository::setUseNetworks,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                TmdbToggleRow(
+                    isTablet = isTablet,
+                    title = stringResource(Res.string.settings_tmdb_module_episodes),
+                    description = stringResource(Res.string.settings_tmdb_module_episodes_description),
+                    checked = settings.useEpisodes,
+                    enabled = enrichmentControlsEnabled,
+                    onCheckedChange = AnimeTmdbSettingsRepository::setUseEpisodes,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                TmdbToggleRow(
+                    isTablet = isTablet,
+                    title = stringResource(Res.string.settings_tmdb_module_season_posters),
+                    description = stringResource(Res.string.settings_tmdb_module_season_posters_description),
+                    checked = settings.useSeasonPosters,
+                    enabled = enrichmentControlsEnabled,
+                    onCheckedChange = AnimeTmdbSettingsRepository::setUseSeasonPosters,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                TmdbToggleRow(
+                    isTablet = isTablet,
+                    title = stringResource(Res.string.settings_tmdb_module_more_like_this),
+                    description = stringResource(Res.string.settings_tmdb_module_more_like_this_description),
+                    checked = settings.useMoreLikeThis,
+                    enabled = enrichmentControlsEnabled,
+                    onCheckedChange = AnimeTmdbSettingsRepository::setUseMoreLikeThis,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                TmdbToggleRow(
+                    isTablet = isTablet,
+                    title = stringResource(Res.string.settings_tmdb_module_collections),
+                    description = stringResource(Res.string.settings_tmdb_module_collections_description),
+                    checked = settings.useCollections,
+                    enabled = enrichmentControlsEnabled,
+                    onCheckedChange = AnimeTmdbSettingsRepository::setUseCollections,
+                )
+            }
+        }
+    }
 }
 
 @Composable

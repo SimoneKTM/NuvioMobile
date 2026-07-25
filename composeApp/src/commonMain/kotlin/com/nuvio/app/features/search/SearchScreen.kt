@@ -50,6 +50,7 @@ import com.nuvio.app.core.ui.nuvioConsumePointerEvents
 import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.enabledAddons
+import com.nuvio.app.features.anime.AnimeAddonRepository
 import com.nuvio.app.features.cloudstream.CloudStreamRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
 import com.nuvio.app.features.home.MetaPreview
@@ -99,12 +100,17 @@ fun SearchScreen(
 
     LaunchedEffect(Unit) {
         AddonRepository.initialize()
+        AnimeAddonRepository.initialize()
         CloudStreamRepository.initialize()
         WatchedRepository.ensureLoaded()
         SearchHistoryRepository.ensureLoaded()
     }
 
     val addonsUiState by AddonRepository.uiState.collectAsStateWithLifecycle()
+    val animeAddonsUiState by AnimeAddonRepository.uiState.collectAsStateWithLifecycle()
+    val allAddons = remember(addonsUiState.addons, animeAddonsUiState.addons) {
+        addonsUiState.addons + animeAddonsUiState.addons
+    }
     val uiState by SearchRepository.uiState.collectAsStateWithLifecycle()
     val discoverUiState by SearchRepository.discoverUiState.collectAsStateWithLifecycle()
     val homeCatalogSettingsUiState by remember {
@@ -132,8 +138,8 @@ fun SearchScreen(
         }
     }
 
-    val addonRefreshKey = remember(addonsUiState.addons, cloudStreamUiState.registryRevision) {
-        addonsUiState.addons.enabledAddons().mapNotNull { addon ->
+    val addonRefreshKey = remember(allAddons, cloudStreamUiState.registryRevision) {
+        allAddons.enabledAddons().mapNotNull { addon ->
             val manifest = addon.manifest ?: return@mapNotNull null
             buildString {
                 append(manifest.transportUrl)
@@ -155,7 +161,7 @@ fun SearchScreen(
     }
 
     LaunchedEffect(addonRefreshKey, homeCatalogSettingsUiState.hideUnreleasedContent) {
-        SearchRepository.refreshDiscover(addonsUiState.addons)
+        SearchRepository.refreshDiscover(allAddons)
     }
 
     LaunchedEffect(query, addonRefreshKey, homeCatalogSettingsUiState.hideUnreleasedContent) {
@@ -168,7 +174,7 @@ fun SearchScreen(
             lastRequestedQuery = normalizedQuery
             SearchRepository.search(
                 query = normalizedQuery,
-                addons = addonsUiState.addons,
+                addons = allAddons,
             )
         }
     }
@@ -210,11 +216,11 @@ fun SearchScreen(
 
                 val normalizedQuery = query.trim()
                 if (normalizedQuery.isBlank()) {
-                    SearchRepository.refreshDiscover(addonsUiState.addons)
+                    SearchRepository.refreshDiscover(allAddons)
                 } else {
                     SearchRepository.search(
                         query = normalizedQuery,
-                        addons = addonsUiState.addons,
+                        addons = allAddons,
                     )
                 }
             }
@@ -306,7 +312,7 @@ fun SearchScreen(
                     onGenreSelected = SearchRepository::selectDiscoverGenre,
                     onRetry = {
                         NetworkStatusRepository.requestRefresh(force = true)
-                        SearchRepository.refreshDiscover(addonsUiState.addons)
+                        SearchRepository.refreshDiscover(allAddons)
                     },
                     watchedKeys = watchedUiState.watchedKeys,
                     fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
@@ -346,7 +352,7 @@ fun SearchScreen(
                                         NetworkStatusRepository.requestRefresh(force = true)
                                         SearchRepository.search(
                                             query = normalizedQuery,
-                                            addons = addonsUiState.addons,
+                                            addons = allAddons,
                                         )
                                     }
                                 },

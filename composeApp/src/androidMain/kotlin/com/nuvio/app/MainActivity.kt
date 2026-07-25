@@ -57,6 +57,11 @@ import com.nuvio.app.features.trakt.TraktCommentsStorage
 import com.nuvio.app.features.trakt.TraktLibraryStorage
 import com.nuvio.app.features.trakt.TraktSettingsStorage
 import com.nuvio.app.features.tmdb.TmdbSettingsStorage
+import com.nuvio.app.features.anime.tmdb.AnimeTmdbSettingsStorage
+import com.nuvio.app.features.anime.mdblist.AnimeMdbListSettingsStorage
+import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettingsStorage
+import com.nuvio.app.features.anime.metascreen.AnimeMetaScreenSettingsStorage
+import com.nuvio.app.features.anime.AnimeCollectionStorage
 import com.nuvio.app.features.opensubtitles.OpenSubtitlesSettingsStorage
 import com.nuvio.app.features.updater.AndroidAppUpdaterPlatform
 import com.nuvio.app.core.ui.CardDepthStyleStorage
@@ -146,6 +151,11 @@ class MainActivity : AppCompatActivity() {
         DebridSettingsStorage.initialize(applicationContext)
         TmdbSettingsStorage.initialize(applicationContext)
         MdbListSettingsStorage.initialize(applicationContext)
+        AnimeTmdbSettingsStorage.initialize(applicationContext)
+        AnimeMdbListSettingsStorage.initialize(applicationContext)
+        AnimeTvdbSettingsStorage.initialize(applicationContext)
+        AnimeMetaScreenSettingsStorage.initialize(applicationContext)
+        AnimeCollectionStorage.initialize(applicationContext)
         OpenSubtitlesSettingsStorage.initialize(applicationContext)
         MalAuthStorage.initialize(applicationContext)
         MalLibraryStorage.initialize(applicationContext)

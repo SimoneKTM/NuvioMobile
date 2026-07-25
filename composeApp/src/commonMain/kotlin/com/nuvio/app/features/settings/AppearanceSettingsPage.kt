@@ -170,7 +170,7 @@ internal fun LazyListScope.appearanceSettingsContent(
         val customSecond by remember { ThemeSettingsRepository.customThemeSecondColor }.collectAsState()
         val animationStyle by remember { ThemeSettingsRepository.themeAnimationStyle }.collectAsState()
         SettingsSection(
-            title = stringResource(Res.string.settings_appearance_section_theme),
+            title = stringResource(Res.string.settings_appearance_section_theme).uppercase(),
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
@@ -281,7 +281,7 @@ internal fun LazyListScope.appearanceSettingsContent(
         var showDateFormatSheet by remember { mutableStateOf(false) }
         var showAppIconSheet by remember { mutableStateOf(false) }
         SettingsSection(
-            title = stringResource(Res.string.settings_appearance_section_display),
+            title = stringResource(Res.string.settings_appearance_section_display).uppercase(),
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
@@ -378,7 +378,7 @@ internal fun LazyListScope.appearanceSettingsContent(
 
     item {
         SettingsSection(
-            title = stringResource(Res.string.settings_appearance_section_home),
+            title = stringResource(Res.string.settings_appearance_section_home).uppercase(),
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
@@ -414,7 +414,7 @@ internal fun LazyListScope.appearanceSettingsContent(
     }
     item {
         SettingsSection(
-            title = stringResource(Res.string.compose_settings_page_streams),
+            title = stringResource(Res.string.compose_settings_page_streams).uppercase(),
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
@@ -429,7 +429,7 @@ internal fun LazyListScope.appearanceSettingsContent(
     }
     item {
         SettingsSection(
-            title = stringResource(Res.string.compose_settings_page_meta_screen),
+            title = stringResource(Res.string.compose_settings_page_meta_screen).uppercase(),
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {

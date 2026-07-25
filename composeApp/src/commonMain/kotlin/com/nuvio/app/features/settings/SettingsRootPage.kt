@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
-import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Favorite
@@ -22,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.build.AppVersionConfig
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_about_made_with
@@ -58,9 +58,6 @@ import nuvio.composeapp.generated.resources.settings_network_title
 import nuvio.composeapp.generated.resources.settings_network_description
 import nuvio.composeapp.generated.resources.settings_network_dns_default
 import nuvio.composeapp.generated.resources.settings_network_dns_custom
-import nuvio.composeapp.generated.resources.compose_settings_page_anime_profile
-import nuvio.composeapp.generated.resources.settings_content_discovery_anime_profile_description
-
 import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.settingsRootContent(
@@ -86,6 +83,14 @@ internal fun LazyListScope.settingsRootContent(
     showSupportersContributorsPage: Boolean = true,
     onAnimeProfileClick: () -> Unit = {},
     onAnimeRootClick: () -> Unit = {},
+    onAnimeAddonsClick: () -> Unit = {},
+    onAnimePluginsClick: () -> Unit = {},
+    onAnimeHomescreenClick: () -> Unit = {},
+    onAnimeCollectionsClick: () -> Unit = {},
+    onAnimeContinueWatchingClick: () -> Unit = {},
+    onAnimeIntegrationsClick: () -> Unit = {},
+    onAnimeStreamsClick: () -> Unit = {},
+    onAnimeMetaScreenClick: () -> Unit = {},
 ) {
     if (showAccountSection) {
         item {
@@ -116,22 +121,18 @@ internal fun LazyListScope.settingsRootContent(
         }
     }
     if (showAnimeSection) {
-        item {
-            SettingsSection(
-                title = stringResource(Res.string.compose_settings_page_anime_profile),
-                isTablet = isTablet,
-            ) {
-                SettingsGroup(isTablet = isTablet) {
-                    SettingsNavigationRow(
-                        title = stringResource(Res.string.compose_settings_page_anime_profile),
-                        description = stringResource(Res.string.settings_content_discovery_anime_profile_description),
-                        icon = Icons.Rounded.Animation,
-                        isTablet = isTablet,
-                        onClick = onAnimeRootClick,
-                    )
-                }
-            }
-        }
+        animeRootSettingsContent(
+            isTablet = isTablet,
+            showPluginsEntry = AppFeaturePolicy.pluginsEnabled,
+            onAddonsClick = onAnimeAddonsClick,
+            onPluginsClick = onAnimePluginsClick,
+            onHomescreenClick = onAnimeHomescreenClick,
+            onCollectionsClick = onAnimeCollectionsClick,
+            onContinueWatchingClick = onAnimeContinueWatchingClick,
+            onIntegrationsClick = onAnimeIntegrationsClick,
+            onStreamsClick = onAnimeStreamsClick,
+            onMetaScreenClick = onAnimeMetaScreenClick,
+        )
     }
     if (showGeneralSection) {
         item {

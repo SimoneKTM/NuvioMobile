@@ -10,16 +10,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CollectionsBookmark
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,11 +37,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nuvio.app.features.anime.AnimeCollectionRepository
+import com.nuvio.app.features.collection.Collection
+import kotlin.uuid.ExperimentalUuidApi
 import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.core.ui.NuvioInputField
 import com.nuvio.app.core.ui.NuvioPrimaryButton
 import com.nuvio.app.core.ui.NuvioSectionLabel
+import com.nuvio.app.core.ui.NuvioStatusModal
 import com.nuvio.app.core.ui.NuvioSurfaceCard
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.features.vezie.EasyProxyAddonBridge
@@ -52,6 +67,10 @@ import nuvio.composeapp.generated.resources.compose_settings_page_continue_watch
 import nuvio.composeapp.generated.resources.compose_settings_page_homescreen
 import nuvio.composeapp.generated.resources.compose_settings_page_plugins
 import nuvio.composeapp.generated.resources.compose_settings_page_poster_customization
+import nuvio.composeapp.generated.resources.compose_settings_page_streams
+import nuvio.composeapp.generated.resources.compose_settings_page_meta_screen
+import nuvio.composeapp.generated.resources.compose_settings_root_streams_description
+import nuvio.composeapp.generated.resources.settings_content_discovery_meta_screen_description
 import nuvio.composeapp.generated.resources.settings_appearance_continue_watching_description
 import nuvio.composeapp.generated.resources.settings_appearance_poster_customization_description
 import nuvio.composeapp.generated.resources.settings_content_discovery_collections_description
@@ -67,6 +86,8 @@ internal fun LazyListScope.animeRootSettingsContent(
     onCollectionsClick: () -> Unit,
     onContinueWatchingClick: () -> Unit,
     onIntegrationsClick: () -> Unit,
+    onStreamsClick: () -> Unit = {},
+    onMetaScreenClick: () -> Unit = {},
 ) {
     item {
         SettingsGroup(isTablet = isTablet) {
@@ -129,6 +150,36 @@ internal fun LazyListScope.animeRootSettingsContent(
             }
         }
     }
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.compose_settings_page_streams).uppercase(),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.compose_settings_page_streams),
+                    description = stringResource(Res.string.compose_settings_root_streams_description),
+                    isTablet = isTablet,
+                    onClick = onStreamsClick,
+                )
+            }
+        }
+    }
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.compose_settings_page_meta_screen).uppercase(),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.compose_settings_page_meta_screen),
+                    description = stringResource(Res.string.settings_content_discovery_meta_screen_description),
+                    isTablet = isTablet,
+                    onClick = onMetaScreenClick,
+                )
+            }
+        }
+    }
 }
 
 internal fun LazyListScope.animeWebScraperSettingsContent(
@@ -181,6 +232,178 @@ internal fun LazyListScope.animeAdvancedSettingsContent(
             }
 
             Spacer(Modifier.height(NuvioTokens.Space.s24))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalUuidApi::class)
+internal fun LazyListScope.animeCollectionsSettingsContent(
+    isTablet: Boolean,
+) {
+    item {
+        val collections by AnimeCollectionRepository.collections.collectAsStateWithLifecycle()
+        var showCreateDialog by remember { mutableStateOf(false) }
+        var showDeleteConfirm by remember { mutableStateOf<String?>(null) }
+        var newCollectionTitle by remember { mutableStateOf("") }
+
+        LaunchedEffect(Unit) {
+            AnimeCollectionRepository.ensureLoaded()
+        }
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            NuvioSectionLabel("Collezioni Anime")
+
+            NuvioSurfaceCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "Hai ${collections.size} collezioni con ${collections.sumOf { it.folders.size }} cartelle.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            NuvioPrimaryButton(
+                text = "Nuova Collezione",
+                onClick = { showCreateDialog = true },
+            )
+
+            if (collections.isNotEmpty()) {
+                NuvioSectionLabel("Le tue collezioni")
+            }
+
+            collections.forEach { collection ->
+                NuvioSurfaceCard {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = collection.title,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = "${collection.folders.size} cartelle",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        IconButton(onClick = { showDeleteConfirm = collection.id }) {
+                            Icon(
+                                imageVector = Icons.Rounded.Delete,
+                                contentDescription = "Elimina",
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(NuvioTokens.Space.s24))
+        }
+
+        if (showCreateDialog) {
+            androidx.compose.material3.BasicAlertDialog(
+                onDismissRequest = { showCreateDialog = false; newCollectionTitle = "" },
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "Nuova Collezione Anime",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = newCollectionTitle,
+                            onValueChange = { newCollectionTitle = it },
+                            placeholder = { Text("Titolo collezione") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                imeAction = ImeAction.Done,
+                            ),
+                            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                                onDone = {
+                                    if (newCollectionTitle.isNotBlank()) {
+                                        AnimeCollectionRepository.addCollection(
+                                            Collection(
+                                                id = kotlin.uuid.Uuid.random().toString(),
+                                                title = newCollectionTitle.trim(),
+                                            ),
+                                        )
+                                        showCreateDialog = false
+                                        newCollectionTitle = ""
+                                    }
+                                },
+                            ),
+                            shape = RoundedCornerShape(14.dp),
+                        )
+                        Spacer(Modifier.height(18.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                        ) {
+                            Button(
+                                onClick = { showCreateDialog = false; newCollectionTitle = "" },
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    contentColor = MaterialTheme.colorScheme.onSurface,
+                                ),
+                            ) {
+                                Text("Annulla")
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Button(
+                                onClick = {
+                                    AnimeCollectionRepository.addCollection(
+                                        Collection(
+                                            id = kotlin.uuid.Uuid.random().toString(),
+                                            title = newCollectionTitle.trim(),
+                                        ),
+                                    )
+                                    showCreateDialog = false
+                                    newCollectionTitle = ""
+                                },
+                                enabled = newCollectionTitle.isNotBlank(),
+                                shape = RoundedCornerShape(16.dp),
+                            ) {
+                                Text("Crea")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        val deleteId = showDeleteConfirm
+        val deleteCollection = deleteId?.let { id -> collections.find { it.id == id } }
+        if (deleteId != null) {
+            NuvioStatusModal(
+                title = "Elimina Collezione",
+                message = "Rimuovere la collezione \"${deleteCollection?.title}\"?",
+                isVisible = true,
+                confirmText = "Elimina",
+                dismissText = "Annulla",
+                onConfirm = {
+                    AnimeCollectionRepository.removeCollection(deleteId)
+                    showDeleteConfirm = null
+                },
+                onDismiss = { showDeleteConfirm = null },
+            )
         }
     }
 }

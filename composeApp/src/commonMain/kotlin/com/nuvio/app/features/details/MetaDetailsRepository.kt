@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import com.nuvio.app.features.addons.AddonManifest
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.buildAddonResourceUrl
+import com.nuvio.app.features.anime.AnimeAddonRepository
 import com.nuvio.app.features.addons.enabledAddons
 import com.nuvio.app.features.addons.httpGetText
 import com.nuvio.app.features.cloudstream.CloudStreamRepository
@@ -17,6 +18,8 @@ import com.nuvio.app.features.mdblist.MdbListSettingsRepository
 import com.nuvio.app.features.tmdb.TmdbMetadataService
 import com.nuvio.app.features.tmdb.TmdbService
 import com.nuvio.app.features.tmdb.TmdbSettingsRepository
+import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettingsRepository
+import com.nuvio.app.features.anime.tvdb.TvdbMetadataService
 import com.nuvio.app.features.trakt.TraktAuthRepository
 import com.nuvio.app.features.trakt.TraktConnectionMode
 import com.nuvio.app.features.trakt.TraktRelatedRepository
@@ -268,6 +271,7 @@ object MetaDetailsRepository {
     private const val METADATA_PROVIDER_READY_TIMEOUT_MS = 10_000L
     private const val TMDB_ENRICH_TIMEOUT_MS = 5_000L
     private const val MDBLIST_ENRICH_TIMEOUT_MS = 5_000L
+    private const val TVDB_ENRICH_TIMEOUT_MS = 5_000L
 
     private suspend fun tryFetchMeta(
         manifest: AddonManifest,
@@ -307,12 +311,20 @@ object MetaDetailsRepository {
             } else {
                 tmdbEnriched
             }
-            log.d { "Parsed meta: type=${enriched.type}, name=${enriched.name}, videos=${enriched.videos.size}" }
-            if (enriched.videos.isNotEmpty()) {
-                val first = enriched.videos.first()
+            val tvdbEnriched = withTimeoutOrNull(TVDB_ENRICH_TIMEOUT_MS) {
+                AnimeTvdbSettingsRepository.ensureLoaded()
+                TvdbMetadataService.enrichMeta(
+                    meta = enriched,
+                    fallbackItemId = id,
+                    settings = AnimeTvdbSettingsRepository.snapshot(),
+                )
+            } ?: enriched
+            log.d { "Parsed meta: type=${tvdbEnriched.type}, name=${tvdbEnriched.name}, videos=${tvdbEnriched.videos.size}" }
+            if (tvdbEnriched.videos.isNotEmpty()) {
+                val first = tvdbEnriched.videos.first()
                 log.d { "First video: id=${first.id} title=${first.title} s=${first.season} e=${first.episode} embeddedStreams=${first.streams.size}" }
             }
-            enriched
+            tvdbEnriched
         } catch (e: Throwable) {
             if (e is CancellationException) throw e
             log.e(e) { "Failed to fetch/parse meta from $url (manifest=${manifest.transportUrl})" }
@@ -322,21 +334,39 @@ object MetaDetailsRepository {
 
     private suspend fun findReadyMetaManifests(type: String, id: String): List<AddonManifest> {
         AddonRepository.initialize()
+        AnimeAddonRepository.initialize()
 
         findMetaManifests(AddonRepository.uiState.value, type, id).takeIf { it.isNotEmpty() }?.let { return it }
+        findMetaManifests(AnimeAddonRepository.uiState.value, type, id).takeIf { it.isNotEmpty() }?.let { return it }
 
-        if (!AddonRepository.uiState.value.hasPendingEnabledAddonManifests()) {
-            return emptyList()
+        val mainPending = AddonRepository.uiState.value.hasPendingEnabledAddonManifests()
+        val animePending = AnimeAddonRepository.uiState.value.hasPendingEnabledAddonManifests()
+
+        if (!mainPending && !animePending) return emptyList()
+
+        if (mainPending) {
+            val readyState = withTimeoutOrNull(METADATA_PROVIDER_READY_TIMEOUT_MS) {
+                AddonRepository.uiState.first { state ->
+                    findMetaManifests(state, type, id).isNotEmpty() ||
+                        !state.hasPendingEnabledAddonManifests()
+                }
+            } ?: AddonRepository.uiState.value
+
+            findMetaManifests(readyState, type, id).takeIf { it.isNotEmpty() }?.let { return it }
         }
 
-        val readyState = withTimeoutOrNull(METADATA_PROVIDER_READY_TIMEOUT_MS) {
-            AddonRepository.uiState.first { state ->
-                findMetaManifests(state, type, id).isNotEmpty() ||
-                    !state.hasPendingEnabledAddonManifests()
-            }
-        } ?: AddonRepository.uiState.value
+        if (animePending) {
+            val animeReadyState = withTimeoutOrNull(METADATA_PROVIDER_READY_TIMEOUT_MS) {
+                AnimeAddonRepository.uiState.first { state ->
+                    findMetaManifests(state, type, id).isNotEmpty() ||
+                        !state.hasPendingEnabledAddonManifests()
+                }
+            } ?: AnimeAddonRepository.uiState.value
 
-        return findMetaManifests(readyState, type, id)
+            return findMetaManifests(animeReadyState, type, id)
+        }
+
+        return emptyList()
     }
 
     private fun findMetaManifests(state: com.nuvio.app.features.addons.AddonsUiState, type: String, id: String): List<AddonManifest> =
@@ -432,8 +462,16 @@ object MetaDetailsRepository {
                 settings = settings,
             )
         } ?: meta
+        val tvdbEnrichedMeta = withTimeoutOrNull(TVDB_ENRICH_TIMEOUT_MS) {
+            AnimeTvdbSettingsRepository.ensureLoaded()
+            TvdbMetadataService.enrichMeta(
+                meta = mdbListEnrichedMeta,
+                fallbackItemId = fallbackItemId,
+                settings = AnimeTvdbSettingsRepository.snapshot(),
+            )
+        } ?: mdbListEnrichedMeta
         val enrichedMeta = applyMoreLikeThisSource(
-            meta = mdbListEnrichedMeta,
+            meta = tvdbEnrichedMeta,
             fallbackItemId = fallbackItemId,
             fallbackItemType = fallbackItemType,
         )

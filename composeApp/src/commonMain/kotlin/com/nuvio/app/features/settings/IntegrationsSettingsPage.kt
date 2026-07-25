@@ -52,6 +52,7 @@ internal fun LazyListScope.integrationsContent(
     onSubdlClick: () -> Unit,
     onTmdbClick: () -> Unit,
     onMdbListClick: () -> Unit,
+    onTvdbClick: () -> Unit = {},
     onLiveTvClick: () -> Unit,
     onDebridClick: () -> Unit,
 ) {
@@ -75,6 +76,14 @@ internal fun LazyListScope.integrationsContent(
                     iconPainter = integrationLogoPainter(IntegrationLogo.MdbList),
                     isTablet = isTablet,
                     onClick = onMdbListClick,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsNavigationRow(
+                    title = "TVDB (Anime)",
+                    description = "Enrich anime metadata from TheTVDB",
+                    icon = Icons.Rounded.LiveTv,
+                    isTablet = isTablet,
+                    onClick = onTvdbClick,
                 )
             }
         }

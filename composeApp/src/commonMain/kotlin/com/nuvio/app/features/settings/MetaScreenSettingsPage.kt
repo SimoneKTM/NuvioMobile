@@ -56,6 +56,7 @@ import com.nuvio.app.features.details.MetaScreenSectionItem
 import com.nuvio.app.features.details.MetaScreenSectionKey
 import com.nuvio.app.features.details.MetaScreenSettingsRepository
 import com.nuvio.app.features.details.MetaScreenSettingsUiState
+import com.nuvio.app.features.anime.metascreen.AnimeMetaScreenSettingsRepository
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_reorder
 import nuvio.composeapp.generated.resources.action_reset
@@ -172,6 +173,80 @@ internal fun LazyListScope.metaScreenSettingsContent(
                 NuvioActionLabel(
                     text = stringResource(Res.string.action_reset),
                     onClick = MetaScreenSettingsRepository::resetToDefaults,
+                )
+            },
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                MetaSectionReorderableList(
+                    items = uiState.items,
+                    isTablet = isTablet,
+                    tabLayout = uiState.tabLayout,
+                )
+            }
+        }
+    }
+}
+
+internal fun LazyListScope.animeMetaScreenSettingsContent(
+    isTablet: Boolean,
+    uiState: MetaScreenSettingsUiState,
+) {
+    val showHeroTrailerPlaybackSetting = AppFeaturePolicy.heroTrailerPlaybackSupported &&
+        AppFeaturePolicy.trailerPlaybackMode == TrailerPlaybackMode.IN_APP
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_meta_section_appearance),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                MetaBackgroundModeSelector(
+                    isTablet = isTablet,
+                    selectedMode = uiState.backgroundMode,
+                    onModeSelected = AnimeMetaScreenSettingsRepository::setBackgroundMode,
+                )
+                if (showHeroTrailerPlaybackSetting) {
+                    SettingsGroupDivider(isTablet = isTablet)
+                    SettingsSwitchRow(
+                        title = stringResource(Res.string.settings_meta_hero_trailer_playback),
+                        description = stringResource(Res.string.settings_meta_hero_trailer_playback_description),
+                        checked = uiState.heroTrailerPlayback,
+                        isTablet = isTablet,
+                        onCheckedChange = { AnimeMetaScreenSettingsRepository.setHeroTrailerPlayback(it) },
+                    )
+                }
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_meta_tab_layout),
+                    description = stringResource(Res.string.settings_meta_tab_layout_description),
+                    checked = uiState.tabLayout,
+                    isTablet = isTablet,
+                    onCheckedChange = { AnimeMetaScreenSettingsRepository.setTabLayout(it) },
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                MetaEpisodeCardStyleSelector(
+                    isTablet = isTablet,
+                    selectedStyle = uiState.episodeCardStyle,
+                    onStyleSelected = AnimeMetaScreenSettingsRepository::setEpisodeCardStyle,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_meta_blur_unwatched_episodes),
+                    description = stringResource(Res.string.settings_meta_blur_unwatched_episodes_description),
+                    checked = uiState.blurUnwatchedEpisodes,
+                    isTablet = isTablet,
+                    onCheckedChange = { AnimeMetaScreenSettingsRepository.setBlurUnwatchedEpisodes(it) },
+                )
+            }
+        }
+    }
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_meta_section_sections),
+            isTablet = isTablet,
+            actions = {
+                NuvioActionLabel(
+                    text = stringResource(Res.string.action_reset),
+                    onClick = AnimeMetaScreenSettingsRepository::resetToDefaults,
                 )
             },
         ) {

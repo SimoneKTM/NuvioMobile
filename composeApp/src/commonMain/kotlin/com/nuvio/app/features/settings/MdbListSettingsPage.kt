@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import com.nuvio.app.features.mdblist.MdbListMetadataService
 import com.nuvio.app.features.mdblist.MdbListSettings
 import com.nuvio.app.features.mdblist.MdbListSettingsRepository
+import com.nuvio.app.features.anime.mdblist.AnimeMdbListSettings
+import com.nuvio.app.features.anime.mdblist.AnimeMdbListSettingsRepository
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_save
 import nuvio.composeapp.generated.resources.settings_mdb_add_api_key_first
@@ -185,6 +187,100 @@ private fun MdbListApiKeyRow(
             ) {
                 Text(stringResource(Res.string.action_save))
             }
+        }
+    }
+}
+
+internal fun LazyListScope.animeMdbListSettingsContent(
+    isTablet: Boolean,
+    settings: AnimeMdbListSettings,
+) {
+    val providerControlsEnabled = settings.enabled && settings.hasApiKey
+
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_mdb_section_title),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_mdb_enable_ratings),
+                    description = stringResource(Res.string.settings_mdb_enable_ratings_description),
+                    checked = settings.enabled,
+                    enabled = settings.hasApiKey,
+                    isTablet = isTablet,
+                    onCheckedChange = AnimeMdbListSettingsRepository::setEnabled,
+                )
+                if (!settings.hasApiKey) {
+                    SettingsGroupDivider(isTablet = isTablet)
+                    MdbListInfoRow(
+                        isTablet = isTablet,
+                        text = stringResource(Res.string.settings_mdb_add_api_key_first),
+                    )
+                }
+            }
+        }
+    }
+
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_mdb_section_api_key),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                MdbListApiKeyRow(
+                    isTablet = isTablet,
+                    value = settings.apiKey,
+                    onApiKeyCommitted = AnimeMdbListSettingsRepository::setApiKey,
+                )
+            }
+        }
+    }
+
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_mdb_section_rating_providers),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                AnimeProviderRows(
+                    isTablet = isTablet,
+                    settings = settings,
+                    controlsEnabled = providerControlsEnabled,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AnimeProviderRows(
+    isTablet: Boolean,
+    settings: AnimeMdbListSettings,
+    controlsEnabled: Boolean,
+) {
+    val providers = listOf(
+        MdbListMetadataService.PROVIDER_IMDB to Res.string.source_imdb,
+        MdbListMetadataService.PROVIDER_TMDB to Res.string.source_tmdb,
+        MdbListMetadataService.PROVIDER_TOMATOES to Res.string.source_rotten_tomatoes,
+        MdbListMetadataService.PROVIDER_METACRITIC to Res.string.source_metacritic,
+        MdbListMetadataService.PROVIDER_TRAKT to Res.string.source_trakt,
+        MdbListMetadataService.PROVIDER_LETTERBOXD to Res.string.source_letterboxd,
+        MdbListMetadataService.PROVIDER_AUDIENCE to Res.string.source_audience_score,
+    )
+
+    providers.forEachIndexed { index, (providerId, providerLabelRes) ->
+        SettingsSwitchRow(
+            title = stringResource(providerLabelRes),
+            checked = settings.isProviderEnabled(providerId),
+            enabled = controlsEnabled,
+            isTablet = isTablet,
+            onCheckedChange = { checked ->
+                AnimeMdbListSettingsRepository.setProviderEnabled(providerId, checked)
+            },
+        )
+        if (index < providers.lastIndex) {
+            SettingsGroupDivider(isTablet = isTablet)
         }
     }
 }
