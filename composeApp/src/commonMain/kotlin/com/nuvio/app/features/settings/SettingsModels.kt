@@ -182,6 +182,11 @@ internal enum class SettingsPage(
         category = SettingsCategory.General,
         parentPage = Integrations,
     ),
+    TvdbEnrichment(
+        titleRes = Res.string.compose_settings_page_tvdb_enrichment,
+        category = SettingsCategory.General,
+        parentPage = Integrations,
+    ),
     Debrid(
         titleRes = Res.string.compose_settings_page_debrid,
         category = SettingsCategory.General,

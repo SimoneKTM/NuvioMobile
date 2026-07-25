@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.features.details.MetaExternalRating
 import com.nuvio.app.features.details.MetaTrailer
+import com.nuvio.app.features.tvdb.TvdbSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -13,12 +14,13 @@ object TvdbMetadataService {
     suspend fun enrichMeta(
         meta: MetaDetails,
         fallbackItemId: String,
-        settings: AnimeTvdbSettings,
+        settings: TvdbSettings,
     ): MetaDetails {
         if (!settings.enabled || !settings.hasApiKey) return meta
 
         return withContext(Dispatchers.Default) {
             try {
+                if (TvdbApi.ensureAuthenticated(settings.apiKey) == null) return@withContext meta
                 val seriesId = findSeriesId(meta, fallbackItemId) ?: return@withContext meta
                 val extended = TvdbApi.getSeriesExtended(seriesId) ?: return@withContext meta
 

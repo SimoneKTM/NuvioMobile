@@ -15,13 +15,14 @@ object TvdbApi {
     private var cachedToken: String? = null
     private var tokenApiKey: String? = null
 
-    suspend fun ensureAuthenticated(): String? {
-        val settings = AnimeTvdbSettingsRepository.snapshot()
-        val apiKey = settings.apiKey.trim().takeIf { it.isNotBlank() } ?: return null
-        if (cachedToken != null && tokenApiKey == apiKey) return cachedToken
-        val response = login(apiKey) ?: return null
+    suspend fun ensureAuthenticated(apiKey: String? = null): String? {
+        val resolvedKey = apiKey?.takeIf { it.isNotBlank() }
+            ?: AnimeTvdbSettingsRepository.snapshot().apiKey.trim().takeIf { it.isNotBlank() }
+            ?: return null
+        if (cachedToken != null && tokenApiKey == resolvedKey) return cachedToken
+        val response = login(resolvedKey) ?: return null
         cachedToken = response.token
-        tokenApiKey = apiKey
+        tokenApiKey = resolvedKey
         return cachedToken
     }
 

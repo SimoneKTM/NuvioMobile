@@ -79,8 +79,8 @@ internal fun LazyListScope.integrationsContent(
                 )
                 SettingsGroupDivider(isTablet = isTablet)
                 SettingsNavigationRow(
-                    title = "TVDB (Anime)",
-                    description = "Enrich anime metadata from TheTVDB",
+                    title = "TVDB",
+                    description = "Enrich metadata from TheTVDB",
                     icon = Icons.Rounded.LiveTv,
                     isTablet = isTablet,
                     onClick = onTvdbClick,

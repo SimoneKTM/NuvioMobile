@@ -77,6 +77,8 @@ import com.nuvio.app.features.anime.mdblist.AnimeMdbListSettings
 import com.nuvio.app.features.anime.mdblist.AnimeMdbListSettingsRepository
 import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettings
 import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettingsRepository
+import com.nuvio.app.features.tvdb.TvdbSettings
+import com.nuvio.app.features.tvdb.TvdbSettingsRepository
 import com.nuvio.app.features.notifications.EpisodeReleaseNotificationsRepository
 import com.nuvio.app.features.opensubtitles.OpenSubtitlesSettings
 import com.nuvio.app.features.opensubtitles.OpenSubtitlesSettingsRepository
@@ -199,6 +201,10 @@ fun SettingsScreen(
         val animeTvdbSettings by remember {
             AnimeTvdbSettingsRepository.ensureLoaded()
             AnimeTvdbSettingsRepository.uiState
+        }.collectAsStateWithLifecycle()
+        val tvdbSettings by remember {
+            TvdbSettingsRepository.ensureLoaded()
+            TvdbSettingsRepository.uiState
         }.collectAsStateWithLifecycle()
         val aiAssistantSettings by remember {
             AiAssistantSettingsRepository.ensureLoaded()
@@ -509,6 +515,7 @@ fun SettingsScreen(
                 animeTmdbSettings = animeTmdbSettings,
                 animeMdbListSettings = animeMdbListSettings,
                 animeTvdbSettings = animeTvdbSettings,
+                tvdbSettings = tvdbSettings,
             )
         } else {
             MobileSettingsScreen(
@@ -597,6 +604,7 @@ fun SettingsScreen(
                 animeTmdbSettings = animeTmdbSettings,
                 animeMdbListSettings = animeMdbListSettings,
                 animeTvdbSettings = animeTvdbSettings,
+                tvdbSettings = tvdbSettings,
             )
         }
     }
@@ -689,6 +697,7 @@ private fun MobileSettingsScreen(
     animeTmdbSettings: AnimeTmdbSettings,
     animeMdbListSettings: AnimeMdbListSettings,
     animeTvdbSettings: AnimeTvdbSettings,
+    tvdbSettings: TvdbSettings,
 ) {
     val saveableStateHolder = rememberSaveableStateHolder()
     saveableStateHolder.SaveableStateProvider("settings_mobile") {
@@ -945,6 +954,7 @@ private fun MobileSettingsScreen(
                         onSubdlClick = { onPageChange(SettingsPage.Subdl) },
                         onTmdbClick = { onPageChange(SettingsPage.TmdbEnrichment) },
                         onMdbListClick = { onPageChange(SettingsPage.MdbListRatings) },
+                        onTvdbClick = { onPageChange(SettingsPage.TvdbEnrichment) },
                         onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
                         onDebridClick = { onPageChange(SettingsPage.Debrid) },
                     )
@@ -986,6 +996,10 @@ private fun MobileSettingsScreen(
                 SettingsPage.MdbListRatings -> mdbListSettingsContent(
                     isTablet = false,
                     settings = mdbListSettings,
+                )
+                SettingsPage.TvdbEnrichment -> tvdbSettingsContent(
+                    isTablet = false,
+                    settings = tvdbSettings,
                 )
                 SettingsPage.Debrid -> debridSettingsContent(
                     isTablet = false,
@@ -1222,6 +1236,7 @@ private fun TabletSettingsScreen(
     animeTmdbSettings: AnimeTmdbSettings,
     animeMdbListSettings: AnimeMdbListSettings,
     animeTvdbSettings: AnimeTvdbSettings,
+    tvdbSettings: TvdbSettings,
 ) {
     var selectedCategory by rememberSaveable { mutableStateOf(SettingsCategory.General.name) }
     val activeCategory = SettingsCategory.valueOf(selectedCategory)
@@ -1541,6 +1556,7 @@ private fun TabletSettingsScreen(
                         onSubdlClick = { onPageChange(SettingsPage.Subdl) },
                         onTmdbClick = { onPageChange(SettingsPage.TmdbEnrichment) },
                         onMdbListClick = { onPageChange(SettingsPage.MdbListRatings) },
+                        onTvdbClick = { onPageChange(SettingsPage.TvdbEnrichment) },
                         onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
                         onDebridClick = { onPageChange(SettingsPage.Debrid) },
                     )
@@ -1582,6 +1598,10 @@ private fun TabletSettingsScreen(
                     SettingsPage.MdbListRatings -> mdbListSettingsContent(
                         isTablet = true,
                         settings = mdbListSettings,
+                    )
+                    SettingsPage.TvdbEnrichment -> tvdbSettingsContent(
+                        isTablet = true,
+                        settings = tvdbSettings,
                     )
                     SettingsPage.LiveTv -> liveTvSettingsContent(
                         isTablet = true,

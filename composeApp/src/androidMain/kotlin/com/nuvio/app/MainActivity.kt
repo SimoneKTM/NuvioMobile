@@ -60,6 +60,7 @@ import com.nuvio.app.features.tmdb.TmdbSettingsStorage
 import com.nuvio.app.features.anime.tmdb.AnimeTmdbSettingsStorage
 import com.nuvio.app.features.anime.mdblist.AnimeMdbListSettingsStorage
 import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettingsStorage
+import com.nuvio.app.features.tvdb.TvdbSettingsStorage
 import com.nuvio.app.features.anime.metascreen.AnimeMetaScreenSettingsStorage
 import com.nuvio.app.features.anime.AnimeCollectionStorage
 import com.nuvio.app.features.opensubtitles.OpenSubtitlesSettingsStorage
@@ -154,6 +155,7 @@ class MainActivity : AppCompatActivity() {
         AnimeTmdbSettingsStorage.initialize(applicationContext)
         AnimeMdbListSettingsStorage.initialize(applicationContext)
         AnimeTvdbSettingsStorage.initialize(applicationContext)
+        TvdbSettingsStorage.initialize(applicationContext)
         AnimeMetaScreenSettingsStorage.initialize(applicationContext)
         AnimeCollectionStorage.initialize(applicationContext)
         OpenSubtitlesSettingsStorage.initialize(applicationContext)

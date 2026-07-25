@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettings
 import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettingsRepository
+import com.nuvio.app.features.tvdb.TvdbSettings
+import com.nuvio.app.features.tvdb.TvdbSettingsRepository
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_save
 import nuvio.composeapp.generated.resources.settings_tvdb_add_api_key_first
@@ -30,6 +32,51 @@ import nuvio.composeapp.generated.resources.settings_tvdb_enable_description
 import nuvio.composeapp.generated.resources.settings_tvdb_section_api_key
 import nuvio.composeapp.generated.resources.settings_tvdb_section_title
 import org.jetbrains.compose.resources.stringResource
+
+internal fun LazyListScope.tvdbSettingsContent(
+    isTablet: Boolean,
+    settings: TvdbSettings,
+) {
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_tvdb_section_title),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_tvdb_enable),
+                    description = stringResource(Res.string.settings_tvdb_enable_description),
+                    checked = settings.enabled,
+                    enabled = settings.hasApiKey,
+                    isTablet = isTablet,
+                    onCheckedChange = TvdbSettingsRepository::setEnabled,
+                )
+                if (!settings.hasApiKey) {
+                    SettingsGroupDivider(isTablet = isTablet)
+                    TvdbInfoRow(
+                        isTablet = isTablet,
+                        text = stringResource(Res.string.settings_tvdb_add_api_key_first),
+                    )
+                }
+            }
+        }
+    }
+
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_tvdb_section_api_key),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                TvdbApiKeyRow(
+                    isTablet = isTablet,
+                    value = settings.apiKey,
+                    onApiKeyCommitted = TvdbSettingsRepository::setApiKey,
+                )
+            }
+        }
+    }
+}
 
 internal fun LazyListScope.animeTvdbSettingsContent(
     isTablet: Boolean,
