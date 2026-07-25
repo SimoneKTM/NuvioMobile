@@ -1,4 +1,4 @@
-name: Build All Releases (Windows, Android Mobile) 
+name: Build All Releases (Windows, Android Mobile)
 
 on:
   workflow_dispatch:
@@ -58,7 +58,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Decode Keystore
         run: |
@@ -105,7 +105,7 @@ jobs:
           fi
 
           {
-            echo "## 🔨 Changes"
+            echo "## ?? Changes"
             echo ""
             echo "$COMMITS"
           } > release_body.md
@@ -151,11 +151,11 @@ jobs:
       - name: Send ntfy Notification
         run: |
           curl \
-            -H "Title: 🎉 Android Build Completata!" \
+            -H "Title: ?? Android Build Completata!" \
             -H "Priority: high" \
             -H "Tags: rocket,android" \
             -H "Click: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.name }}" \
-            -d "Build **Android v${{ steps.version.outputs.name }}** pronta! 🚀 APK caricato." \
+            -d "Build **Android v${{ steps.version.outputs.name }}** pronta! ?? APK caricato." \
             https://ntfy.sh/nuvio_builds
 
   build-desktop:
@@ -203,7 +203,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Write local.properties
         shell: pwsh
@@ -313,4 +313,4 @@ jobs:
       - name: Send ntfy Notification
         shell: pwsh
         run: |
-          curl.exe -H "Title: 🎉 Desktop Build Completata!" -H "Priority: high" -H "Tags: rocket,windows" -H "Click: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.name }}" -d "Build **Desktop Windows v${{ steps.version.outputs.name }}** pronta! 🚀 MSI caricato." https://ntfy.sh/nuvio_builds
+          curl.exe -H "Title: ?? Desktop Build Completata!" -H "Priority: high" -H "Tags: rocket,windows" -H "Click: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.name }}" -d "Build **Desktop Windows v${{ steps.version.outputs.name }}** pronta! ?? MSI caricato." https://ntfy.sh/nuvio_builds
