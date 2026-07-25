@@ -81,7 +81,7 @@ internal fun LazyListScope.integrationsContent(
                 SettingsNavigationRow(
                     title = "TVDB",
                     description = "Enrich metadata from TheTVDB",
-                    icon = Icons.Rounded.LiveTv,
+                    iconPainter = integrationLogoPainter(IntegrationLogo.Tvdb),
                     isTablet = isTablet,
                     onClick = onTvdbClick,
                 )
