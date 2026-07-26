@@ -49,7 +49,7 @@ object TvdbApi {
             val url = "$BASE_URL/search?query=${encodeQuery(query)}&type=series"
             val responseText = httpGetTextWithHeaders(url, headers = authHeaders(token))
             val response = json.decodeFromString<TvdbSearchResponse>(responseText)
-            response.data
+            response.data.orEmpty()
         }.onFailure { e ->
             log.w { "TVDB search failed: ${e.message}" }
         }.getOrNull().orEmpty()
@@ -122,7 +122,7 @@ object TvdbApi {
 
     @Serializable
     data class TvdbSearchResponse(
-        val data: List<TvdbSearchResult> = emptyList(),
+        val data: List<TvdbSearchResult>? = null,
     )
 
     @Serializable
@@ -197,6 +197,12 @@ object TvdbApi {
     )
 
     @Serializable
+    data class TvdbSeasonCompanies(
+        val studio: TvdbCompany? = null,
+        val network: TvdbCompany? = null,
+    )
+
+    @Serializable
     data class TvdbSeason(
         val id: Int = 0,
         val number: Int = 0,
@@ -204,7 +210,7 @@ object TvdbApi {
         @SerialName("image") val image: String? = null,
         @SerialName("image_type") val imageType: Int? = null,
         val overview: String? = null,
-        val companies: List<TvdbCompany> = emptyList(),
+        val companies: TvdbSeasonCompanies? = null,
         val seasons: List<TvdbSeason>? = null,
         val trailers: List<TvdbTrailer>? = null,
         val artwork: List<TvdbArtwork>? = null,
@@ -222,7 +228,7 @@ object TvdbApi {
 
     @Serializable
     data class TvdbCompany(
-        val id: Int = 0,
+        val id: Int? = null,
         val name: String = "",
         val slug: String? = null,
         @SerialName("primary_company_type") val primaryCompanyType: Int? = null,
