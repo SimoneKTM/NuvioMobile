@@ -155,7 +155,7 @@ object TvdbMetadataService {
         }
     }
 
-    private suspend fun findSeriesId(meta: MetaDetails, fallbackItemId: String): Int? {
+    private suspend fun findSeriesId(meta: MetaDetails, fallbackItemId: String): String? {
         tryRemoteIdSearch("fallbackItemId", fallbackItemId)?.let { return it }
         tryRemoteIdSearch("meta.id", meta.id)?.let { return it }
 
@@ -198,7 +198,7 @@ object TvdbMetadataService {
         return null
     }
 
-    private suspend fun tryRemoteIdSearch(source: String, itemId: String): Int? {
+    private suspend fun tryRemoteIdSearch(source: String, itemId: String): String? {
         log.d { "TVDB tryRemoteIdSearch: source=$source, itemId=$itemId" }
         val remoteId = when {
             itemId.startsWith("imdb:") || itemId.startsWith("tmdb:") -> itemId
