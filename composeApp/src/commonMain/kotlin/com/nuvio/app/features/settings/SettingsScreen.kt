@@ -527,6 +527,8 @@ fun SettingsScreen(
                 animeMdbListSettings = animeMdbListSettings,
                 animeTvdbSettings = animeTvdbSettings,
                 tvdbSettings = tvdbSettings,
+                animeShowInNavigation = animeProfileState.config.showInNavigation,
+                onAnimeShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
             )
         } else {
             MobileSettingsScreen(
@@ -1269,6 +1271,8 @@ private fun TabletSettingsScreen(
     animeMdbListSettings: AnimeMdbListSettings,
     animeTvdbSettings: AnimeTvdbSettings,
     tvdbSettings: TvdbSettings,
+    animeShowInNavigation: Boolean = true,
+    onAnimeShowInNavigationChanged: (Boolean) -> Unit = {},
 ) {
     var selectedCategory by rememberSaveable { mutableStateOf(SettingsCategory.General.name) }
     val activeCategory = SettingsCategory.valueOf(selectedCategory)
