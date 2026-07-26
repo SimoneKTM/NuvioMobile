@@ -195,7 +195,7 @@ private fun DiscoverFilterRow(
 }
 
 @Composable
-private fun DiscoverGridRow(
+internal fun DiscoverGridRow(
     items: List<MetaPreview>,
     columns: Int,
     modifier: Modifier = Modifier,

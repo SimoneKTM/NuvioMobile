@@ -801,16 +801,13 @@ object LibraryRepository {
 
         val items = localSnapshot.items
             .sortedByDescending { it.savedAtEpochMs }
-        val sections = items
-            .groupBy { it.type }
-            .map { (type, typeItems) ->
-                LibrarySection(
-                    type = type,
-                    displayTitle = type.toLibraryDisplayTitle(),
-                    items = typeItems.sortedByDescending { it.savedAtEpochMs },
-                )
-            }
-            .sortedBy { it.displayTitle }
+        val sections = listOf(
+            LibrarySection(
+                type = "all",
+                displayTitle = "",
+                items = items,
+            )
+        )
 
         val newUiState = LibraryUiState(
             sourceMode = LibrarySourceMode.LOCAL,

@@ -362,26 +362,48 @@ fun SearchScreen(
                     }
 
                     else -> {
-                        items(
-                            items = uiState.sections.withDuplicateSafeLazyKeys { section -> section.key },
-                            key = { section -> section.lazyKey },
-                        ) { keyedSection ->
-                            val section = keyedSection.value
-                            HomeCatalogRowSection(
-                                section = section,
-                                modifier = Modifier.padding(bottom = 12.dp),
-                                watchedKeys = watchedUiState.watchedKeys,
-                                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                                onPosterClick = onPosterClick,
-                                onPosterLongClick = onPosterLongClick,
-                            )
+                        val allItems = remember(uiState.sections) {
+                            uiState.sections
+                                .flatMap { it.items }
+                                .distinctBy { "${it.type}:${it.id}" }
                         }
-                        if (uiState.isLoading) {
-                            item(key = "search_loading_more") {
-                                HomeSkeletonRow(
+                        if (allItems.isEmpty() && !uiState.isLoading) {
+                            item {
+                                SearchEmptyStateCard(
+                                    reason = uiState.emptyStateReason,
+                                    errorMessage = uiState.errorMessage,
+                                    networkCondition = networkStatusUiState.condition,
+                                    onRetry = {
+                                        if (normalizedQuery.isNotBlank()) {
+                                            NetworkStatusRepository.requestRefresh(force = true)
+                                            SearchRepository.search(
+                                                query = normalizedQuery,
+                                                addons = allAddons,
+                                            )
+                                        }
+                                    },
                                     modifier = Modifier.padding(horizontal = homeSectionPadding),
-                                    showHeaderAccent = !homeCatalogSettingsUiState.hideCatalogUnderline,
                                 )
+                            }
+                        } else {
+                            items(allItems.chunked(discoverColumns)) { rowItems ->
+                                DiscoverGridRow(
+                                    items = rowItems,
+                                    columns = discoverColumns,
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                    watchedKeys = watchedUiState.watchedKeys,
+                                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                                    onPosterClick = onPosterClick,
+                                    onPosterLongClick = onPosterLongClick,
+                                )
+                            }
+                            if (uiState.isLoading) {
+                                item(key = "search_loading_more") {
+                                    HomeSkeletonRow(
+                                        modifier = Modifier.padding(horizontal = homeSectionPadding),
+                                        showHeaderAccent = !homeCatalogSettingsUiState.hideCatalogUnderline,
+                                    )
+                                }
                             }
                         }
                     }
