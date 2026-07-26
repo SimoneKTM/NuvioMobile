@@ -39,7 +39,7 @@ object TvdbMetadataService {
                 }
 
                 val posterArt = extended.artwork.firstOrNull { it.type == 2 }
-                val bgArt = extended.image.takeIf { it.isNotBlank() }
+                val bgArt = extended.image?.takeIf { it.isNotBlank() }
                 val iconArt = extended.artwork.firstOrNull { it.type == 6 || it.type == 7 }
                 val genres = extended.tags.mapNotNull { tag ->
                     tag.name.takeIf { it.isNotBlank() }
