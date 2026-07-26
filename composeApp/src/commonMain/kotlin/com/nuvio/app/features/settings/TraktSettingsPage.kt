@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -695,6 +696,7 @@ private fun TraktConnectionCard(
 ) {
     val horizontalPadding = if (isTablet) 20.dp else 16.dp
     val verticalPadding = if (isTablet) 18.dp else 16.dp
+    val uriHandler = LocalUriHandler.current
 
     Column(
         modifier = Modifier
@@ -773,21 +775,35 @@ private fun TraktConnectionCard(
                         )
                     }
                 }
-                val uriHandler = LocalUriHandler.current
-                Button(
-                    onClick = {
-                        val url = uiState.verificationUrl?.let { "https://$it" }
-                        if (url != null) {
-                            runCatching { uriHandler.openUri(url) }
-                        }
-                    },
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = uiState.verificationUrl != null && !uiState.isLoading,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(
-                        text = uiState.verificationUrl?.let { "Apri $it" }
-                            ?: stringResource(Res.string.trakt_device_code_verification_url),
-                    )
+                    Button(
+                        onClick = {
+                            val url = uiState.verificationUrl?.let { "https://$it" }
+                            if (url != null) {
+                                runCatching { uriHandler.openUri(url) }
+                            }
+                        },
+                        enabled = uiState.verificationUrl != null && !uiState.isLoading,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(
+                            text = uiState.verificationUrl?.let { "Apri $it" }
+                                ?: stringResource(Res.string.trakt_device_code_verification_url),
+                        )
+                    }
+                    OutlinedButton(
+                        onClick = TraktAuthRepository::onCancelAuthorization,
+                        enabled = !uiState.isLoading,
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(Res.string.action_cancel))
+                    }
                 }
             }
 
@@ -797,17 +813,33 @@ private fun TraktConnectionCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Button(
-                    onClick = { TraktAuthRepository.onConnectRequested() },
-                    enabled = uiState.credentialsConfigured && !uiState.isLoading,
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    if (uiState.isLoading) {
-                        NuvioLoadingIndicator(
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    } else {
-                        Text(stringResource(Res.string.settings_trakt_connect))
+                    Button(
+                        onClick = { TraktAuthRepository.onConnectRequested() },
+                        enabled = uiState.credentialsConfigured && !uiState.isLoading,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        if (uiState.isLoading) {
+                            NuvioLoadingIndicator(
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        } else {
+                            Text(stringResource(Res.string.settings_trakt_connect))
+                        }
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            val url = "https://trakt.tv/activate"
+                            runCatching { uriHandler.openUri(url) }
+                        },
+                        enabled = uiState.credentialsConfigured,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(Res.string.settings_trakt_open_browser))
                     }
                 }
                 if (!uiState.credentialsConfigured) {
