@@ -2,6 +2,7 @@ package com.nuvio.app.features.collection
 
 import co.touchlab.kermit.Logger
 import com.nuvio.app.features.addons.AddonRepository
+import com.nuvio.app.features.anime.AnimeAddonRepository
 import com.nuvio.app.features.catalog.CATALOG_PAGE_SIZE
 import com.nuvio.app.features.catalog.CatalogPage
 import com.nuvio.app.features.catalog.CatalogTarget
@@ -130,7 +131,8 @@ object FolderDetailRepository {
 
         val sources = folder.resolvedSources
         val showAll = collection.showAllTab && sources.size > 1
-        val addons = AddonRepository.uiState.value.addons
+        val addons = AddonRepository.uiState.value.addons +
+            AnimeAddonRepository.uiState.value.addons.filter { it.enabled }
 
         val tabs = buildList {
             if (showAll) {
