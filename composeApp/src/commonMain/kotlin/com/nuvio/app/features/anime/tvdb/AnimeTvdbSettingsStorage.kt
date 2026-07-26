@@ -7,6 +7,18 @@ internal expect object AnimeTvdbSettingsStorage {
     fun saveEnabled(enabled: Boolean)
     fun loadApiKey(): String?
     fun saveApiKey(apiKey: String)
+    fun loadUseTrailers(): Boolean?
+    fun saveUseTrailers(enabled: Boolean)
+    fun loadUseArtwork(): Boolean?
+    fun saveUseArtwork(enabled: Boolean)
+    fun loadUseBasicInfo(): Boolean?
+    fun saveUseBasicInfo(enabled: Boolean)
+    fun loadUseCredits(): Boolean?
+    fun saveUseCredits(enabled: Boolean)
+    fun loadUseEpisodes(): Boolean?
+    fun saveUseEpisodes(enabled: Boolean)
+    fun loadUseSeasonPosters(): Boolean?
+    fun saveUseSeasonPosters(enabled: Boolean)
     fun exportToSyncPayload(): JsonObject
     fun replaceFromSyncPayload(payload: JsonObject)
 }

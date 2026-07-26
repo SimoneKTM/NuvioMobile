@@ -160,6 +160,8 @@ internal fun LazyListScope.animeTvdbSettingsContent(
     isTablet: Boolean,
     settings: AnimeTvdbSettings,
 ) {
+    val enrichmentControlsEnabled = settings.enabled && settings.hasApiKey
+
     item {
         SettingsSection(
             title = stringResource(Res.string.settings_tvdb_section_title),
@@ -195,6 +197,69 @@ internal fun LazyListScope.animeTvdbSettingsContent(
                     isTablet = isTablet,
                     value = settings.apiKey,
                     onApiKeyCommitted = AnimeTvdbSettingsRepository::setApiKey,
+                )
+            }
+        }
+    }
+
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_tvdb_section_modules),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_tvdb_module_trailers),
+                    description = stringResource(Res.string.settings_tvdb_module_trailers_description),
+                    checked = settings.useTrailers,
+                    enabled = enrichmentControlsEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = AnimeTvdbSettingsRepository::setUseTrailers,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_tvdb_module_artwork),
+                    description = stringResource(Res.string.settings_tvdb_module_artwork_description),
+                    checked = settings.useArtwork,
+                    enabled = enrichmentControlsEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = AnimeTvdbSettingsRepository::setUseArtwork,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_tvdb_module_basic_info),
+                    description = stringResource(Res.string.settings_tvdb_module_basic_info_description),
+                    checked = settings.useBasicInfo,
+                    enabled = enrichmentControlsEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = AnimeTvdbSettingsRepository::setUseBasicInfo,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_tvdb_module_credits),
+                    description = stringResource(Res.string.settings_tvdb_module_credits_description),
+                    checked = settings.useCredits,
+                    enabled = enrichmentControlsEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = AnimeTvdbSettingsRepository::setUseCredits,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_tvdb_module_episodes),
+                    description = stringResource(Res.string.settings_tvdb_module_episodes_description),
+                    checked = settings.useEpisodes,
+                    enabled = enrichmentControlsEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = AnimeTvdbSettingsRepository::setUseEpisodes,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsSwitchRow(
+                    title = stringResource(Res.string.settings_tvdb_module_season_posters),
+                    description = stringResource(Res.string.settings_tvdb_module_season_posters_description),
+                    checked = settings.useSeasonPosters,
+                    enabled = enrichmentControlsEnabled,
+                    isTablet = isTablet,
+                    onCheckedChange = AnimeTvdbSettingsRepository::setUseSeasonPosters,
                 )
             }
         }
