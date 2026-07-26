@@ -69,8 +69,9 @@ object TvdbApi {
 
     suspend fun getSeriesExtended(id: String): TvdbSeriesExtended? {
         val token = ensureAuthenticated() ?: return null
+        val numericId = id.removePrefix("series-").removePrefix("movie-")
         return runCatching {
-            val url = "$BASE_URL/series/$id/extended"
+            val url = "$BASE_URL/series/$numericId/extended"
             val responseText = httpGetTextWithHeaders(url, headers = authHeaders(token))
             val response = json.decodeFromString<TvdbSeriesExtendedResponse>(responseText)
             response.data
