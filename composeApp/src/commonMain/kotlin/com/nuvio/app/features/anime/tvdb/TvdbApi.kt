@@ -3,6 +3,7 @@ package com.nuvio.app.features.anime.tvdb
 import co.touchlab.kermit.Logger
 import com.nuvio.app.features.addons.httpGetTextWithHeaders
 import com.nuvio.app.features.addons.httpPostJson
+import com.nuvio.app.features.tvdb.TvdbSettingsRepository
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -18,6 +19,7 @@ object TvdbApi {
     suspend fun ensureAuthenticated(apiKey: String? = null): String? {
         val resolvedKey = apiKey?.takeIf { it.isNotBlank() }
             ?: AnimeTvdbSettingsRepository.snapshot().apiKey.trim().takeIf { it.isNotBlank() }
+            ?: TvdbSettingsRepository.snapshot().apiKey.trim().takeIf { it.isNotBlank() }
             ?: return null
         if (cachedToken != null && tokenApiKey == resolvedKey) return cachedToken
         val response = login(resolvedKey) ?: return null
