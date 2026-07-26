@@ -19,7 +19,7 @@ import com.nuvio.app.features.tmdb.TmdbMetadataService
 import com.nuvio.app.features.tmdb.TmdbService
 import com.nuvio.app.features.tmdb.TmdbSettingsRepository
 import com.nuvio.app.features.anime.tvdb.TvdbMetadataService
-import com.nuvio.app.features.tvdb.TvdbSettingsRepository
+import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettingsRepository
 import com.nuvio.app.features.trakt.TraktAuthRepository
 import com.nuvio.app.features.trakt.TraktConnectionMode
 import com.nuvio.app.features.trakt.TraktRelatedRepository
@@ -312,11 +312,11 @@ object MetaDetailsRepository {
                 tmdbEnriched
             }
             val tvdbEnriched = withTimeoutOrNull(TVDB_ENRICH_TIMEOUT_MS) {
-                TvdbSettingsRepository.ensureLoaded()
+                AnimeTvdbSettingsRepository.ensureLoaded()
                 TvdbMetadataService.enrichMeta(
                     meta = enriched,
                     fallbackItemId = id,
-                    settings = TvdbSettingsRepository.snapshot(),
+                    settings = AnimeTvdbSettingsRepository.snapshot(),
                 )
             } ?: enriched
             log.d { "Parsed meta: type=${tvdbEnriched.type}, name=${tvdbEnriched.name}, videos=${tvdbEnriched.videos.size}" }
@@ -463,11 +463,11 @@ object MetaDetailsRepository {
             )
         } ?: meta
         val tvdbEnrichedMeta = withTimeoutOrNull(TVDB_ENRICH_TIMEOUT_MS) {
-            TvdbSettingsRepository.ensureLoaded()
+            AnimeTvdbSettingsRepository.ensureLoaded()
             TvdbMetadataService.enrichMeta(
                 meta = mdbListEnrichedMeta,
                 fallbackItemId = fallbackItemId,
-                settings = TvdbSettingsRepository.snapshot(),
+                settings = AnimeTvdbSettingsRepository.snapshot(),
             )
         } ?: mdbListEnrichedMeta
         val enrichedMeta = applyMoreLikeThisSource(
