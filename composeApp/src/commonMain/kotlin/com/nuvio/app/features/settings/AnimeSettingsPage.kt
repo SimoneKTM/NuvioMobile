@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CollectionsBookmark
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Home
@@ -78,7 +77,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import nuvio.composeapp.generated.resources.Res
-import nuvio.composeapp.generated.resources.collections_header
 import nuvio.composeapp.generated.resources.compose_settings_page_addons
 import nuvio.composeapp.generated.resources.compose_settings_page_anime_layout
 import nuvio.composeapp.generated.resources.compose_settings_page_anime_profile
@@ -96,7 +94,6 @@ import nuvio.composeapp.generated.resources.layout_catalog_type_sub
 import nuvio.composeapp.generated.resources.layout_hide_unreleased
 import nuvio.composeapp.generated.resources.layout_hide_unreleased_sub
 import nuvio.composeapp.generated.resources.settings_appearance_continue_watching_description
-import nuvio.composeapp.generated.resources.settings_content_discovery_collections_description
 import nuvio.composeapp.generated.resources.settings_content_discovery_homescreen_description
 import nuvio.composeapp.generated.resources.settings_content_discovery_meta_screen_description
 import nuvio.composeapp.generated.resources.settings_content_discovery_section_sources
@@ -192,7 +189,6 @@ internal fun LazyListScope.animeContentDiscoveryContent(
 internal fun LazyListScope.animeLayoutSettingsContent(
     isTablet: Boolean,
     onHomescreenClick: () -> Unit,
-    onCollectionsClick: () -> Unit,
     onContinueWatchingClick: () -> Unit,
     onStreamsClick: () -> Unit = {},
     onMetaScreenClick: () -> Unit = {},
@@ -209,14 +205,6 @@ internal fun LazyListScope.animeLayoutSettingsContent(
                     icon = Icons.Rounded.Home,
                     isTablet = isTablet,
                     onClick = onHomescreenClick,
-                )
-                SettingsGroupDivider(isTablet = isTablet)
-                SettingsNavigationRow(
-                    title = stringResource(Res.string.collections_header),
-                    description = stringResource(Res.string.settings_content_discovery_collections_description),
-                    icon = Icons.Rounded.CollectionsBookmark,
-                    isTablet = isTablet,
-                    onClick = onCollectionsClick,
                 )
                 SettingsGroupDivider(isTablet = isTablet)
                 SettingsNavigationRow(
