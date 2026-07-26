@@ -290,6 +290,7 @@ object MetaDetailsRepository {
             AnimeTmdbSettingsRepository.ensureLoaded()
             val s = AnimeTmdbSettingsRepository.snapshot()
             if (s.enabled && s.hasApiKey) return s.toTmdbSettings()
+            return TmdbSettings(enabled = false)
         }
         TmdbSettingsRepository.ensureLoaded()
         return TmdbSettingsRepository.snapshot()
@@ -300,6 +301,7 @@ object MetaDetailsRepository {
             AnimeMdbListSettingsRepository.ensureLoaded()
             val s = AnimeMdbListSettingsRepository.snapshot()
             if (s.hasApiKey) return s.toMdbListSettings()
+            return MdbListSettings(apiKey = "")
         }
         MdbListSettingsRepository.ensureLoaded()
         return MdbListSettingsRepository.snapshot()
@@ -310,6 +312,7 @@ object MetaDetailsRepository {
             AnimeTvdbSettingsRepository.ensureLoaded()
             val s = AnimeTvdbSettingsRepository.snapshot()
             if (s.enabled && s.hasApiKey) return s
+            return AnimeTvdbSettings(enabled = false)
         }
         TvdbSettingsRepository.ensureLoaded()
         return TvdbSettingsRepository.snapshot().toAnimeTvdbSettings()
