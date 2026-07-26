@@ -23,7 +23,7 @@ object TvdbApi {
             ?: return null
         if (cachedToken != null && tokenApiKey == resolvedKey) return cachedToken
         val response = login(resolvedKey) ?: return null
-        cachedToken = response.token
+        cachedToken = response.data.token
         tokenApiKey = resolvedKey
         return cachedToken
     }
@@ -110,8 +110,13 @@ object TvdbApi {
             .replace(":", "%3A")
 
     @Serializable
-    data class TvdbLoginResponse(
+    data class TvdbLoginData(
         val token: String = "",
+    )
+
+    @Serializable
+    data class TvdbLoginResponse(
+        val data: TvdbLoginData = TvdbLoginData(),
     )
 
     @Serializable
