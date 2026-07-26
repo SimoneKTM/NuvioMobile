@@ -597,6 +597,8 @@ object MetaDetailsRepository {
         isAnime: Boolean,
     ): Boolean {
         if (shouldFetchMdbListOnMetaScreen(meta, fallbackItemId, settings, isAnime)) return true
+        val tvdbSettings = resolveAnimeTvdbSettings(isAnime)
+        if (tvdbSettings.enabled && tvdbSettings.hasApiKey) return true
         return shouldApplyMoreLikeThisSource(meta, isAnime)
     }
 
