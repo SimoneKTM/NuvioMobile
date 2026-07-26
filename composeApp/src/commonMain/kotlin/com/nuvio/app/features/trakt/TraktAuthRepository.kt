@@ -19,6 +19,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.getString
@@ -198,7 +199,7 @@ object TraktAuthRepository {
             if (result.isFailure) {
                 val error = result.exceptionOrNull()
                 if (error is CancellationException) throw error
-                log.w { "Trakt device token poll failed: ${error.message}" }
+                log.w { "Trakt device token poll failed: ${error?.message}" }
                 continue
             }
 
