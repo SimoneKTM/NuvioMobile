@@ -1,17 +1,20 @@
 package com.nuvio.app.features.anime.tvdb
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.features.addons.httpGetText
 import com.nuvio.app.features.details.MetaCompany
 import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.features.details.MetaExternalRating
 import com.nuvio.app.features.details.MetaPerson
 import com.nuvio.app.features.details.MetaTrailer
+import com.nuvio.app.features.tmdb.TmdbService
 import com.nuvio.app.features.tvdb.TvdbSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object TvdbMetadataService {
     private val log = Logger.withTag("TvdbMetadata")
+    private val imdbIdRegex = Regex("tt\\d+")
 
     suspend fun enrichMeta(
         meta: MetaDetails,
@@ -27,6 +30,13 @@ object TvdbMetadataService {
                 val extended = TvdbApi.getSeriesExtended(seriesId) ?: return@withContext meta
 
                 var enriched = meta
+
+                val tvdbImdbId = extended.remoteIds
+                    .firstOrNull { it.sourceName == "IMDB" }
+                    ?.id?.takeIf { it.isNotBlank() }
+                if (tvdbImdbId != null && imdbIdRegex.find(meta.id) == null && imdbIdRegex.find(fallbackItemId) == null) {
+                    enriched = enriched.copy(id = tvdbImdbId)
+                }
 
                 if (settings.useBasicInfo) {
                     if (extended.overview != null && extended.overview.isNotBlank()) {
@@ -142,8 +152,18 @@ object TvdbMetadataService {
     }
 
     private suspend fun findSeriesId(meta: MetaDetails, fallbackItemId: String): Int? {
-        val remoteResult = tryRemoteIdSearch(fallbackItemId)
-        if (remoteResult != null) return remoteResult
+        tryRemoteIdSearch(fallbackItemId)?.let { return it }
+        tryRemoteIdSearch(meta.id)?.let { return it }
+
+        val tmdbImdbId = searchImdbIdViaTmdb(meta.name, meta.releaseInfo)
+        if (tmdbImdbId != null) {
+            tryRemoteIdSearch(tmdbImdbId)?.let { return it }
+        }
+
+        val scrapedImdbId = searchImdbByTitle(meta.name, meta.releaseInfo)
+        if (scrapedImdbId != null) {
+            tryRemoteIdSearch(scrapedImdbId)?.let { return it }
+        }
 
         val name = meta.name.takeIf { it.isNotBlank() } ?: return null
 
@@ -175,13 +195,51 @@ object TvdbMetadataService {
 
     private suspend fun tryRemoteIdSearch(itemId: String): Int? {
         val remoteId = when {
-            itemId.matches(Regex("^tt\\d+$")) -> "imdb:$itemId"
+            itemId.startsWith("imdb:") || itemId.startsWith("tmdb:") -> itemId
             itemId.matches(Regex("^\\d+$")) -> "tmdb:$itemId"
-            else -> return null
-        }
+            else -> {
+                val imdbMatch = imdbIdRegex.find(itemId)
+                if (imdbMatch != null) "imdb:${imdbMatch.value}"
+                else null
+            }
+        } ?: return null
         val results = TvdbApi.searchByRemoteId(remoteId)
         return results.firstOrNull()?.id
     }
+
+    private suspend fun searchImdbIdViaTmdb(title: String, year: String?): String? {
+        if (title.isBlank()) return null
+        return try {
+            val results = TmdbService.search(title, "tv")
+            val match = if (year != null) {
+                results.firstOrNull { it.year == year.take(4) } ?: results.firstOrNull()
+            } else {
+                results.firstOrNull()
+            } ?: return null
+            TmdbService.tmdbToImdb(tmdbId = match.id.toIntOrNull() ?: return null, mediaType = "tv")
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private suspend fun searchImdbByTitle(title: String, year: String?): String? {
+        if (title.isBlank()) return null
+        return try {
+            val query = if (year != null) "$title $year" else title
+            val url = "https://www.imdb.com/find?q=${encodeQuery(query)}&s=tt"
+            val html = httpGetText(url)
+            imdbIdRegex.find(html)?.value
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun encodeQuery(query: String): String =
+        query.replace(" ", "+")
+            .replace(",", "%2C")
+            .replace(":", "%3A")
+            .replace("&", "%26")
+            .replace("?", "%3F")
 }
 
 internal fun TvdbSettings.toAnimeTvdbSettings(): AnimeTvdbSettings = AnimeTvdbSettings(
