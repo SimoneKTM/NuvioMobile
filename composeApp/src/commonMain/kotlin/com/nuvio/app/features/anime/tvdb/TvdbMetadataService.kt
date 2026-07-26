@@ -21,13 +21,30 @@ object TvdbMetadataService {
         fallbackItemId: String,
         settings: AnimeTvdbSettings,
     ): MetaDetails {
-        if (!settings.enabled || !settings.hasApiKey) return meta
+        if (!settings.enabled || !settings.hasApiKey) {
+            log.d { "TVDB skip: disabled or no api key, enabled=${settings.enabled}, hasApiKey=${settings.hasApiKey}" }
+            return meta
+        }
 
         return withContext(Dispatchers.Default) {
             try {
-                if (TvdbApi.ensureAuthenticated(settings.apiKey) == null) return@withContext meta
-                val seriesId = findSeriesId(meta, fallbackItemId) ?: return@withContext meta
-                val extended = TvdbApi.getSeriesExtended(seriesId) ?: return@withContext meta
+                log.d { "TVDB start: name=${meta.name}, fallbackId=$fallbackItemId" }
+                if (TvdbApi.ensureAuthenticated(settings.apiKey) == null) {
+                    log.d { "TVDB fail: auth failed" }
+                    return@withContext meta
+                }
+                val seriesId = findSeriesId(meta, fallbackItemId)
+                if (seriesId == null) {
+                    log.d { "TVDB fail: findSeriesId returned null for name=${meta.name}, fallbackId=$fallbackItemId, meta.id=${meta.id}" }
+                    return@withContext meta
+                }
+                log.d { "TVDB match: seriesId=$seriesId for name=${meta.name}" }
+                val extended = TvdbApi.getSeriesExtended(seriesId)
+                if (extended == null) {
+                    log.d { "TVDB fail: getSeriesExtended returned null for seriesId=$seriesId" }
+                    return@withContext meta
+                }
+                log.d { "TVDB data: seriesId=$seriesId, name=${extended.name}, hasOverview=${extended.overview != null}, hasImage=${extended.image != null}, artwork=${extended.artwork.size}, tags=${extended.tags.size}, cast=${extended.characters.size} trailers=${extended.trailers.size}" }
 
                 var enriched = meta
 
@@ -139,23 +156,29 @@ object TvdbMetadataService {
     }
 
     private suspend fun findSeriesId(meta: MetaDetails, fallbackItemId: String): Int? {
-        tryRemoteIdSearch(fallbackItemId)?.let { return it }
-        tryRemoteIdSearch(meta.id)?.let { return it }
+        tryRemoteIdSearch("fallbackItemId", fallbackItemId)?.let { return it }
+        tryRemoteIdSearch("meta.id", meta.id)?.let { return it }
 
+        log.d { "TVDB findSeriesId: trying TMDB search for name=${meta.name}, year=${meta.releaseInfo}" }
         val tmdbImdbId = searchImdbIdViaTmdb(meta.name, meta.releaseInfo)
         if (tmdbImdbId != null) {
-            tryRemoteIdSearch(tmdbImdbId)?.let { return it }
+            log.d { "TVDB findSeriesId: got IMDB from TMDB: $tmdbImdbId" }
+            tryRemoteIdSearch("tmdbImdb", tmdbImdbId)?.let { return it }
         }
 
+        log.d { "TVDB findSeriesId: trying IMDB scrape for name=${meta.name}" }
         val scrapedImdbId = searchImdbByTitle(meta.name, meta.releaseInfo)
         if (scrapedImdbId != null) {
-            tryRemoteIdSearch(scrapedImdbId)?.let { return it }
+            log.d { "TVDB findSeriesId: got IMDB from scrape: $scrapedImdbId" }
+            tryRemoteIdSearch("scrapedImdb", scrapedImdbId)?.let { return it }
         }
 
-        val name = meta.name.takeIf { it.isNotBlank() } ?: return null
+        val name = meta.name.takeIf { it.isNotBlank() } ?: return null.also { log.d { "TVDB findSeriesId: name blank, giving up" } }
 
+        log.d { "TVDB findSeriesId: searching TVDB by name: $name" }
         val results = TvdbApi.searchSeries(name)
         if (results.isNotEmpty()) {
+            log.d { "TVDB findSeriesId: found by name: id=${results.first().id}, name=${results.first().name}" }
             return results.first().id
         }
 
@@ -163,12 +186,40 @@ object TvdbMetadataService {
             .replace(Regex("\\s*\\(\\d{4}\\)\\s*$"), "")
             .trim()
         if (simplifiedName != name) {
+            log.d { "TVDB findSeriesId: retrying with simplified name: $simplifiedName" }
             val retryResults = TvdbApi.searchSeries(simplifiedName)
             if (retryResults.isNotEmpty()) {
+                log.d { "TVDB findSeriesId: found by simplified name: id=${retryResults.first().id}" }
                 return retryResults.first().id
             }
         }
 
+        log.d { "TVDB findSeriesId: all attempts failed for name=${meta.name}" }
+        return null
+    }
+
+    private suspend fun tryRemoteIdSearch(source: String, itemId: String): Int? {
+        log.d { "TVDB tryRemoteIdSearch: source=$source, itemId=$itemId" }
+        val remoteId = when {
+            itemId.startsWith("imdb:") || itemId.startsWith("tmdb:") -> itemId
+            itemId.matches(Regex("^\\d+$")) -> "tmdb:$itemId"
+            else -> {
+                val imdbMatch = imdbIdRegex.find(itemId)
+                if (imdbMatch != null) "imdb:${imdbMatch.value}"
+                else null
+            }
+        }
+        if (remoteId == null) {
+            log.d { "TVDB tryRemoteIdSearch: source=$source, no remoteId parseable from $itemId" }
+            return null
+        }
+        log.d { "TVDB tryRemoteIdSearch: source=$source, searching remote_id=$remoteId" }
+        val results = TvdbApi.searchByRemoteId(remoteId)
+        if (results.isNotEmpty()) {
+            log.d { "TVDB tryRemoteIdSearch: source=$source, found id=${results.first().id}" }
+            return results.first().id
+        }
+        log.d { "TVDB tryRemoteIdSearch: source=$source, no results for $remoteId" }
         return null
     }
 
@@ -178,20 +229,6 @@ object TvdbMetadataService {
         settings: TvdbSettings,
     ): MetaDetails {
         return enrichMeta(meta, fallbackItemId, settings.toAnimeTvdbSettings())
-    }
-
-    private suspend fun tryRemoteIdSearch(itemId: String): Int? {
-        val remoteId = when {
-            itemId.startsWith("imdb:") || itemId.startsWith("tmdb:") -> itemId
-            itemId.matches(Regex("^\\d+$")) -> "tmdb:$itemId"
-            else -> {
-                val imdbMatch = imdbIdRegex.find(itemId)
-                if (imdbMatch != null) "imdb:${imdbMatch.value}"
-                else null
-            }
-        } ?: return null
-        val results = TvdbApi.searchByRemoteId(remoteId)
-        return results.firstOrNull()?.id
     }
 
     private suspend fun searchImdbIdViaTmdb(title: String, year: String?): String? {
