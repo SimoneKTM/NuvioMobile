@@ -1052,7 +1052,6 @@ private fun MobileSettingsScreen(
                     isTablet = false,
                     onHomescreenClick = { onPageChange(SettingsPage.AnimeHomescreen) },
                     onContinueWatchingClick = { onPageChange(SettingsPage.AnimeContinueWatching) },
-                    onStreamsClick = { onPageChange(SettingsPage.AnimeStreams) },
                     onMetaScreenClick = { onPageChange(SettingsPage.AnimeMetaScreen) },
                 )
                 SettingsPage.AnimeAddons -> animeAddonsSettingsContent()
@@ -1664,7 +1663,6 @@ private fun TabletSettingsScreen(
                     isTablet = true,
                     onHomescreenClick = { openInlinePage(SettingsPage.AnimeHomescreen) },
                     onContinueWatchingClick = { openInlinePage(SettingsPage.AnimeContinueWatching) },
-                    onStreamsClick = { openInlinePage(SettingsPage.AnimeStreams) },
                     onMetaScreenClick = { openInlinePage(SettingsPage.AnimeMetaScreen) },
                 )
                 SettingsPage.AnimeAddons -> animeAddonsSettingsContent()

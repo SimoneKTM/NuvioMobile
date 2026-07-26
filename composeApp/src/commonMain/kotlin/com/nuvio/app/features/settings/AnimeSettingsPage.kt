@@ -190,7 +190,6 @@ internal fun LazyListScope.animeLayoutSettingsContent(
     isTablet: Boolean,
     onHomescreenClick: () -> Unit,
     onContinueWatchingClick: () -> Unit,
-    onStreamsClick: () -> Unit = {},
     onMetaScreenClick: () -> Unit = {},
 ) {
     item {
@@ -213,13 +212,6 @@ internal fun LazyListScope.animeLayoutSettingsContent(
                     icon = Icons.Rounded.PlayCircle,
                     isTablet = isTablet,
                     onClick = onContinueWatchingClick,
-                )
-                SettingsGroupDivider(isTablet = isTablet)
-                SettingsNavigationRow(
-                    title = stringResource(Res.string.compose_settings_page_streams),
-                    description = stringResource(Res.string.compose_settings_root_streams_description),
-                    isTablet = isTablet,
-                    onClick = onStreamsClick,
                 )
                 SettingsGroupDivider(isTablet = isTablet)
                 SettingsNavigationRow(
