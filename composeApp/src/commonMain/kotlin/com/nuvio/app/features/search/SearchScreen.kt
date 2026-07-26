@@ -365,6 +365,7 @@ fun SearchScreen(
                         val allItems = uiState.sections
                             .flatMap { it.items }
                             .distinctBy { "${it.type}:${it.id}" }
+                            .sortedWith(compareByDescending<MetaPreview> { it.popularity }.thenByDescending { it.releaseInfo?.take(4)?.toIntOrNull() })
                         if (allItems.isEmpty() && !uiState.isLoading) {
                             item {
                                 SearchEmptyStateCard(
