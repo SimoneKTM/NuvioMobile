@@ -1,6 +1,7 @@
 package com.nuvio.app.features.tmdb
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.features.anime.tmdb.AnimeTmdbSettings
 import com.nuvio.app.features.addons.httpGetText
 import com.nuvio.app.features.details.MetaCompany
 import com.nuvio.app.features.details.MetaDetails
@@ -560,6 +561,26 @@ object TmdbMetadataService {
             settings = settings,
         )
     }
+
+    suspend fun enrichMeta(
+        meta: MetaDetails,
+        fallbackItemId: String,
+        settings: AnimeTmdbSettings,
+    ): MetaDetails = enrichMeta(
+        meta = meta,
+        fallbackItemId = fallbackItemId,
+        settings = settings.toTmdbSettings(),
+    )
+
+    suspend fun fetchStandaloneMeta(
+        type: String,
+        id: String,
+        settings: AnimeTmdbSettings,
+    ): MetaDetails? = fetchStandaloneMeta(
+        type = type,
+        id = id,
+        settings = settings.toTmdbSettings(),
+    )
 
     suspend fun fetchStandaloneMeta(
         type: String,

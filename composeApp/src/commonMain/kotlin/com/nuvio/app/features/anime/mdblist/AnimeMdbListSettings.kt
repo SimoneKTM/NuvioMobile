@@ -1,6 +1,7 @@
 package com.nuvio.app.features.anime.mdblist
 
 import com.nuvio.app.features.mdblist.MdbListMetadataService
+import com.nuvio.app.features.mdblist.MdbListSettings
 
 data class AnimeMdbListSettings(
     val enabled: Boolean = false,
@@ -30,4 +31,16 @@ data class AnimeMdbListSettings(
 
     fun enabledProvidersInPriorityOrder(): List<String> =
         MdbListMetadataService.PROVIDER_PRIORITY_ORDER.filter(::isProviderEnabled)
+
+    fun toMdbListSettings(): MdbListSettings = MdbListSettings(
+        enabled = enabled,
+        apiKey = apiKey,
+        useImdb = useImdb,
+        useTmdb = useTmdb,
+        useTomatoes = useTomatoes,
+        useMetacritic = useMetacritic,
+        useTrakt = useTrakt,
+        useLetterboxd = useLetterboxd,
+        useAudience = useAudience,
+    )
 }

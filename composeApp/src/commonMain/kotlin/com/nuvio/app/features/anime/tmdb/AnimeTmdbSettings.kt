@@ -1,5 +1,7 @@
 package com.nuvio.app.features.anime.tmdb
 
+import com.nuvio.app.features.tmdb.TmdbSettings
+
 data class AnimeTmdbSettings(
     val enabled: Boolean = false,
     val apiKey: String = "",
@@ -18,4 +20,21 @@ data class AnimeTmdbSettings(
 ) {
     val hasApiKey: Boolean
         get() = apiKey.isNotBlank()
+
+    fun toTmdbSettings(): TmdbSettings = TmdbSettings(
+        enabled = enabled,
+        apiKey = apiKey,
+        language = language,
+        useTrailers = useTrailers,
+        useArtwork = useArtwork,
+        useBasicInfo = useBasicInfo,
+        useDetails = useDetails,
+        useCredits = useCredits,
+        useProductions = useProductions,
+        useNetworks = useNetworks,
+        useEpisodes = useEpisodes,
+        useSeasonPosters = useSeasonPosters,
+        useMoreLikeThis = useMoreLikeThis,
+        useCollections = useCollections,
+    )
 }

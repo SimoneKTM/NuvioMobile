@@ -5,6 +5,8 @@ import com.nuvio.app.features.addons.AddonManifest
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.buildAddonResourceUrl
 import com.nuvio.app.features.anime.AnimeAddonRepository
+import com.nuvio.app.features.anime.mdblist.AnimeMdbListSettingsRepository
+import com.nuvio.app.features.anime.tmdb.AnimeTmdbSettingsRepository
 import com.nuvio.app.features.addons.enabledAddons
 import com.nuvio.app.features.addons.httpGetText
 import com.nuvio.app.features.cloudstream.CloudStreamRepository
@@ -293,25 +295,47 @@ object MetaDetailsRepository {
             val payload = httpGetText(url)
             log.d { "Raw payload length=${payload.length}, first 500 chars: ${payload.take(500)}" }
             val result = MetaDetailsParser.parse(payload)
-            val isAnime = type.startsWith("anime", ignoreCase = true)
 
-            TmdbSettingsRepository.ensureLoaded()
-            val tmdbEnriched = withTimeoutOrNull(TMDB_ENRICH_TIMEOUT_MS) {
-                TmdbMetadataService.enrichMeta(
-                    meta = result,
-                    fallbackItemId = id,
-                    settings = TmdbSettingsRepository.snapshot(),
-                )
-            } ?: result
-            val enriched = if (includeMdbList) {
-                MdbListSettingsRepository.ensureLoaded()
-                withTimeoutOrNull(MDBLIST_ENRICH_TIMEOUT_MS) {
-                    MdbListMetadataService.enrichMeta(
-                        meta = tmdbEnriched,
+            val isAnime = type.startsWith("anime", ignoreCase = true)
+            val tmdbEnriched = if (isAnime) {
+                AnimeTmdbSettingsRepository.ensureLoaded()
+                withTimeoutOrNull(TMDB_ENRICH_TIMEOUT_MS) {
+                    TmdbMetadataService.enrichMeta(
+                        meta = result,
                         fallbackItemId = id,
-                        settings = MdbListSettingsRepository.snapshot(),
+                        settings = AnimeTmdbSettingsRepository.snapshot(),
                     )
-                } ?: tmdbEnriched
+                } ?: result
+            } else {
+                TmdbSettingsRepository.ensureLoaded()
+                withTimeoutOrNull(TMDB_ENRICH_TIMEOUT_MS) {
+                    TmdbMetadataService.enrichMeta(
+                        meta = result,
+                        fallbackItemId = id,
+                        settings = TmdbSettingsRepository.snapshot(),
+                    )
+                } ?: result
+            }
+            val enriched = if (includeMdbList) {
+                if (isAnime) {
+                    AnimeMdbListSettingsRepository.ensureLoaded()
+                    withTimeoutOrNull(MDBLIST_ENRICH_TIMEOUT_MS) {
+                        MdbListMetadataService.enrichMeta(
+                            meta = tmdbEnriched,
+                            fallbackItemId = id,
+                            settings = AnimeMdbListSettingsRepository.snapshot(),
+                        )
+                    } ?: tmdbEnriched
+                } else {
+                    MdbListSettingsRepository.ensureLoaded()
+                    withTimeoutOrNull(MDBLIST_ENRICH_TIMEOUT_MS) {
+                        MdbListMetadataService.enrichMeta(
+                            meta = tmdbEnriched,
+                            fallbackItemId = id,
+                            settings = MdbListSettingsRepository.snapshot(),
+                        )
+                    } ?: tmdbEnriched
+                }
             } else {
                 tmdbEnriched
             }
@@ -414,14 +438,26 @@ object MetaDetailsRepository {
             ?: itemId
     }
 
-    private suspend fun tryFetchTmdbFallbackMeta(type: String, id: String): MetaDetails? =
-        withTimeoutOrNull(TMDB_ENRICH_TIMEOUT_MS) {
-            TmdbMetadataService.fetchStandaloneMeta(
-                type = type,
-                id = id,
-                settings = TmdbSettingsRepository.snapshot(),
-            )
+    private suspend fun tryFetchTmdbFallbackMeta(type: String, id: String): MetaDetails? {
+        val isAnime = type.startsWith("anime", ignoreCase = true)
+        return withTimeoutOrNull(TMDB_ENRICH_TIMEOUT_MS) {
+            if (isAnime) {
+                AnimeTmdbSettingsRepository.ensureLoaded()
+                TmdbMetadataService.fetchStandaloneMeta(
+                    type = type,
+                    id = id,
+                    settings = AnimeTmdbSettingsRepository.snapshot(),
+                )
+            } else {
+                TmdbSettingsRepository.ensureLoaded()
+                TmdbMetadataService.fetchStandaloneMeta(
+                    type = type,
+                    id = id,
+                    settings = TmdbSettingsRepository.snapshot(),
+                )
+            }
         }
+    }
 
     private suspend fun publishLoadedMeta(
         requestKey: String,
@@ -470,12 +506,22 @@ object MetaDetailsRepository {
         settings: com.nuvio.app.features.mdblist.MdbListSettings,
         settingsFingerprint: String,
     ): MetaDetails {
+        val isAnime = fallbackItemType.startsWith("anime", ignoreCase = true)
         val mdbListEnrichedMeta = withTimeoutOrNull(MDBLIST_ENRICH_TIMEOUT_MS) {
-            MdbListMetadataService.enrichMeta(
-                meta = meta,
-                fallbackItemId = fallbackItemId,
-                settings = settings,
-            )
+            if (isAnime) {
+                AnimeMdbListSettingsRepository.ensureLoaded()
+                MdbListMetadataService.enrichMeta(
+                    meta = meta,
+                    fallbackItemId = fallbackItemId,
+                    settings = AnimeMdbListSettingsRepository.snapshot(),
+                )
+            } else {
+                MdbListMetadataService.enrichMeta(
+                    meta = meta,
+                    fallbackItemId = fallbackItemId,
+                    settings = settings,
+                )
+            }
         } ?: meta
         val tvdbEnrichedMeta = if (fallbackItemType.startsWith("anime", ignoreCase = true)) {
             AnimeTvdbSettingsRepository.ensureLoaded()
@@ -523,7 +569,21 @@ object MetaDetailsRepository {
     ): MetaDetails {
         TraktSettingsRepository.ensureLoaded()
         TraktAuthRepository.ensureLoaded()
-        TmdbSettingsRepository.ensureLoaded()
+
+        val isAnime = fallbackItemType.startsWith("anime", ignoreCase = true)
+        val tmdbEnabled: Boolean
+        val tmdbUseMoreLikeThis: Boolean
+        if (isAnime) {
+            AnimeTmdbSettingsRepository.ensureLoaded()
+            val s = AnimeTmdbSettingsRepository.snapshot()
+            tmdbEnabled = s.enabled
+            tmdbUseMoreLikeThis = s.useMoreLikeThis
+        } else {
+            TmdbSettingsRepository.ensureLoaded()
+            val s = TmdbSettingsRepository.snapshot()
+            tmdbEnabled = s.enabled
+            tmdbUseMoreLikeThis = s.useMoreLikeThis
+        }
 
         val traktSettings = TraktSettingsRepository.uiState.value
         val isTraktAuthenticated = TraktAuthRepository.uiState.value.mode == TraktConnectionMode.CONNECTED
@@ -549,8 +609,7 @@ object MetaDetailsRepository {
             )
         }
 
-        val tmdbSettings = TmdbSettingsRepository.snapshot()
-        if (!tmdbSettings.enabled || !tmdbSettings.useMoreLikeThis) {
+        if (!tmdbEnabled || !tmdbUseMoreLikeThis) {
             return meta.copy(moreLikeThis = emptyList(), moreLikeThisSource = null)
         }
 
@@ -563,11 +622,23 @@ object MetaDetailsRepository {
         meta: MetaDetails,
         fallbackItemId: String,
         settings: com.nuvio.app.features.mdblist.MdbListSettings,
-    ): Boolean = MdbListMetadataService.shouldFetchForMeta(
-        meta = meta,
-        fallbackItemId = fallbackItemId,
-        settings = settings,
-    )
+    ): Boolean {
+        val isAnime = meta.type.startsWith("anime", ignoreCase = true)
+        return if (isAnime) {
+            AnimeMdbListSettingsRepository.ensureLoaded()
+            MdbListMetadataService.shouldFetchForMeta(
+                meta = meta,
+                fallbackItemId = fallbackItemId,
+                settings = AnimeMdbListSettingsRepository.snapshot(),
+            )
+        } else {
+            MdbListMetadataService.shouldFetchForMeta(
+                meta = meta,
+                fallbackItemId = fallbackItemId,
+                settings = settings,
+            )
+        }
+    }
 
     private fun shouldEnrichForMetaScreen(
         meta: MetaDetails,
@@ -581,15 +652,28 @@ object MetaDetailsRepository {
     private fun shouldApplyMoreLikeThisSource(meta: MetaDetails): Boolean {
         TraktSettingsRepository.ensureLoaded()
         TraktAuthRepository.ensureLoaded()
-        TmdbSettingsRepository.ensureLoaded()
+
+        val isAnime = meta.type.startsWith("anime", ignoreCase = true)
+        val tmdbEnabled: Boolean
+        val tmdbUseMoreLikeThis: Boolean
+        if (isAnime) {
+            AnimeTmdbSettingsRepository.ensureLoaded()
+            val s = AnimeTmdbSettingsRepository.snapshot()
+            tmdbEnabled = s.enabled
+            tmdbUseMoreLikeThis = s.useMoreLikeThis
+        } else {
+            TmdbSettingsRepository.ensureLoaded()
+            val s = TmdbSettingsRepository.snapshot()
+            tmdbEnabled = s.enabled
+            tmdbUseMoreLikeThis = s.useMoreLikeThis
+        }
 
         val traktSettings = TraktSettingsRepository.uiState.value
         val isTraktAuthenticated = TraktAuthRepository.uiState.value.mode == TraktConnectionMode.CONNECTED
-        val tmdbSettings = TmdbSettingsRepository.snapshot()
         return shouldUseTraktMoreLikeThis(
             isAuthenticated = isTraktAuthenticated,
             source = traktSettings.moreLikeThisSource,
-        ) || !tmdbSettings.enabled || !tmdbSettings.useMoreLikeThis || meta.moreLikeThisSource == null && meta.moreLikeThis.isNotEmpty()
+        ) || !tmdbEnabled || !tmdbUseMoreLikeThis || meta.moreLikeThisSource == null && meta.moreLikeThis.isNotEmpty()
     }
 
     private fun buildMetaScreenSettingsFingerprint(
