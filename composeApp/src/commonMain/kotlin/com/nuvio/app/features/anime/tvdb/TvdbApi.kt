@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
 
 object TvdbApi {
     private val log = Logger.withTag("TvdbApi")
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
     private const val BASE_URL = "https://api4.thetvdb.com/v4"
 
     private var cachedToken: String? = null

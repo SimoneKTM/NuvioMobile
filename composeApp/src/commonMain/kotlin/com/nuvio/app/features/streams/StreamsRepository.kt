@@ -607,9 +607,7 @@ object StreamsRepository {
 
                     val displayName = addon.addonName
                     val group = runCatchingUnlessCancelled {
-                        val payload = withTimeoutOrNull(STREAM_PROVIDER_TIMEOUT_MS) {
-                            httpGetText(url)
-                        } ?: error("$displayName timed out")
+                        val payload = httpGetText(url)
                         StreamParser.parse(
                             payload = payload,
                             addonName = displayName,
