@@ -76,6 +76,7 @@ import nuvio.composeapp.generated.resources.settings_trakt_features
 import nuvio.composeapp.generated.resources.settings_trakt_finish_sign_in
 import nuvio.composeapp.generated.resources.settings_trakt_intro_description
 import nuvio.composeapp.generated.resources.settings_trakt_missing_credentials
+import nuvio.composeapp.generated.resources.settings_trakt_open_browser_btn
 import nuvio.composeapp.generated.resources.settings_trakt_save_actions_description
 import nuvio.composeapp.generated.resources.settings_trakt_sign_in_description
 import nuvio.composeapp.generated.resources.trakt_all_history
@@ -839,7 +840,7 @@ private fun TraktConnectionCard(
                         enabled = uiState.credentialsConfigured,
                         modifier = Modifier.weight(1f),
                     ) {
-                        Text(stringResource(Res.string.settings_trakt_open_browser))
+                        Text(stringResource(Res.string.settings_trakt_open_browser_btn))
                     }
                 }
                 if (!uiState.credentialsConfigured) {
