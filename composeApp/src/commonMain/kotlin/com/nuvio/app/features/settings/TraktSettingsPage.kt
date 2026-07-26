@@ -774,33 +774,20 @@ private fun TraktConnectionCard(
                     }
                 }
                 val uriHandler = LocalUriHandler.current
-                Row(
+                Button(
+                    onClick = {
+                        val url = uiState.verificationUrl?.let { "https://$it" }
+                        if (url != null) {
+                            runCatching { uriHandler.openUri(url) }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    enabled = uiState.verificationUrl != null && !uiState.isLoading,
                 ) {
-                    Button(
-                        onClick = {
-                            val url = uiState.verificationUrl?.let { "https://$it" }
-                            if (url != null) {
-                                runCatching { uriHandler.openUri(url) }
-                            }
-                        },
-                        enabled = uiState.verificationUrl != null && !uiState.isLoading,
-                    ) {
-                        Text(
-                            text = uiState.verificationUrl?.let { "Apri $it" }
-                                ?: stringResource(Res.string.trakt_device_code_verification_url),
-                        )
-                    }
-                    OutlinedButton(
-                        onClick = TraktAuthRepository::onCancelAuthorization,
-                        enabled = !uiState.isLoading,
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error,
-                        ),
-                    ) {
-                        Text(stringResource(Res.string.action_cancel))
-                    }
+                    Text(
+                        text = uiState.verificationUrl?.let { "Apri $it" }
+                            ?: stringResource(Res.string.trakt_device_code_verification_url),
+                    )
                 }
             }
 
