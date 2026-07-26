@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.features.anime.AnimeCollectionRepository
 import com.nuvio.app.features.anime.AnimeHomeCatalogSettingsRepository
+import com.nuvio.app.features.animeprofile.AnimeProfileRepository
 import com.nuvio.app.features.collection.Collection
 import com.nuvio.app.core.ui.NuvioActionLabel
 import com.nuvio.app.core.ui.NuvioToastController
@@ -114,6 +115,8 @@ import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.animeRootSettingsContent(
     isTablet: Boolean,
+    showInNavigation: Boolean,
+    onShowInNavigationChanged: (Boolean) -> Unit,
     onContentDiscoveryClick: () -> Unit,
     onLayoutClick: () -> Unit,
     onIntegrationsClick: () -> Unit,
@@ -124,6 +127,14 @@ internal fun LazyListScope.animeRootSettingsContent(
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
+                SettingsSwitchRow(
+                    title = "Mostra scheda Anime",
+                    description = "Mostra o nascondi la scheda Anime nella barra di navigazione",
+                    checked = showInNavigation,
+                    isTablet = isTablet,
+                    onCheckedChange = onShowInNavigationChanged,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
                 SettingsNavigationRow(
                     title = stringResource(Res.string.compose_settings_page_content_discovery),
                     description = "Gestisci componenti aggiuntivi e plugin per la scheda Anime",

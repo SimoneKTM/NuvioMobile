@@ -56,6 +56,7 @@ import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.details.MetaScreenSettingsRepository
 import com.nuvio.app.features.details.MetaScreenSettingsUiState
 import com.nuvio.app.features.anime.AnimeHomeCatalogSettingsRepository
+import com.nuvio.app.features.animeprofile.AnimeProfileRepository
 import com.nuvio.app.features.anime.metascreen.AnimeMetaScreenSettingsRepository
 import com.nuvio.app.core.ui.PosterCardStyleRepository
 import com.nuvio.app.core.ui.PosterCardStyleUiState
@@ -263,6 +264,9 @@ fun SettingsScreen(
         val animeHomescreenSettingsUiState by remember {
             AnimeHomeCatalogSettingsRepository.ensureLoaded()
             AnimeHomeCatalogSettingsRepository.uiState
+        }.collectAsStateWithLifecycle()
+        val animeProfileState by remember {
+            AnimeProfileRepository.state
         }.collectAsStateWithLifecycle()
         val collections by CollectionRepository.collections.collectAsStateWithLifecycle()
         val metaScreenSettingsUiState by remember {
@@ -828,6 +832,8 @@ private fun MobileSettingsScreen(
                                 onAnimeContentDiscoveryClick = { onPageChange(SettingsPage.AnimeContentDiscovery) },
                                 onAnimeLayoutClick = { onPageChange(SettingsPage.AnimeLayout) },
                                 onAnimeIntegrationsClick = { onPageChange(SettingsPage.AnimeIntegrations) },
+                                animeShowInNavigation = animeProfileState.config.showInNavigation,
+                                onAnimeShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
                             )
                         }
                     }
@@ -1025,6 +1031,8 @@ private fun MobileSettingsScreen(
                 SettingsPage.AnimeProfile -> {
                     animeRootSettingsContent(
                         isTablet = false,
+                        showInNavigation = animeProfileState.config.showInNavigation,
+                        onShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
                         onContentDiscoveryClick = { onPageChange(SettingsPage.AnimeContentDiscovery) },
                         onLayoutClick = { onPageChange(SettingsPage.AnimeLayout) },
                         onIntegrationsClick = { onPageChange(SettingsPage.AnimeIntegrations) },
@@ -1033,6 +1041,8 @@ private fun MobileSettingsScreen(
                 SettingsPage.AnimeRoot -> {
                     animeRootSettingsContent(
                         isTablet = false,
+                        showInNavigation = animeProfileState.config.showInNavigation,
+                        onShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
                         onContentDiscoveryClick = { onPageChange(SettingsPage.AnimeContentDiscovery) },
                         onLayoutClick = { onPageChange(SettingsPage.AnimeLayout) },
                         onIntegrationsClick = { onPageChange(SettingsPage.AnimeIntegrations) },
@@ -1438,6 +1448,8 @@ private fun TabletSettingsScreen(
                                 onAnimeContentDiscoveryClick = { openInlinePage(SettingsPage.AnimeContentDiscovery) },
                                 onAnimeLayoutClick = { openInlinePage(SettingsPage.AnimeLayout) },
                                 onAnimeIntegrationsClick = { openInlinePage(SettingsPage.AnimeIntegrations) },
+                                animeShowInNavigation = animeProfileState.config.showInNavigation,
+                                onAnimeShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
                             )
                         }
                     }
@@ -1634,12 +1646,16 @@ private fun TabletSettingsScreen(
                     )
                      SettingsPage.AnimeProfile -> animeRootSettingsContent(
                         isTablet = true,
+                        showInNavigation = animeProfileState.config.showInNavigation,
+                        onShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
                         onContentDiscoveryClick = { openInlinePage(SettingsPage.AnimeContentDiscovery) },
                         onLayoutClick = { openInlinePage(SettingsPage.AnimeLayout) },
                         onIntegrationsClick = { openInlinePage(SettingsPage.AnimeIntegrations) },
                     )
                     SettingsPage.AnimeRoot -> animeRootSettingsContent(
                         isTablet = true,
+                        showInNavigation = animeProfileState.config.showInNavigation,
+                        onShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
                         onContentDiscoveryClick = { openInlinePage(SettingsPage.AnimeContentDiscovery) },
                         onLayoutClick = { openInlinePage(SettingsPage.AnimeLayout) },
                         onIntegrationsClick = { openInlinePage(SettingsPage.AnimeIntegrations) },
