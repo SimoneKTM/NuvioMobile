@@ -54,13 +54,13 @@ internal fun LazyListScope.tvdbSettingsContent(
 
     item {
         SettingsSection(
-            title = stringResource(Res.string.settings_tvdb_section_title),
+            title = "Arricchimento TVDB",
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
                 SettingsSwitchRow(
                     title = stringResource(Res.string.settings_tvdb_enable),
-                    description = stringResource(Res.string.settings_tvdb_enable_description),
+                    description = "Usa TVDB come fonte di metadati per migliorare i dati dei componenti aggiuntivi",
                     checked = settings.enabled,
                     enabled = settings.hasApiKey,
                     isTablet = isTablet,
@@ -79,7 +79,7 @@ internal fun LazyListScope.tvdbSettingsContent(
 
     item {
         SettingsSection(
-            title = stringResource(Res.string.settings_tvdb_section_api_key),
+            title = "Credenziali",
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
@@ -164,7 +164,7 @@ internal fun LazyListScope.animeTvdbSettingsContent(
 
     item {
         SettingsSection(
-            title = stringResource(Res.string.settings_tvdb_section_title),
+            title = "Arricchimento TVDB",
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
@@ -189,7 +189,7 @@ internal fun LazyListScope.animeTvdbSettingsContent(
 
     item {
         SettingsSection(
-            title = stringResource(Res.string.settings_tvdb_section_api_key),
+            title = "Credenziali",
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
