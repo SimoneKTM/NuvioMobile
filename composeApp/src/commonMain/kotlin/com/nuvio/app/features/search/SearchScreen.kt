@@ -362,11 +362,9 @@ fun SearchScreen(
                     }
 
                     else -> {
-                        val allItems = remember(uiState.sections) {
-                            uiState.sections
-                                .flatMap { it.items }
-                                .distinctBy { "${it.type}:${it.id}" }
-                        }
+                        val allItems = uiState.sections
+                            .flatMap { it.items }
+                            .distinctBy { "${it.type}:${it.id}" }
                         if (allItems.isEmpty() && !uiState.isLoading) {
                             item {
                                 SearchEmptyStateCard(
