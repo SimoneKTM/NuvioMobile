@@ -414,11 +414,11 @@ fun SearchScreen(
 
 private fun discoverColumnCountForWidth(screenWidth: Dp): Int =
     when {
-        screenWidth >= 1400.dp -> 9
-        screenWidth >= 1200.dp -> 8
-        screenWidth >= 1000.dp -> 7
-        screenWidth >= 840.dp -> 6
-        else -> 5
+        screenWidth >= 1400.dp -> 10
+        screenWidth >= 1200.dp -> 9
+        screenWidth >= 1000.dp -> 8
+        screenWidth >= 840.dp -> 7
+        else -> 6
     }
 
 @Composable
