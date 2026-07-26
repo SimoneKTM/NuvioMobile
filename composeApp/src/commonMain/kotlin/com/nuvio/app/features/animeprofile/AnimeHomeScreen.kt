@@ -19,14 +19,12 @@ import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioShelfSection
 import com.nuvio.app.core.ui.NuvioViewAllPillSize
 import com.nuvio.app.features.anime.AnimeAddonRepository
-import com.nuvio.app.features.anime.AnimeCollectionRepository
 import com.nuvio.app.features.anime.AnimeContinueWatchingPreferencesRepository
 import com.nuvio.app.features.anime.AnimeHomeCatalogSettingsRepository
 import com.nuvio.app.features.anime.AnimeHomeRepository
 import com.nuvio.app.features.home.HomeCatalogSection
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.canOpenCatalog
-import com.nuvio.app.features.home.components.HomeCollectionRowSection
 import com.nuvio.app.features.home.components.HomeContinueWatchingSection
 import com.nuvio.app.features.home.components.HomeContinueWatchingSectionBottomPadding
 import com.nuvio.app.features.home.components.HomeEmptyStateCard
@@ -64,7 +62,6 @@ fun AnimeHomeScreen(
         AnimeHomeCatalogSettingsRepository.ensureLoaded()
         AnimeHomeCatalogSettingsRepository.uiState
     }.collectAsStateWithLifecycle()
-    val collections by AnimeCollectionRepository.collections.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     val continueWatchingListState = rememberLazyListState()
     val continueWatchingPreferences by remember {
@@ -75,7 +72,6 @@ fun AnimeHomeScreen(
 
     LaunchedEffect(Unit) {
         AnimeAddonRepository.initialize()
-        AnimeCollectionRepository.ensureLoaded()
         WatchProgressRepository.ensureLoaded()
     }
 
@@ -101,11 +97,6 @@ fun AnimeHomeScreen(
         AnimeHomeRepository.refresh(enabledAddons)
     }
 
-    LaunchedEffect(collections) {
-        AnimeHomeCatalogSettingsRepository.syncCollections(collections)
-        AnimeHomeRepository.applyCurrentSettings()
-    }
-
     val showHeroSlot = homeSettingsUiState.heroEnabled
     val isResolvingHeroSources = enabledAddons.any { it.isRefreshing } || homeUiState.isLoading
     val showHeroSkeleton = showHeroSlot &&
@@ -113,22 +104,11 @@ fun AnimeHomeScreen(
         isResolvingHeroSources
 
     val hasActiveAddons = enabledAddons.any { it.manifest != null }
-    val visibleCollections = remember(collections) {
-        collections.filter { it.folders.isNotEmpty() }
-    }
-    val collectionsMap = remember(visibleCollections) {
-        visibleCollections.associateBy { "collection_${it.id}" }
-    }
     val sectionsMap = remember(homeUiState.sections) {
         homeUiState.sections.associateBy(HomeCatalogSection::key)
     }
     val enabledHomeItems = remember(homeSettingsUiState.items) {
         homeSettingsUiState.items.filter { it.enabled }
-    }
-    val hasRenderableCollectionRows = remember(enabledHomeItems, collectionsMap) {
-        enabledHomeItems.any { item ->
-            item.isCollection && collectionsMap[item.key] != null
-        }
     }
 
     val animeContinueWatchingItems = remember(watchProgressUiState.entries, continueWatchingPreferences.isVisible) {
@@ -180,7 +160,7 @@ fun AnimeHomeScreen(
             }
 
             when {
-                !hasActiveAddons && !hasRenderableCollectionRows -> {
+                !hasActiveAddons -> {
                     item {
                         HomeEmptyStateCard(
                             modifier = Modifier.padding(horizontal = 16.dp),
@@ -192,7 +172,7 @@ fun AnimeHomeScreen(
                     }
                 }
 
-                homeUiState.isLoading && homeUiState.sections.isEmpty() && !hasRenderableCollectionRows -> {
+                homeUiState.isLoading && homeUiState.sections.isEmpty() -> {
                     items(3) {
                         HomeSkeletonRow(
                             modifier = Modifier.padding(horizontal = 16.dp),
@@ -201,7 +181,7 @@ fun AnimeHomeScreen(
                     }
                 }
 
-                homeUiState.sections.isEmpty() && homeUiState.heroItems.isEmpty() && !hasRenderableCollectionRows -> {
+                homeUiState.sections.isEmpty() && homeUiState.heroItems.isEmpty() -> {
                     item {
                         HomeEmptyStateCard(
                             modifier = Modifier.padding(horizontal = 16.dp),
@@ -228,37 +208,23 @@ fun AnimeHomeScreen(
                         }
                     }
                     enabledHomeItems.forEach { settingsItem ->
-                        if (settingsItem.isCollection) {
-                            val collection = collectionsMap[settingsItem.key]
-                            if (collection != null) {
-                                item(key = settingsItem.key) {
-                                    HomeCollectionRowSection(
-                                        collection = collection,
-                                        modifier = Modifier.padding(bottom = 12.dp),
-                                        sectionPadding = homeSectionPadding,
-                                        onFolderClick = onFolderClick,
-                                    )
-                                }
-                            }
-                        } else {
-                            val section = sectionsMap[settingsItem.key]
-                            if (section != null && section.items.isNotEmpty()) {
-                                item(key = settingsItem.key) {
-                                    AnimeCatalogRowSection(
-                                        section = section,
-                                        entries = section.items.take(ANIME_CATALOG_PREVIEW_LIMIT),
-                                        modifier = Modifier.padding(bottom = 12.dp),
-                                        sectionPadding = homeSectionPadding,
-                                        hideCatalogUnderline = homeSettingsUiState.hideCatalogUnderline,
-                                        onViewAllClick = if (section.canOpenCatalog(ANIME_CATALOG_PREVIEW_LIMIT)) {
-                                            onCatalogClick?.let { { it(section) } }
-                                        } else {
-                                            null
-                                        },
-                                        onPosterClick = onPosterClick,
-                                        onPosterLongClick = onPosterLongClick,
-                                    )
-                                }
+                        val section = sectionsMap[settingsItem.key]
+                        if (section != null && section.items.isNotEmpty()) {
+                            item(key = settingsItem.key) {
+                                AnimeCatalogRowSection(
+                                    section = section,
+                                    entries = section.items.take(ANIME_CATALOG_PREVIEW_LIMIT),
+                                    modifier = Modifier.padding(bottom = 12.dp),
+                                    sectionPadding = homeSectionPadding,
+                                    hideCatalogUnderline = homeSettingsUiState.hideCatalogUnderline,
+                                    onViewAllClick = if (section.canOpenCatalog(ANIME_CATALOG_PREVIEW_LIMIT)) {
+                                        onCatalogClick?.let { { it(section) } }
+                                    } else {
+                                        null
+                                    },
+                                    onPosterClick = onPosterClick,
+                                    onPosterLongClick = onPosterLongClick,
+                                )
                             }
                         }
                     }

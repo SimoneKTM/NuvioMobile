@@ -70,6 +70,7 @@ import com.nuvio.app.features.home.HomeCatalogSettingsRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsUiState
 import com.nuvio.app.features.livetv.LiveTvRepository
 import com.nuvio.app.features.mdblist.MdbListSettings
+import com.nuvio.app.features.telegram.telegramSettingsContent
 import com.nuvio.app.features.mdblist.MdbListSettingsRepository
 import com.nuvio.app.features.anime.tmdb.AnimeTmdbSettings
 import com.nuvio.app.features.anime.tmdb.AnimeTmdbSettingsRepository
@@ -1019,6 +1020,9 @@ private fun MobileSettingsScreen(
                     isTablet = false,
                     uiState = liveTvUiState,
                 )
+                SettingsPage.Telegram -> item {
+                    telegramSettingsContent(isTablet = false)
+                }
                 SettingsPage.Network -> networkSettingsContent(
                     isTablet = false,
                 )
@@ -1099,9 +1103,10 @@ private fun MobileSettingsScreen(
                     onTmdbClick = { onPageChange(SettingsPage.AnimeTmdbEnrichment) },
                     onMdbListClick = { onPageChange(SettingsPage.AnimeMdbListRatings) },
                     onTvdbClick = { onPageChange(SettingsPage.AnimeTvdb) },
-                    onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
-                    onDebridClick = { onPageChange(SettingsPage.Debrid) },
-                )
+                        onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
+                        onDebridClick = { onPageChange(SettingsPage.Debrid) },
+                        onTelegramClick = { onPageChange(SettingsPage.Telegram) },
+                    )
                 SettingsPage.AnimeStreams -> streamsSettingsContent(isTablet = false)
                 SettingsPage.AnimeMetaScreen -> animeMetaScreenSettingsContent(
                     isTablet = false,
@@ -1564,7 +1569,7 @@ private fun TabletSettingsScreen(
                         isTablet = true,
                         uiState = metaScreenSettingsUiState,
                     )
-                    SettingsPage.Integrations -> integrationsContent(
+                     SettingsPage.Integrations -> integrationsContent(
                         isTablet = true,
                         onAiAssistantClick = { onPageChange(SettingsPage.AiAssistant) },
                         onTraktClick = { onPageChange(SettingsPage.TraktAuthentication) },
@@ -1579,6 +1584,7 @@ private fun TabletSettingsScreen(
                         onTvdbClick = { onPageChange(SettingsPage.TvdbEnrichment) },
                         onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
                         onDebridClick = { onPageChange(SettingsPage.Debrid) },
+                        onTelegramClick = { onPageChange(SettingsPage.Telegram) },
                     )
                     SettingsPage.AiAssistant -> aiAssistantSettingsContent(
                         isTablet = true,
@@ -1627,6 +1633,9 @@ private fun TabletSettingsScreen(
                         isTablet = true,
                         uiState = liveTvUiState,
                     )
+                    SettingsPage.Telegram -> item {
+                        telegramSettingsContent(isTablet = true)
+                    }
                     SettingsPage.Debrid -> debridSettingsContent(
                         isTablet = true,
                         settings = debridSettings,

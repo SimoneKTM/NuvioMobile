@@ -13,8 +13,10 @@ import com.nuvio.app.core.i18n.localizedMediaTypeLabel
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
 import com.nuvio.app.features.home.HomeCatalogSection
 import com.nuvio.app.features.home.MetaPreview
+import com.nuvio.app.features.home.PosterShape
 import com.nuvio.app.features.home.filterReleasedItems
 import com.nuvio.app.features.home.stableKey
+import com.nuvio.app.features.livetv.LiveTvRepository
 import com.nuvio.app.features.trakt.TraktPublicListSourceResolver
 import com.nuvio.app.features.watchprogress.CurrentDateProvider
 import kotlinx.coroutines.CoroutineScope
@@ -184,6 +186,17 @@ object FolderDetailRepository {
                             isLoading = true,
                         ),
                     )
+                } else if (source.isLiveTv) {
+                    add(
+                        FolderTab(
+                            label = "Live TV",
+                            typeLabel = "Live TV",
+                            source = source,
+                            sourceKey = "livetv",
+                            type = "live_tv",
+                            isLoading = true,
+                        ),
+                    )
                 } else {
                     val catalogSource = source.addonCatalogSource() ?: return@forEachIndexed
                     val resolvedCatalog = addons.findCollectionCatalog(catalogSource)
@@ -223,9 +236,15 @@ object FolderDetailRepository {
         // Load catalog data for each source
         sources.forEachIndexed { sourceIndex, source ->
             val tabIndex = if (showAll) sourceIndex + 1 else sourceIndex
+
+            if (source.isLiveTv) {
+                loadLiveTvTab(tabIndex)
+                return@forEachIndexed
+            }
+
             val catalogSource = source.addonCatalogSource()
             val resolvedCatalog = catalogSource?.let { addons.findCollectionCatalog(it) }
-            if (!source.isTmdb && !source.isTrakt && resolvedCatalog == null) {
+            if (!source.isTmdb && !source.isTrakt && !source.isLiveTv && resolvedCatalog == null) {
                 updateTab(tabIndex) {
                     it.copy(
                         isLoading = false,
@@ -382,6 +401,32 @@ object FolderDetailRepository {
         loadJobs[index] = job
     }
 
+    private fun loadLiveTvTab(index: Int) {
+        LiveTvRepository.ensureLoaded()
+        val channels = LiveTvRepository.uiState.value.channels
+        val items = channels.map { channel ->
+            MetaPreview(
+                id = channel.streamUrl,
+                type = "live",
+                name = channel.name,
+                poster = channel.logoUrl,
+                posterShape = PosterShape.Landscape,
+            )
+        }
+        updateTab(index) { tab ->
+            tab.copy(
+                items = items,
+                isLoading = false,
+            )
+        }
+        val current = _uiState.value
+        if (current.showAllTab) rebuildAllTab()
+        val allDone = current.tabs.none { !it.isAllTab && it.isLoading }
+        if (allDone) {
+            _uiState.value = _uiState.value.copy(isLoading = false)
+        }
+    }
+
     private fun rebuildAllTab() {
         val current = _uiState.value
         if (!current.showAllTab) return
@@ -427,7 +472,7 @@ object FolderDetailRepository {
         val collectionId = activeCollectionId ?: return emptyList()
 
         return current.tabs.filter { !it.isAllTab && it.items.isNotEmpty() }.mapNotNull { tab ->
-            val directSource = tab.source?.let { it.isTmdb || it.isTrakt } == true
+            val directSource = tab.source?.let { it.isTmdb || it.isTrakt || it.isLiveTv } == true
             val target = if (directSource) {
                 val sourceKey = tab.sourceKey ?: return@mapNotNull null
                 CatalogTarget.CollectionSource(

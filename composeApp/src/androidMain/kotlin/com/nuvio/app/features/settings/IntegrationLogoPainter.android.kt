@@ -23,4 +23,5 @@ internal actual fun integrationLogoPainter(logo: IntegrationLogo): Painter =
         IntegrationLogo.OpenSubtitles -> painterResource(id = R.drawable.opensubtitles_favicon)
         IntegrationLogo.Subdl -> painterResource(id = R.drawable.subdl_favicon)
         IntegrationLogo.Tvdb -> painterResource(id = R.drawable.tvdb_logo)
+        IntegrationLogo.Telegram -> painterResource(id = R.drawable.telegram_logo)
     }

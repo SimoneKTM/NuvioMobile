@@ -30,6 +30,7 @@ import nuvio.composeapp.generated.resources.compose_settings_page_meta_screen
 import nuvio.composeapp.generated.resources.compose_settings_page_notifications
 import nuvio.composeapp.generated.resources.compose_settings_page_playback
 import nuvio.composeapp.generated.resources.compose_settings_page_plugins
+import nuvio.composeapp.generated.resources.compose_settings_page_telegram
 import nuvio.composeapp.generated.resources.compose_settings_page_poster_customization
 import nuvio.composeapp.generated.resources.compose_settings_page_root
 import nuvio.composeapp.generated.resources.compose_settings_page_streams
@@ -316,6 +317,11 @@ internal enum class SettingsPage(
         titleRes = Res.string.compose_settings_page_tvdb_enrichment,
         category = SettingsCategory.Anime,
         parentPage = AnimeIntegrations,
+    ),
+    Telegram(
+        titleRes = Res.string.compose_settings_page_telegram,
+        category = SettingsCategory.General,
+        parentPage = Integrations,
     ),
 }
 

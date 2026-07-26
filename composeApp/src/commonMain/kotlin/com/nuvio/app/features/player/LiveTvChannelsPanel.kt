@@ -51,9 +51,8 @@ import coil3.compose.AsyncImage
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.features.livetv.LiveTvChannel
+import com.nuvio.app.features.livetv.LiveTvFilterPanelRow
 import com.nuvio.app.features.livetv.LiveTvRepository
-import com.nuvio.app.features.livetv.LiveTvFilterRow
-import com.nuvio.app.features.livetv.isLikelyCategoryHeading
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_close
 import nuvio.composeapp.generated.resources.live_tv_favorite
@@ -75,19 +74,16 @@ internal fun LiveTvChannelsPanel(
 ) {
     val tokens = MaterialTheme.nuvio
     val uiState by LiveTvRepository.uiState.collectAsStateWithLifecycle()
-    val channels = remember(uiState.channels, uiState.favoriteUrls) {
+    val channels = remember(uiState.channels, uiState.favoriteChannelIds) {
         uiState.channels
-            .filterNot { isLikelyCategoryHeading(it.name) }
             .sortedWith(
-                compareByDescending<LiveTvChannel> { it.streamUrl in uiState.favoriteUrls }
+                compareByDescending<LiveTvChannel> { it.id in uiState.favoriteChannelIds }
                     .thenBy { it.name.lowercase() },
             )
     }
     val groups = remember(uiState.channels) {
         uiState.channels
-            .filterNot { isLikelyCategoryHeading(it.name) }
-            .map { it.group }
-            .filter { it.isNotBlank() }
+            .mapNotNull { it.group?.trim()?.takeIf(String::isNotBlank) }
             .distinct()
             .sorted()
     }
@@ -96,7 +92,7 @@ internal fun LiveTvChannelsPanel(
     val filteredChannels = remember(channels, selectedGroup, favoritesOnly) {
         channels.filter { channel ->
             (selectedGroup.isBlank() || channel.group == selectedGroup) &&
-                (!favoritesOnly || channel.streamUrl in uiState.favoriteUrls)
+                (!favoritesOnly || channel.id in uiState.favoriteChannelIds)
         }
     }
 
@@ -161,9 +157,9 @@ internal fun LiveTvChannelsPanel(
                     }
 
                     if (channels.isNotEmpty()) {
-                        LiveTvFilterRow(
+                        LiveTvFilterPanelRow(
                             groups = groups,
-                            selectedGroup = selectedGroup,
+                            selectedGroup = selectedGroup.takeIf { it.isNotBlank() },
                             favoritesOnly = favoritesOnly,
                             allLabel = stringResource(Res.string.live_tv_all_channels),
                             favoritesLabel = stringResource(Res.string.live_tv_favorites),
@@ -214,8 +210,8 @@ internal fun LiveTvChannelsPanel(
                                 LiveTvPlayerChannelRow(
                                     channel = channel,
                                     selected = channel.streamUrl == currentStreamUrl,
-                                    favorite = channel.streamUrl in uiState.favoriteUrls,
-                                    onFavoriteClick = { LiveTvRepository.toggleFavorite(channel) },
+                                    favorite = channel.id in uiState.favoriteChannelIds,
+                                    onFavoriteClick = { LiveTvRepository.toggleFavoriteChannel(channel.id) },
                                     onClick = { onChannelSelected(channel) },
                                 )
                             }

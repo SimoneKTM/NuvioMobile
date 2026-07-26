@@ -21,9 +21,11 @@ import nuvio.composeapp.generated.resources.compose_settings_page_opensubtitles
 import nuvio.composeapp.generated.resources.compose_settings_page_simkl
 import nuvio.composeapp.generated.resources.compose_settings_page_subdl
 import nuvio.composeapp.generated.resources.compose_settings_page_tmdb_enrichment
+import nuvio.composeapp.generated.resources.compose_settings_page_telegram
 import nuvio.composeapp.generated.resources.compose_settings_page_trakt
 import nuvio.composeapp.generated.resources.compose_settings_root_trakt_description
 import nuvio.composeapp.generated.resources.settings_integrations_ai_description
+import nuvio.composeapp.generated.resources.settings_integrations_telegram_description
 import nuvio.composeapp.generated.resources.settings_integrations_anilist_description
 import nuvio.composeapp.generated.resources.settings_integrations_debrid_description
 import nuvio.composeapp.generated.resources.settings_integrations_kitsu_description
@@ -57,6 +59,7 @@ internal fun LazyListScope.integrationsContent(
     onTvdbClick: () -> Unit = {},
     onLiveTvClick: () -> Unit,
     onDebridClick: () -> Unit,
+    onTelegramClick: () -> Unit = {},
 ) {
     item {
         SettingsSection(
@@ -191,6 +194,14 @@ internal fun LazyListScope.integrationsContent(
                     icon = Icons.Rounded.Cloud,
                     isTablet = isTablet,
                     onClick = onDebridClick,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.compose_settings_page_telegram),
+                    description = stringResource(Res.string.settings_integrations_telegram_description),
+                    iconPainter = integrationLogoPainter(IntegrationLogo.Telegram),
+                    isTablet = isTablet,
+                    onClick = onTelegramClick,
                 )
             }
         }

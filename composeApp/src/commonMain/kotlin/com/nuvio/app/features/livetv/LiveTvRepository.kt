@@ -1,303 +1,470 @@
 package com.nuvio.app.features.livetv
 
+import co.touchlab.kermit.Logger
 import com.nuvio.app.features.addons.httpGetText
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.random.Random
 
 object LiveTvRepository {
-    private val mutableUiState = MutableStateFlow(LiveTvUiState())
-    val uiState = mutableUiState.asStateFlow()
-    private val epgScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val log = Logger.withTag("LiveTvRepository")
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val _uiState = MutableStateFlow(LiveTvUiState())
+    val uiState: StateFlow<LiveTvUiState> = _uiState.asStateFlow()
 
-    private var initialized = false
+    private var hasLoaded = false
 
     fun ensureLoaded() {
-        if (initialized) return
-        initialized = true
-        mutableUiState.value = mutableUiState.value.copy(
-            sourceUrl = LiveTvStorage.loadSourceUrl().orEmpty(),
-            favoriteUrls = LiveTvStorage.loadFavoriteUrls(),
-            recentChannel = LiveTvStorage.loadRecentChannel(),
+        if (hasLoaded) return
+        hasLoaded = true
+        val playlists = loadSavedPlaylists()
+        _uiState.value = LiveTvUiState(
+            playlistUrl = playlists.firstEnabledUrlSource(),
+            playlists = playlists,
+            favoriteChannelIds = loadFavoriteChannelIds(),
+            lastWatchedChannelId = LiveTvStorage.loadLastWatchedChannelId(),
+            isNavigationEnabled = LiveTvStorage.loadNavigationEnabled() ?: true,
         )
+        publishNavigationVisibility()
+        if (playlists.isNotEmpty()) {
+            refresh()
+        }
     }
 
-    suspend fun load(sourceUrl: String): Result<List<LiveTvChannel>> {
-        val normalizedUrl = sourceUrl.trim()
-        if (!normalizedUrl.startsWith("http://") && !normalizedUrl.startsWith("https://")) {
-            val error = IllegalArgumentException(
-                "Geçerli bir HTTP veya HTTPS M3U bağlantısı girin."
-            )
-            mutableUiState.value = mutableUiState.value.copy(errorMessage = error.message)
-            return Result.failure(error)
+    fun savePlaylistUrl(url: String) {
+        ensureLoaded()
+        val normalized = url.trim()
+        val playlists = if (normalized.isBlank()) {
+            emptyList()
+        } else {
+            listOf(createUrlPlaylist(normalized))
         }
-
-        mutableUiState.value = mutableUiState.value.copy(
-            sourceUrl = normalizedUrl,
-            isLoading = true,
+        persistPlaylists(playlists)
+        _uiState.value = _uiState.value.copy(
+            playlistUrl = playlists.firstEnabledUrlSource(),
+            playlists = playlists,
+            channels = emptyList(),
+            isLoading = false,
             errorMessage = null,
         )
+        publishNavigationVisibility()
+        if (playlists.isNotEmpty()) {
+            refresh()
+        }
+    }
 
-        return runCatching {
-            val playlist = withContext(Dispatchers.Default) {
-                parseM3uPlaylistData(httpGetText(normalizedUrl))
+    fun addPlaylistUrl(url: String) {
+        addPlaylistUrl(name = null, url = url)
+    }
+
+    fun addPlaylistUrl(name: String?, url: String) {
+        ensureLoaded()
+        val normalized = url.trim()
+        if (normalized.isBlank()) return
+
+        val current = _uiState.value.playlists
+        if (current.any { it.type == LiveTvPlaylistType.Url && it.source.equals(normalized, ignoreCase = true) }) {
+            return
+        }
+
+        val playlists = current + createUrlPlaylist(normalized, name)
+        persistPlaylists(playlists)
+        _uiState.value = _uiState.value.copy(
+            playlistUrl = playlists.firstEnabledUrlSource(),
+            playlists = playlists,
+            errorMessage = null,
+        )
+        publishNavigationVisibility()
+        refresh()
+    }
+
+    fun addLocalPlaylist(fileName: String?, content: String) {
+        addLocalPlaylist(name = null, fileName = fileName, content = content)
+    }
+
+    fun addLocalPlaylist(name: String?, fileName: String?, content: String) {
+        ensureLoaded()
+        val normalizedContent = content.trim()
+        if (normalizedContent.isBlank()) return
+
+        val fallbackName = name?.trim()?.takeIf(String::isNotBlank)
+            ?: fileName
+                ?.let { file -> file.substringBeforeLast('.', missingDelimiterValue = file) }
+                ?.trim()
+                ?.takeIf(String::isNotBlank)
+            ?: "Local playlist"
+        val playlist = LiveTvPlaylist(
+            id = stablePlaylistId("local:${fallbackName}:${normalizedContent.hashCode()}:${Random.nextInt()}", _uiState.value.playlists.size),
+            name = fallbackName,
+            type = LiveTvPlaylistType.LocalFile,
+            source = normalizedContent,
+            isEnabled = true,
+        )
+        val playlists = _uiState.value.playlists + playlist
+        persistPlaylists(playlists)
+        _uiState.value = _uiState.value.copy(
+            playlistUrl = playlists.firstEnabledUrlSource(),
+            playlists = playlists,
+            errorMessage = null,
+        )
+        publishNavigationVisibility()
+        refresh()
+    }
+
+    fun updatePlaylist(playlistId: String, name: String, source: String) {
+        ensureLoaded()
+        val current = _uiState.value.playlists
+        val existing = current.firstOrNull { it.id == playlistId } ?: return
+        val normalizedName = name.trim().ifBlank { existing.name }
+        val normalizedSource = source.trim()
+        if (normalizedSource.isBlank()) return
+        if (existing.type == LiveTvPlaylistType.Url && current.any {
+                it.id != playlistId &&
+                    it.type == LiveTvPlaylistType.Url &&
+                    it.source.equals(normalizedSource, ignoreCase = true)
             }
-            val channels = playlist.channels
-            require(channels.isNotEmpty()) {
-                "Bu M3U listesinde oynatılabilir kanal bulunamadı."
+        ) {
+            return
+        }
+
+        val playlists = current.map { playlist ->
+            if (playlist.id == playlistId) {
+                playlist.copy(
+                    name = normalizedName,
+                    source = normalizedSource,
+                )
+            } else {
+                playlist
             }
-            LiveTvStorage.saveSourceUrl(normalizedUrl)
-            mutableUiState.value = LiveTvUiState(
-                sourceUrl = normalizedUrl,
-                channels = channels,
-                favoriteUrls = mutableUiState.value.favoriteUrls,
-                recentChannel = mutableUiState.value.recentChannel,
-                isEpgLoading = playlist.epgUrls.isNotEmpty(),
-                isLoaded = true,
-            )
-            loadEpgInBackground(normalizedUrl, playlist.epgUrls)
-            channels
-        }.onFailure { error ->
-            mutableUiState.value = mutableUiState.value.copy(
+        }
+        persistPlaylists(playlists)
+        _uiState.value = _uiState.value.copy(
+            playlistUrl = playlists.firstEnabledUrlSource(),
+            playlists = playlists,
+            errorMessage = null,
+        )
+        publishNavigationVisibility()
+        refresh()
+    }
+
+    fun removePlaylist(playlistId: String) {
+        ensureLoaded()
+        val playlists = _uiState.value.playlists.filterNot { it.id == playlistId }
+        persistPlaylists(playlists)
+        _uiState.value = _uiState.value.copy(
+            playlistUrl = playlists.firstEnabledUrlSource(),
+            playlists = playlists,
+            channels = emptyList(),
+            isLoading = false,
+            errorMessage = null,
+        )
+        publishNavigationVisibility()
+        if (playlists.any { it.isEnabled }) {
+            refresh()
+        }
+    }
+
+    fun setPlaylistEnabled(playlistId: String, isEnabled: Boolean) {
+        ensureLoaded()
+        val current = _uiState.value.playlists
+        if (current.none { it.id == playlistId }) return
+
+        val playlists = current.map { playlist ->
+            if (playlist.id == playlistId) {
+                playlist.copy(isEnabled = isEnabled)
+            } else {
+                playlist
+            }
+        }
+        persistPlaylists(playlists)
+        _uiState.value = _uiState.value.copy(
+            playlistUrl = playlists.firstEnabledUrlSource(),
+            playlists = playlists,
+            channels = emptyList(),
+            isLoading = false,
+            errorMessage = null,
+        )
+        publishNavigationVisibility()
+        if (playlists.any { it.isEnabled }) {
+            refresh()
+        }
+    }
+
+    fun setNavigationEnabled(enabled: Boolean) {
+        ensureLoaded()
+        if (_uiState.value.isNavigationEnabled == enabled) return
+
+        LiveTvStorage.saveNavigationEnabled(enabled)
+        _uiState.value = _uiState.value.copy(isNavigationEnabled = enabled)
+        publishNavigationVisibility()
+    }
+
+    fun refresh() {
+        ensureLoaded()
+        val playlists = _uiState.value.playlists
+        if (playlists.isEmpty()) {
+            _uiState.value = _uiState.value.copy(
+                playlistUrl = "",
+                playlists = emptyList(),
+                channels = emptyList(),
                 isLoading = false,
-                isLoaded = mutableUiState.value.channels.isNotEmpty(),
-                errorMessage = error.message ?: "M3U listesi yüklenemedi.",
+                errorMessage = null,
+            )
+            publishNavigationVisibility()
+            return
+        }
+
+        val enabledPlaylists = playlists.filter { it.isEnabled }
+        if (enabledPlaylists.isEmpty()) {
+            _uiState.value = _uiState.value.copy(
+                playlistUrl = "",
+                playlists = playlists,
+                channels = emptyList(),
+                isLoading = false,
+                errorMessage = null,
+            )
+            return
+        }
+
+        _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+        scope.launch {
+            val loadedChannels = mutableListOf<LiveTvChannel>()
+            val failedPlaylistNames = mutableListOf<String>()
+
+            enabledPlaylists.forEach { playlist ->
+                val result = runCatching {
+                    val payload = when (playlist.type) {
+                        LiveTvPlaylistType.Url -> withContext(Dispatchers.Default) { httpGetText(playlist.source) }
+                        LiveTvPlaylistType.LocalFile -> playlist.source
+                    }
+                    parseM3uPlaylist(payload, playlist)
+                }
+
+                result.fold(
+                    onSuccess = { channels -> loadedChannels += channels },
+                    onFailure = { error ->
+                        if (error is CancellationException) throw error
+                        failedPlaylistNames += playlist.name
+                        log.w(error) { "Failed to load live TV playlist ${playlist.name}" }
+                    },
+                )
+            }
+
+            val channels = loadedChannels.distinctBy { it.streamUrl }
+            _uiState.value = _uiState.value.copy(
+                playlistUrl = playlists.firstEnabledUrlSource(),
+                playlists = playlists,
+                channels = channels,
+                isLoading = false,
+                errorMessage = when {
+                    channels.isEmpty() && failedPlaylistNames.isNotEmpty() -> "Playlist could not be loaded."
+                    channels.isEmpty() -> "No channels found in these playlists."
+                    failedPlaylistNames.isNotEmpty() -> "Some playlists could not be loaded: ${failedPlaylistNames.joinToString()}"
+                    else -> null
+                },
             )
         }
     }
 
-    fun disconnect() {
-        LiveTvStorage.saveSourceUrl("")
-        mutableUiState.value = LiveTvUiState(
-            favoriteUrls = mutableUiState.value.favoriteUrls,
-            recentChannel = mutableUiState.value.recentChannel,
-        )
-    }
-
-    fun toggleFavorite(channel: LiveTvChannel) {
-        val favorites = mutableUiState.value.favoriteUrls.toMutableSet()
-        if (!favorites.add(channel.streamUrl)) {
-            favorites.remove(channel.streamUrl)
-        }
-        LiveTvStorage.saveFavoriteUrls(favorites)
-        mutableUiState.value = mutableUiState.value.copy(favoriteUrls = favorites)
-    }
-
-    fun recordRecentChannel(channel: LiveTvChannel) {
-        val recentChannel = LiveTvRecentChannel(
-            streamUrl = channel.streamUrl,
-            name = channel.name,
-            logoUrl = channel.logoUrl,
-            group = channel.group,
-            tvgId = channel.tvgId,
-        )
-        LiveTvStorage.saveRecentChannel(recentChannel)
-        mutableUiState.value = mutableUiState.value.copy(recentChannel = recentChannel)
-    }
-
-    private fun loadEpgInBackground(sourceUrl: String, epgUrls: List<String>) {
-        if (epgUrls.isEmpty()) return
-        epgScope.launch {
-            val programmes = epgUrls
-                .mapNotNull { epgUrl ->
-                    runCatching {
-                        parseCurrentXmlTvProgrammes(httpGetText(epgUrl))
-                    }.getOrNull()
+    fun toggleFavoriteChannel(channelId: String) {
+        ensureLoaded()
+        val favorites = _uiState.value.favoriteChannelIds
+            .let { current ->
+                if (channelId in current) {
+                    current - channelId
+                } else {
+                    current + channelId
                 }
-                .fold(emptyMap<String, LiveTvProgramme>()) { merged, entries -> merged + entries }
-            if (mutableUiState.value.sourceUrl == sourceUrl) {
-                mutableUiState.value = mutableUiState.value.copy(
-                    currentProgrammes = programmes,
-                    isEpgLoading = false,
-                )
             }
-        }
+        persistFavoriteChannelIds(favorites)
+        _uiState.value = _uiState.value.copy(favoriteChannelIds = favorites)
+    }
+
+    fun markChannelWatched(channel: LiveTvChannel) {
+        ensureLoaded()
+        LiveTvStorage.saveLastWatchedChannelId(channel.id)
+        _uiState.value = _uiState.value.copy(lastWatchedChannelId = channel.id)
+    }
+
+    private fun publishNavigationVisibility() {
+        LiveTvStorage.publishNavigationVisibility(_uiState.value.showInNavigation)
+    }
+
+    private fun loadSavedPlaylists(): List<LiveTvPlaylist> {
+        val saved = decodePlaylists(LiveTvStorage.loadPlaylistsBlob().orEmpty())
+        if (saved.isNotEmpty()) return saved
+
+        val legacyUrl = LiveTvStorage.loadPlaylistUrl()?.trim().orEmpty()
+        return if (legacyUrl.isBlank()) emptyList() else listOf(createUrlPlaylist(legacyUrl))
+    }
+
+    private fun persistPlaylists(playlists: List<LiveTvPlaylist>) {
+        LiveTvStorage.savePlaylistsBlob(encodePlaylists(playlists))
+        LiveTvStorage.savePlaylistUrl(playlists.firstUrlSource())
+    }
+
+    private fun loadFavoriteChannelIds(): Set<String> =
+        LiveTvStorage.loadFavoriteChannelIdsBlob()
+            .orEmpty()
+            .lineSequence()
+            .map(String::trim)
+            .filter(String::isNotBlank)
+            .toSet()
+
+    private fun persistFavoriteChannelIds(channelIds: Set<String>) {
+        LiveTvStorage.saveFavoriteChannelIdsBlob(channelIds.sorted().joinToString("\n"))
     }
 }
 
-internal fun parseM3uPlaylist(content: String): List<LiveTvChannel> =
-    parseM3uPlaylistData(content).channels
-
-internal data class ParsedM3uPlaylist(
-    val channels: List<LiveTvChannel>,
-    val epgUrls: List<String>,
-)
-
-internal fun parseM3uPlaylistData(content: String): ParsedM3uPlaylist {
+internal fun parseM3uPlaylist(
+    payload: String,
+    playlist: LiveTvPlaylist? = null,
+): List<LiveTvChannel> {
     val channels = mutableListOf<LiveTvChannel>()
-    val epgUrls = linkedSetOf<String>()
-    var metadata: ParsedM3uMetadata? = null
-    var pendingHeaders = emptyMap<String, String>()
+    var pendingInfo: M3uInfo? = null
 
-    content.lineSequence().forEach { rawLine ->
-        val line = rawLine.trim().removePrefix("\uFEFF")
-        when {
-            line.startsWith("#EXTM3U", ignoreCase = true) -> {
-                val attributes = parseM3uAttributes(line)
-                listOfNotNull(attributes["url-tvg"], attributes["x-tvg-url"])
-                    .flatMap { it.split(',', ';') }
-                    .map(String::trim)
-                    .filter { it.startsWith("http://") || it.startsWith("https://") }
-                    .forEach(epgUrls::add)
-            }
-
-            line.startsWith("#EXTINF", ignoreCase = true) -> {
-                metadata = parseExtInf(line)
-            }
-
-            line.startsWith("#EXTVLCOPT:http-user-agent=", ignoreCase = true) -> {
-                pendingHeaders = pendingHeaders + ("User-Agent" to line.substringAfter('=').trim())
-            }
-
-            line.startsWith("#EXTHTTP:", ignoreCase = true) -> {
-                pendingHeaders = pendingHeaders + parseExtHttpHeaders(line.substringAfter(':'))
-            }
-
-            line.isNotEmpty() && !line.startsWith("#") -> {
-                val parsedUrl = parseStreamUrl(line)
-                val current = metadata ?: ParsedM3uMetadata(
-                    name = "Kanal ${channels.size + 1}",
-                    tvgId = null,
-                    logoUrl = null,
-                    group = "",
-                )
-                channels += LiveTvChannel(
-                    id = "${parsedUrl.url}#${channels.size}",
-                    name = current.name.ifBlank { "Kanal ${channels.size + 1}" },
-                    streamUrl = parsedUrl.url,
-                    tvgId = current.tvgId,
-                    logoUrl = current.logoUrl,
-                    group = current.group,
-                    headers = pendingHeaders + parsedUrl.headers,
-                )
-                metadata = null
-                pendingHeaders = emptyMap()
+    payload.lineSequence()
+        .map(String::trim)
+        .filter(String::isNotBlank)
+        .forEach { line ->
+            when {
+                line.startsWith("#EXTINF", ignoreCase = true) -> {
+                    pendingInfo = parseExtInf(line)
+                }
+                line.startsWith("#") -> Unit
+                else -> {
+                    val streamUrl = line
+                    val info = pendingInfo
+                    val name = info?.name?.takeIf(String::isNotBlank)
+                        ?: streamUrl.substringAfterLast('/').substringBefore('?').ifBlank { "Channel" }
+                    channels += LiveTvChannel(
+                        id = stableChannelId(streamUrl, channels.size),
+                        name = name,
+                        streamUrl = streamUrl,
+                        logoUrl = info?.logoUrl?.takeIf(String::isNotBlank),
+                        group = info?.group?.takeIf(String::isNotBlank),
+                        playlistId = playlist?.id,
+                        playlistName = playlist?.name,
+                    )
+                    pendingInfo = null
+                }
             }
         }
-    }
 
-    return ParsedM3uPlaylist(
-        channels = channels
-            .distinctBy { it.streamUrl }
-            .filterNot { isLikelyCategoryHeading(it.name) },
-        epgUrls = epgUrls.toList(),
-    )
+    return channels.distinctBy { it.streamUrl }
 }
 
-private data class ParsedM3uMetadata(
+private data class M3uInfo(
     val name: String,
-    val tvgId: String?,
     val logoUrl: String?,
-    val group: String,
+    val group: String?,
 )
 
-private data class ParsedStreamUrl(
-    val url: String,
-    val headers: Map<String, String>,
-)
-
-private val m3uAttributeRegex = Regex("""([\w-]+)="([^"]*)"""")
-
-private fun parseExtInf(line: String): ParsedM3uMetadata {
-    val attributes = parseM3uAttributes(line.substringBeforeLast(',', line))
-    val displayName = line.substringAfterLast(',', "").trim()
-        .ifBlank { attributes["tvg-name"].orEmpty() }
-
-    return ParsedM3uMetadata(
-        name = displayName,
-        tvgId = attributes["tvg-id"]?.takeIf(String::isNotBlank),
-        logoUrl = attributes["tvg-logo"]?.takeIf { it.isNotBlank() },
-        group = attributes["group-title"].orEmpty(),
+private fun parseExtInf(line: String): M3uInfo {
+    val name = line.substringAfter(',', missingDelimiterValue = "")
+        .trim()
+        .ifBlank {
+            readM3uAttribute(line, "tvg-name").orEmpty()
+        }
+    return M3uInfo(
+        name = name,
+        logoUrl = readM3uAttribute(line, "tvg-logo"),
+        group = readM3uAttribute(line, "group-title"),
     )
 }
 
-private fun parseM3uAttributes(line: String): Map<String, String> =
-    m3uAttributeRegex
-        .findAll(line)
-        .associate { match -> match.groupValues[1].lowercase() to match.groupValues[2].trim() }
-
-private fun parseStreamUrl(line: String): ParsedStreamUrl {
-    val url = line.substringBefore('|').trim()
-    val headers = line.substringAfter('|', "")
-        .split('&')
-        .mapNotNull { entry ->
-            val key = entry.substringBefore('=').trim()
-            val value = entry.substringAfter('=', "").trim()
-            if (key.isBlank() || value.isBlank()) null else key to value
-        }
-        .toMap()
-    return ParsedStreamUrl(url = url, headers = headers)
+private fun readM3uAttribute(line: String, key: String): String? {
+    val marker = "$key=\""
+    val start = line.indexOf(marker, ignoreCase = true)
+    if (start < 0) return null
+    val valueStart = start + marker.length
+    val valueEnd = line.indexOf('"', startIndex = valueStart).takeIf { it >= 0 } ?: return null
+    return line.substring(valueStart, valueEnd).trim()
 }
 
-private fun parseExtHttpHeaders(value: String): Map<String, String> {
-    val trimmed = value.trim().removePrefix("{").removeSuffix("}")
-    return trimmed.split(',')
-        .mapNotNull { entry ->
-            val key = entry.substringBefore(':').trim().trim('"')
-            val headerValue = entry.substringAfter(':', "").trim().trim('"')
-            if (key.isBlank() || headerValue.isBlank()) null else key to headerValue
-        }
-        .toMap()
+private fun createUrlPlaylist(url: String, customName: String? = null): LiveTvPlaylist =
+    LiveTvPlaylist(
+        id = stablePlaylistId(url, 0),
+        name = customName?.trim()?.takeIf(String::isNotBlank) ?: playlistNameFromUrl(url),
+        type = LiveTvPlaylistType.Url,
+        source = url,
+    )
+
+private fun playlistNameFromUrl(url: String): String {
+    val trimmed = url.trim()
+    val fileName = trimmed
+        .substringBefore('?')
+        .substringAfterLast('/')
+        .substringBeforeLast('.', missingDelimiterValue = "")
+        .trim()
+    if (fileName.isNotBlank()) return fileName
+
+    return trimmed
+        .substringAfter("://", missingDelimiterValue = trimmed)
+        .substringBefore('/')
+        .trim()
+        .ifBlank { "M3U playlist" }
 }
 
-internal fun isLikelyCategoryHeading(name: String): Boolean {
-    val normalized = name.trim()
-    return normalized.length >= 8 && Regex("""^\s*#+\s*.+\s*#+\s*$""").matches(normalized)
-}
+private fun List<LiveTvPlaylist>.firstUrlSource(): String =
+    firstOrNull { it.type == LiveTvPlaylistType.Url }?.source.orEmpty()
 
-private val xmlTvProgrammeRegex = Regex(
-    """<programme\b([^>]*)>([\s\S]*?)</programme>""",
-    RegexOption.IGNORE_CASE,
-)
-private val xmlTvTitleRegex = Regex(
-    """<title\b[^>]*>([\s\S]*?)</title>""",
-    RegexOption.IGNORE_CASE,
-)
-private val xmlAttributeRegex = Regex("""([\w-]+)="([^"]*)"""")
+private fun List<LiveTvPlaylist>.firstEnabledUrlSource(): String =
+    firstOrNull { it.isEnabled && it.type == LiveTvPlaylistType.Url }?.source.orEmpty()
 
-internal fun parseCurrentXmlTvProgrammes(
-    content: String,
-    nowEpochMs: Long = LiveTvClock.nowEpochMs(),
-): Map<String, LiveTvProgramme> {
-    val programmes = mutableMapOf<String, LiveTvProgramme>()
-    xmlTvProgrammeRegex.findAll(content).forEach { match ->
-        val attributes = xmlAttributeRegex.findAll(match.groupValues[1])
-            .associate { attribute -> attribute.groupValues[1].lowercase() to attribute.groupValues[2] }
-        val channelId = attributes["channel"]?.trim()?.takeIf(String::isNotBlank) ?: return@forEach
-        val rawStart = attributes["start"].orEmpty()
-        val rawStop = attributes["stop"].orEmpty()
-        val startEpochMs = LiveTvClock.parseXmlTvTimestamp(rawStart) ?: return@forEach
-        val stopEpochMs = LiveTvClock.parseXmlTvTimestamp(rawStop) ?: return@forEach
-        if (nowEpochMs !in startEpochMs until stopEpochMs) return@forEach
-        val title = xmlTvTitleRegex.find(match.groupValues[2])
-            ?.groupValues
-            ?.get(1)
-            ?.decodeXmlEntities()
-            ?.trim()
-            ?.takeIf(String::isNotBlank)
-            ?: return@forEach
-        programmes[channelId] = LiveTvProgramme(
-            title = title,
-            startEpochMs = startEpochMs,
-            stopEpochMs = stopEpochMs,
-            timeLabel = "${rawStart.xmlTvTimePart()} - ${rawStop.xmlTvTimePart()}",
-        )
+private const val playlistRecordSeparator = "\u001E"
+private const val playlistFieldSeparator = "\u001F"
+
+private fun encodePlaylists(playlists: List<LiveTvPlaylist>): String =
+    playlists.joinToString(playlistRecordSeparator) { playlist ->
+        listOf(
+            playlist.id,
+            playlist.name,
+            playlist.type.name,
+            playlist.source,
+            playlist.isEnabled.toString(),
+        ).joinToString(playlistFieldSeparator) { escapePlaylistField(it) }
     }
-    return programmes
-}
 
-private fun String.xmlTvTimePart(): String {
-    val digits = takeWhile(Char::isDigit)
-    return if (digits.length >= 12) "${digits.substring(8, 10)}:${digits.substring(10, 12)}" else ""
-}
+private fun decodePlaylists(blob: String): List<LiveTvPlaylist> =
+    blob
+        .split(playlistRecordSeparator)
+        .mapNotNull { record ->
+            if (record.isBlank()) return@mapNotNull null
+            val fields = record.split(playlistFieldSeparator).map(::unescapePlaylistField)
+            val type = fields.getOrNull(2)?.let { raw ->
+                runCatching { LiveTvPlaylistType.valueOf(raw) }.getOrNull()
+            } ?: return@mapNotNull null
+            LiveTvPlaylist(
+                id = fields.getOrNull(0)?.takeIf(String::isNotBlank) ?: return@mapNotNull null,
+                name = fields.getOrNull(1)?.takeIf(String::isNotBlank) ?: "M3U playlist",
+                type = type,
+                source = fields.getOrNull(3)?.takeIf(String::isNotBlank) ?: return@mapNotNull null,
+                isEnabled = fields.getOrNull(4)?.equals("false", ignoreCase = true) != true,
+            )
+        }
 
-private fun String.decodeXmlEntities(): String =
-    replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", "\"")
-        .replace("&apos;", "'")
+private fun escapePlaylistField(value: String): String =
+    value
+        .replace("%", "%25")
+        .replace(playlistRecordSeparator, "%1E")
+        .replace(playlistFieldSeparator, "%1F")
+
+private fun unescapePlaylistField(value: String): String =
+    value
+        .replace("%1F", playlistFieldSeparator)
+        .replace("%1E", playlistRecordSeparator)
+        .replace("%25", "%")
+
+private fun stableChannelId(streamUrl: String, index: Int): String =
+    "live:${streamUrl.hashCode().toUInt().toString(16)}:$index"
+
+private fun stablePlaylistId(source: String, index: Int): String =
+    "playlist:${source.hashCode().toUInt().toString(16)}:$index"

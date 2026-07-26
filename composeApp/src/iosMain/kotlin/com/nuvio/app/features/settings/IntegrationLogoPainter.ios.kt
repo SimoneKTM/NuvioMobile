@@ -13,6 +13,7 @@ import nuvio.composeapp.generated.resources.rating_tmdb
 import nuvio.composeapp.generated.resources.simkl_logo
 import nuvio.composeapp.generated.resources.subdl_favicon
 import nuvio.composeapp.generated.resources.trakt_tv_favicon
+import nuvio.composeapp.generated.resources.telegram_logo
 import nuvio.composeapp.generated.resources.tvdb_logo
 import org.jetbrains.compose.resources.painterResource
 
@@ -30,4 +31,5 @@ internal actual fun integrationLogoPainter(logo: IntegrationLogo): Painter =
         IntegrationLogo.OpenSubtitles -> painterResource(Res.drawable.opensubtitles_favicon)
         IntegrationLogo.Subdl -> painterResource(Res.drawable.subdl_favicon)
         IntegrationLogo.Tvdb -> painterResource(Res.drawable.tvdb_logo)
+        IntegrationLogo.Telegram -> painterResource(Res.drawable.telegram_logo)
     }

@@ -256,6 +256,14 @@ object CollectionEditorRepository {
 
     fun addCatalogSource(catalog: AvailableCatalog) {
         val folder = _uiState.value.editingFolder ?: return
+        if (catalog.addonId == "livetv") {
+            if (folder.resolvedSources.any { it.isLiveTv }) return
+            val source = CollectionSource(provider = "livetv")
+            _uiState.value = _uiState.value.copy(
+                editingFolder = folder.withSources(folder.resolvedSources + source),
+            )
+            return
+        }
         val defaultGenre = if (catalog.genreRequired) catalog.genreOptions.firstOrNull() else null
         val source = CollectionCatalogSource(
             addonId = catalog.addonId,
@@ -295,12 +303,17 @@ object CollectionEditorRepository {
     fun toggleCatalogSource(catalog: AvailableCatalog) {
         val folder = _uiState.value.editingFolder ?: return
         val sources = folder.resolvedSources
-        val existingIndex = sources.indexOfFirst {
-            !it.isTmdb &&
-                !it.isTrakt &&
-                it.addonId == catalog.addonId &&
-                it.type == catalog.type &&
-                it.catalogId == catalog.catalogId
+        val existingIndex = if (catalog.addonId == "livetv") {
+            sources.indexOfFirst { it.isLiveTv }
+        } else {
+            sources.indexOfFirst {
+                !it.isTmdb &&
+                    !it.isTrakt &&
+                    !it.isLiveTv &&
+                    it.addonId == catalog.addonId &&
+                    it.type == catalog.type &&
+                    it.catalogId == catalog.catalogId
+            }
         }
         if (existingIndex >= 0) {
             removeCatalogSource(existingIndex)

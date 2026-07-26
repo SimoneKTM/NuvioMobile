@@ -20,6 +20,7 @@ import com.nuvio.app.features.plugins.PluginRepository
 import com.nuvio.app.features.plugins.pluginContentId
 import com.nuvio.app.features.plugins.PluginsUiState
 import com.nuvio.app.features.plugins.isExcludedByPluginQualityFilter
+import com.nuvio.app.features.telegram.TelegramSourceResolver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -296,7 +297,9 @@ object StreamsRepository {
             groupByRepository = pluginUiState.groupStreamsByRepository,
         )
 
-        if (installedAddons.isEmpty() && pluginProviderGroups.isEmpty() && cloudStreamProviderGroups.isEmpty()) {
+        val telegramEnabled = TelegramSourceResolver.isEnabled()
+
+        if (installedAddons.isEmpty() && pluginProviderGroups.isEmpty() && cloudStreamProviderGroups.isEmpty() && !telegramEnabled) {
             _uiState.value = StreamsUiState(
                 requestToken = requestToken,
                 isAnyLoading = false,
@@ -328,7 +331,7 @@ object StreamsRepository {
                 "for stream type=$type id=$videoId"
         }
 
-        if (streamAddons.isEmpty() && pluginProviderGroups.isEmpty() && cloudStreamProviderGroups.isEmpty()) {
+        if (streamAddons.isEmpty() && pluginProviderGroups.isEmpty() && cloudStreamProviderGroups.isEmpty() && !telegramEnabled) {
             _uiState.value = StreamsUiState(
                 requestToken = requestToken,
                 isAnyLoading = false,
@@ -339,6 +342,17 @@ object StreamsRepository {
 
         // Initialise loading placeholders
         val installedAddonOrder = streamAddons.map { it.addonName }
+        val telegramGroup = if (telegramEnabled) {
+            listOf(AddonStreamGroup(
+                addonName = "Telegram",
+                addonId = "telegram",
+                streams = emptyList(),
+                isLoading = true,
+            ))
+        } else {
+            emptyList()
+        }
+
         val initialGroups = StreamAutoPlaySelector.orderAddonStreams(streamAddons.map { addon ->
             AddonStreamGroup(
                 addonName = addon.addonName,
@@ -360,7 +374,7 @@ object StreamsRepository {
                 streams = emptyList(),
                 isLoading = true,
             )
-        }, installedAddonOrder)
+        } + telegramGroup, installedAddonOrder)
         val isInitiallyLoading = initialGroups.any { it.isLoading }
         _uiState.value = StreamsUiState(
             requestToken = requestToken,
@@ -380,7 +394,8 @@ object StreamsRepository {
             val pluginFirstErrorByAddonId = mutableMapOf<String, String>()
             val totalTasks = streamAddons.size +
                 pluginProviderGroups.sumOf { it.scrapers.size } +
-                cloudStreamProviderGroups.size
+                cloudStreamProviderGroups.size +
+                (if (telegramEnabled) 1 else 0)
             val cloudStreamSemaphore = Semaphore(CLOUDSTREAM_STREAM_PROVIDER_CONCURRENCY)
 
             val installedAddonNames = installedAddonOrder.toSet()
@@ -700,6 +715,27 @@ object StreamsRepository {
                         streams = emptyList(),
                         isLoading = false,
                         error = "${providerGroup.addonName} timed out",
+                    )
+                    publishCompletion(StreamLoadCompletion.Addon(group))
+                }
+            }
+
+            if (telegramEnabled) {
+                launch {
+                    val result = withTimeoutOrNull(STREAM_PROVIDER_TIMEOUT_MS) {
+                        TelegramSourceResolver.resolve(
+                            title = searchTitle ?: "",
+                            year = null,
+                            season = season,
+                            episode = episode,
+                            isMovie = season == null,
+                        )
+                    } ?: emptyList()
+                    val group = AddonStreamGroup(
+                        addonName = "Telegram",
+                        addonId = "telegram",
+                        streams = result,
+                        isLoading = false,
                     )
                     publishCompletion(StreamLoadCompletion.Addon(group))
                 }
