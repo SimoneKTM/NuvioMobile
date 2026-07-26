@@ -22,7 +22,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.net.Proxy
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import kotlin.text.Charsets
@@ -91,7 +90,6 @@ private val addonHttpClient = OkHttpClient.Builder()
     .writeTimeout(60, TimeUnit.SECONDS)
     .followRedirects(true)
     .followSslRedirects(true)
-    .proxy(Proxy.NO_PROXY)
     .addInterceptor(CloudflareKillerInterceptor())
     .build()
 
