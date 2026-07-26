@@ -18,8 +18,9 @@ import com.nuvio.app.features.mdblist.MdbListSettingsRepository
 import com.nuvio.app.features.tmdb.TmdbMetadataService
 import com.nuvio.app.features.tmdb.TmdbService
 import com.nuvio.app.features.tmdb.TmdbSettingsRepository
-import com.nuvio.app.features.anime.tvdb.TvdbMetadataService
 import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettingsRepository
+import com.nuvio.app.features.anime.tvdb.TvdbMetadataService
+import com.nuvio.app.features.tvdb.TvdbSettingsRepository
 import com.nuvio.app.features.trakt.TraktAuthRepository
 import com.nuvio.app.features.trakt.TraktConnectionMode
 import com.nuvio.app.features.trakt.TraktRelatedRepository
@@ -292,6 +293,9 @@ object MetaDetailsRepository {
             val payload = httpGetText(url)
             log.d { "Raw payload length=${payload.length}, first 500 chars: ${payload.take(500)}" }
             val result = MetaDetailsParser.parse(payload)
+            val isAnime = type.startsWith("anime", ignoreCase = true)
+
+            TmdbSettingsRepository.ensureLoaded()
             val tmdbEnriched = withTimeoutOrNull(TMDB_ENRICH_TIMEOUT_MS) {
                 TmdbMetadataService.enrichMeta(
                     meta = result,
@@ -311,14 +315,25 @@ object MetaDetailsRepository {
             } else {
                 tmdbEnriched
             }
-            val tvdbEnriched = withTimeoutOrNull(TVDB_ENRICH_TIMEOUT_MS) {
+            val tvdbEnriched = if (isAnime) {
                 AnimeTvdbSettingsRepository.ensureLoaded()
-                TvdbMetadataService.enrichMeta(
-                    meta = enriched,
-                    fallbackItemId = id,
-                    settings = AnimeTvdbSettingsRepository.snapshot(),
-                )
-            } ?: enriched
+                withTimeoutOrNull(TVDB_ENRICH_TIMEOUT_MS) {
+                    TvdbMetadataService.enrichMeta(
+                        meta = enriched,
+                        fallbackItemId = id,
+                        settings = AnimeTvdbSettingsRepository.snapshot(),
+                    )
+                } ?: enriched
+            } else {
+                TvdbSettingsRepository.ensureLoaded()
+                withTimeoutOrNull(TVDB_ENRICH_TIMEOUT_MS) {
+                    TvdbMetadataService.enrichMeta(
+                        meta = enriched,
+                        fallbackItemId = id,
+                        settings = TvdbSettingsRepository.snapshot(),
+                    )
+                } ?: enriched
+            }
             log.d { "Parsed meta: type=${tvdbEnriched.type}, name=${tvdbEnriched.name}, videos=${tvdbEnriched.videos.size}" }
             if (tvdbEnriched.videos.isNotEmpty()) {
                 val first = tvdbEnriched.videos.first()
@@ -462,14 +477,25 @@ object MetaDetailsRepository {
                 settings = settings,
             )
         } ?: meta
-        val tvdbEnrichedMeta = withTimeoutOrNull(TVDB_ENRICH_TIMEOUT_MS) {
+        val tvdbEnrichedMeta = if (fallbackItemType.startsWith("anime", ignoreCase = true)) {
             AnimeTvdbSettingsRepository.ensureLoaded()
-            TvdbMetadataService.enrichMeta(
-                meta = mdbListEnrichedMeta,
-                fallbackItemId = fallbackItemId,
-                settings = AnimeTvdbSettingsRepository.snapshot(),
-            )
-        } ?: mdbListEnrichedMeta
+            withTimeoutOrNull(TVDB_ENRICH_TIMEOUT_MS) {
+                TvdbMetadataService.enrichMeta(
+                    meta = mdbListEnrichedMeta,
+                    fallbackItemId = fallbackItemId,
+                    settings = AnimeTvdbSettingsRepository.snapshot(),
+                )
+            } ?: mdbListEnrichedMeta
+        } else {
+            TvdbSettingsRepository.ensureLoaded()
+            withTimeoutOrNull(TVDB_ENRICH_TIMEOUT_MS) {
+                TvdbMetadataService.enrichMeta(
+                    meta = mdbListEnrichedMeta,
+                    fallbackItemId = fallbackItemId,
+                    settings = TvdbSettingsRepository.snapshot(),
+                )
+            } ?: mdbListEnrichedMeta
+        }
         val enrichedMeta = applyMoreLikeThisSource(
             meta = tvdbEnrichedMeta,
             fallbackItemId = fallbackItemId,

@@ -6,6 +6,7 @@ import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.features.details.MetaExternalRating
 import com.nuvio.app.features.details.MetaPerson
 import com.nuvio.app.features.details.MetaTrailer
+import com.nuvio.app.features.tvdb.TvdbSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -164,6 +165,14 @@ object TvdbMetadataService {
         return null
     }
 
+    suspend fun enrichMeta(
+        meta: MetaDetails,
+        fallbackItemId: String,
+        settings: TvdbSettings,
+    ): MetaDetails {
+        return enrichMeta(meta, fallbackItemId, settings.toAnimeTvdbSettings())
+    }
+
     private suspend fun tryRemoteIdSearch(itemId: String): Int? {
         val remoteId = when {
             itemId.matches(Regex("^tt\\d+$")) -> "imdb:$itemId"
@@ -174,3 +183,14 @@ object TvdbMetadataService {
         return results.firstOrNull()?.id
     }
 }
+
+internal fun TvdbSettings.toAnimeTvdbSettings(): AnimeTvdbSettings = AnimeTvdbSettings(
+    enabled = enabled,
+    apiKey = apiKey,
+    useTrailers = useTrailers,
+    useArtwork = useArtwork,
+    useBasicInfo = useBasicInfo,
+    useCredits = useCredits,
+    useEpisodes = useEpisodes,
+    useSeasonPosters = useSeasonPosters,
+)
