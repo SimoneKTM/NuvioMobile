@@ -336,7 +336,7 @@ object PlayerStreamsRepository {
                     val url = buildAddonResourceUrl(
                         manifestUrl = addon.manifest.transportUrl,
                         resource = "stream",
-                        type = type,
+                        type = ContentType.streamMatchKey(type),
                         id = videoId,
                     )
 

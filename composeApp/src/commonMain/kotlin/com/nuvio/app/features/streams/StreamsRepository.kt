@@ -600,7 +600,7 @@ object StreamsRepository {
                     val url = buildAddonResourceUrl(
                         manifestUrl = addon.manifest.transportUrl,
                         resource = "stream",
-                        type = type,
+                        type = ContentType.streamMatchKey(type),
                         id = videoId,
                     )
                     log.d { "Fetching streams from: $url" }
