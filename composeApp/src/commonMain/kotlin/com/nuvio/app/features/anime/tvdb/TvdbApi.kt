@@ -58,7 +58,7 @@ object TvdbApi {
     suspend fun searchByRemoteId(remoteId: String): List<TvdbSearchResult> {
         val token = ensureAuthenticated() ?: return emptyList()
         return runCatching {
-            val url = "$BASE_URL/search?remote_id=${encodeQuery(remoteId)}"
+            val url = "$BASE_URL/search/remoteid/${encodeQuery(remoteId)}"
             val responseText = httpGetTextWithHeaders(url, headers = authHeaders(token))
             val response = json.decodeFromString<TvdbSearchResponse>(responseText)
             response.data
@@ -137,7 +137,7 @@ object TvdbApi {
         val overviewTranslations: List<String> = emptyList(),
         @SerialName("remote_ids") val remoteIds: List<TvdbRemoteId> = emptyList(),
         val slug: String? = null,
-        val status: TvdbStatus? = null,
+        val status: String? = null,
         val year: String? = null,
     )
 
