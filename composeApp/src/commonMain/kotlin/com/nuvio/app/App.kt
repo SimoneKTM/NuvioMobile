@@ -250,6 +250,7 @@ import com.nuvio.app.features.watchprogress.WatchProgressSourceCoordinator
 import com.nuvio.app.features.watchprogress.nextUpDismissKey
 import com.nuvio.app.features.watchprogress.toContinueWatchingItem
 import com.nuvio.app.features.anime.AnimeCollectionRepository
+import com.nuvio.app.features.animeprofile.AnimeProfileRepository
 import com.nuvio.app.features.anilist.AniListApi
 import com.nuvio.app.features.anilist.AniListAuthRepository
 import com.nuvio.app.features.anilist.AniListLibraryItem
@@ -912,9 +913,17 @@ private fun MainAppContent(
             LiveTvRepository.ensureLoaded()
             LiveTvRepository.uiState
         }.collectAsStateWithLifecycle()
+        val animeProfileState by remember {
+            AnimeProfileRepository.state
+        }.collectAsStateWithLifecycle()
         val authState by AuthRepository.state.collectAsStateWithLifecycle()
         LaunchedEffect(liveTvUiState.showInNavigation) {
             if (!liveTvUiState.showInNavigation && selectedTab == AppScreenTab.LiveTv) {
+                selectedTab = AppScreenTab.Home
+            }
+        }
+        LaunchedEffect(animeProfileState.config.showInNavigation) {
+            if (!animeProfileState.config.showInNavigation && selectedTab == AppScreenTab.Anime) {
                 selectedTab = AppScreenTab.Home
             }
         }
@@ -2006,12 +2015,14 @@ private fun MainAppContent(
                                                 icon = Icons.Filled.Home,
                                                 contentDescription = stringResource(Res.string.compose_nav_home),
                                             )
-                                            NavItem(
-                                                selected = selectedTab == AppScreenTab.Anime,
-                                                onClick = { handleRootTabClick(AppScreenTab.Anime) },
-                                                icon = Icons.Rounded.FilterDrama,
-                                                contentDescription = stringResource(Res.string.compose_nav_anime),
-                                            )
+                                            if (animeProfileState.config.showInNavigation) {
+                                                NavItem(
+                                                    selected = selectedTab == AppScreenTab.Anime,
+                                                    onClick = { handleRootTabClick(AppScreenTab.Anime) },
+                                                    icon = Icons.Rounded.FilterDrama,
+                                                    contentDescription = stringResource(Res.string.compose_nav_anime),
+                                                )
+                                            }
                                             NavItem(
                                                 selected = selectedTab == AppScreenTab.Search,
                                                 onClick = { handleRootTabClick(AppScreenTab.Search) },
@@ -2249,6 +2260,7 @@ private fun MainAppContent(
                                         onProfileSelected = onProfileSelected,
                                         onAddProfileRequested = onSwitchProfile,
                                         showLiveTvTab = liveTvUiState.showInNavigation,
+                                        showAnimeTab = animeProfileState.config.showInNavigation,
                                     )
                                 }
                             }
@@ -4071,6 +4083,7 @@ private fun TabletFloatingTopBar(
     onProfileSelected: (NuvioProfile) -> Unit,
     onAddProfileRequested: () -> Unit,
     showLiveTvTab: Boolean = true,
+    showAnimeTab: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.nuvio
@@ -4110,23 +4123,25 @@ private fun TabletFloatingTopBar(
                         )
                     },
                 )
-                TabletTopPillItem(
-                    label = stringResource(Res.string.compose_nav_anime),
-                    selected = selectedTab == AppScreenTab.Anime,
-                    onClick = { onTabSelected(AppScreenTab.Anime) },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Rounded.FilterDrama,
-                            contentDescription = stringResource(Res.string.compose_nav_anime),
-                            modifier = Modifier.size(NuvioTokens.Space.s18),
-                            tint = if (selectedTab == AppScreenTab.Anime) {
-                                tokens.colors.textPrimary
-                            } else {
-                                tokens.colors.textMuted
-                            },
-                        )
-                    },
-                )
+                if (showAnimeTab) {
+                    TabletTopPillItem(
+                        label = stringResource(Res.string.compose_nav_anime),
+                        selected = selectedTab == AppScreenTab.Anime,
+                        onClick = { onTabSelected(AppScreenTab.Anime) },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Rounded.FilterDrama,
+                                contentDescription = stringResource(Res.string.compose_nav_anime),
+                                modifier = Modifier.size(NuvioTokens.Space.s18),
+                                tint = if (selectedTab == AppScreenTab.Anime) {
+                                    tokens.colors.textPrimary
+                                } else {
+                                    tokens.colors.textMuted
+                                },
+                            )
+                        },
+                    )
+                }
                 TabletTopPillItem(
                     label = stringResource(Res.string.compose_nav_search),
                     selected = selectedTab == AppScreenTab.Search,
