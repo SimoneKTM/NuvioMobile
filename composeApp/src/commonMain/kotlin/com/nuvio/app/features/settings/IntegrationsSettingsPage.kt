@@ -151,6 +151,14 @@ internal fun LazyListScope.integrationsContent(
                     isTablet = isTablet,
                     onClick = onOpenSubtitlesClick,
                 )
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.compose_settings_page_subdl),
+                    description = stringResource(Res.string.settings_integrations_subdl_description),
+                    iconPainter = integrationLogoPainter(IntegrationLogo.Subdl),
+                    isTablet = isTablet,
+                    onClick = onSubdlClick,
+                )
             }
         }
     }
