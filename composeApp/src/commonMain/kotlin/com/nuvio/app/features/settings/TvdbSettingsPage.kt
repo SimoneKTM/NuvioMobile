@@ -170,7 +170,7 @@ internal fun LazyListScope.animeTvdbSettingsContent(
             SettingsGroup(isTablet = isTablet) {
                 SettingsSwitchRow(
                     title = stringResource(Res.string.settings_tvdb_enable),
-                    description = stringResource(Res.string.settings_tvdb_enable_description),
+                    description = "Usa TVDB come fonte di metadati per migliorare i dati dei componenti aggiuntivi",
                     checked = settings.enabled,
                     enabled = settings.hasApiKey,
                     isTablet = isTablet,
@@ -180,7 +180,7 @@ internal fun LazyListScope.animeTvdbSettingsContent(
                     SettingsGroupDivider(isTablet = isTablet)
                     TvdbInfoRow(
                         isTablet = isTablet,
-                        text = stringResource(Res.string.settings_tvdb_add_api_key_first),
+                        text = "Aggiungi la tua chiave API TVDB qui sotto prima dell'arricchimento",
                     )
                 }
             }
