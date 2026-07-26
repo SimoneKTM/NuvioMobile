@@ -19,6 +19,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -37,6 +38,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -771,15 +773,34 @@ private fun TraktConnectionCard(
                         )
                     }
                 }
-                Button(
-                    onClick = TraktAuthRepository::onCancelAuthorization,
-                    enabled = !uiState.isLoading,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
+                val uriHandler = LocalUriHandler.current
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(stringResource(Res.string.action_cancel))
+                    Button(
+                        onClick = {
+                            val url = uiState.verificationUrl?.let { "https://$it" }
+                            if (url != null) {
+                                runCatching { uriHandler.openUri(url) }
+                            }
+                        },
+                        enabled = uiState.verificationUrl != null && !uiState.isLoading,
+                    ) {
+                        Text(
+                            text = uiState.verificationUrl?.let { "Apri $it" }
+                                ?: stringResource(Res.string.trakt_device_code_verification_url),
+                        )
+                    }
+                    OutlinedButton(
+                        onClick = TraktAuthRepository::onCancelAuthorization,
+                        enabled = !uiState.isLoading,
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) {
+                        Text(stringResource(Res.string.action_cancel))
+                    }
                 }
             }
 
