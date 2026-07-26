@@ -61,15 +61,15 @@ object MetaDetailsRepository {
     private var activeRequestKey: String? = null
     private val cachedMetaByRequestKey = mutableMapOf<String, CachedMetaEntry>()
 
-    fun load(type: String, id: String) {
-        log.d { "load() called — type=$type id=$id" }
+    fun load(type: String, id: String, isAnime: Boolean = false) {
+        log.d { "load() called — type=$type id=$id isAnime=$isAnime" }
         val requestKey = "$type:$id"
         parseCloudStreamRouteId(id)?.let { route ->
             loadCloudStream(requestKey = requestKey, route = route)
             return
         }
         val currentState = _uiState.value
-        val mdbListSettings = MdbListSettingsRepository.snapshot()
+        val mdbListSettings = resolveMdbListSettings(isAnime)
         val metaScreenSettingsFingerprint = buildMetaScreenSettingsFingerprint(mdbListSettings)
 
         cachedMetaByRequestKey[requestKey]?.let { cachedEntry ->
@@ -82,7 +82,7 @@ object MetaDetailsRepository {
                 }
 
             val cachedBaseMeta = cachedEntry.baseMeta
-            if (!shouldEnrichForMetaScreen(cachedBaseMeta, id, mdbListSettings)) {
+            if (!shouldEnrichForMetaScreen(cachedBaseMeta, id, mdbListSettings, isAnime)) {
                 _uiState.value = MetaDetailsUiState(meta = cachedBaseMeta.withUnreleasedFilter())
                 activeRequestKey = requestKey
                 return
@@ -108,6 +108,7 @@ object MetaDetailsRepository {
                         fallbackItemType = type,
                         settings = mdbListSettings,
                         settingsFingerprint = metaScreenSettingsFingerprint,
+                        isAnime = isAnime,
                     )
                 }
                 _uiState.value = MetaDetailsUiState(meta = enrichedMeta.withUnreleasedFilter())
@@ -135,7 +136,7 @@ object MetaDetailsRepository {
             val manifests = findReadyMetaManifests(type = type, id = metaLookupId)
 
             if (manifests.isEmpty()) {
-                val tmdbMeta = tryFetchTmdbFallbackMeta(type = type, id = id)
+                val tmdbMeta = tryFetchTmdbFallbackMeta(type = type, id = id, isAnime = isAnime)
                 if (tmdbMeta != null) {
                     publishLoadedMeta(
                         requestKey = requestKey,
@@ -144,6 +145,7 @@ object MetaDetailsRepository {
                         fallbackItemType = type,
                         mdbListSettings = mdbListSettings,
                         metaScreenSettingsFingerprint = metaScreenSettingsFingerprint,
+                        isAnime = isAnime,
                     )
                     return@launch
                 }
@@ -158,7 +160,7 @@ object MetaDetailsRepository {
 
             for (manifest in manifests) {
                 val result = withContext(Dispatchers.Default) {
-                    tryFetchMeta(manifest, type, metaLookupId, includeMdbList = false)
+                    tryFetchMeta(manifest, type, metaLookupId, includeMdbList = false, isAnime = isAnime)
                 }
                 if (result != null) {
                     publishLoadedMeta(
@@ -168,12 +170,13 @@ object MetaDetailsRepository {
                         fallbackItemType = type,
                         mdbListSettings = mdbListSettings,
                         metaScreenSettingsFingerprint = metaScreenSettingsFingerprint,
+                        isAnime = isAnime,
                     )
                     return@launch
                 }
             }
 
-            val tmdbMeta = tryFetchTmdbFallbackMeta(type = type, id = id)
+            val tmdbMeta = tryFetchTmdbFallbackMeta(type = type, id = id, isAnime = isAnime)
             if (tmdbMeta != null) {
                 publishLoadedMeta(
                     requestKey = requestKey,
@@ -182,6 +185,7 @@ object MetaDetailsRepository {
                     fallbackItemType = type,
                     mdbListSettings = mdbListSettings,
                     metaScreenSettingsFingerprint = metaScreenSettingsFingerprint,
+                    isAnime = isAnime,
                 )
                 return@launch
             }
@@ -193,12 +197,13 @@ object MetaDetailsRepository {
         }
     }
 
-    fun peek(type: String, id: String): MetaDetails? {
+    fun peek(type: String, id: String, isAnime: Boolean = false): MetaDetails? {
         val requestKey = "$type:$id"
         val currentMeta = _uiState.value.meta?.takeIf { it.type == type && it.id == id }
         if (currentMeta != null) return currentMeta
 
-        val metaScreenSettingsFingerprint = buildMetaScreenSettingsFingerprint(MdbListSettingsRepository.snapshot())
+        val mdbListSettings = resolveMdbListSettings(isAnime)
+        val metaScreenSettingsFingerprint = buildMetaScreenSettingsFingerprint(mdbListSettings)
         val cachedEntry = cachedMetaByRequestKey[requestKey] ?: return null
         return cachedEntry.metaScreenMeta
             ?.takeIf { cachedEntry.metaScreenSettingsFingerprint == metaScreenSettingsFingerprint }
@@ -211,7 +216,7 @@ object MetaDetailsRepository {
         _uiState.value = MetaDetailsUiState()
     }
 
-    suspend fun fetch(type: String, id: String): MetaDetails? {
+    suspend fun fetch(type: String, id: String, isAnime: Boolean = false): MetaDetails? {
         val requestKey = "$type:$id"
         cachedMetaByRequestKey[requestKey]?.let { return it.baseMeta }
 
@@ -229,7 +234,7 @@ object MetaDetailsRepository {
 
         for (manifest in manifests) {
             val result = withTimeoutOrNull(FETCH_TIMEOUT_MS) {
-                tryFetchMeta(manifest, type, metaLookupId, includeMdbList = false)
+                tryFetchMeta(manifest, type, metaLookupId, includeMdbList = false, isAnime = isAnime)
             }
             if (result != null) {
                 cachedMetaByRequestKey[requestKey] = CachedMetaEntry(baseMeta = result)
@@ -237,7 +242,7 @@ object MetaDetailsRepository {
             }
         }
 
-        return tryFetchTmdbFallbackMeta(type = type, id = id)?.also { result ->
+        return tryFetchTmdbFallbackMeta(type = type, id = id, isAnime = isAnime)?.also { result ->
             cachedMetaByRequestKey[requestKey] = CachedMetaEntry(baseMeta = result)
         }
     }
@@ -280,8 +285,8 @@ object MetaDetailsRepository {
     private const val MDBLIST_ENRICH_TIMEOUT_MS = 5_000L
     private const val TVDB_ENRICH_TIMEOUT_MS = 5_000L
 
-    private fun resolveTmdbSettings(type: String): TmdbSettings {
-        if (type.startsWith("anime", ignoreCase = true)) {
+    private fun resolveTmdbSettings(isAnime: Boolean): TmdbSettings {
+        if (isAnime) {
             AnimeTmdbSettingsRepository.ensureLoaded()
             val s = AnimeTmdbSettingsRepository.snapshot()
             if (s.enabled && s.hasApiKey) return s.toTmdbSettings()
@@ -290,8 +295,8 @@ object MetaDetailsRepository {
         return TmdbSettingsRepository.snapshot()
     }
 
-    private fun resolveMdbListSettings(type: String): MdbListSettings {
-        if (type.startsWith("anime", ignoreCase = true)) {
+    private fun resolveMdbListSettings(isAnime: Boolean): MdbListSettings {
+        if (isAnime) {
             AnimeMdbListSettingsRepository.ensureLoaded()
             val s = AnimeMdbListSettingsRepository.snapshot()
             if (s.hasApiKey) return s.toMdbListSettings()
@@ -300,8 +305,8 @@ object MetaDetailsRepository {
         return MdbListSettingsRepository.snapshot()
     }
 
-    private fun resolveAnimeTvdbSettings(type: String): AnimeTvdbSettings {
-        if (type.startsWith("anime", ignoreCase = true)) {
+    private fun resolveAnimeTvdbSettings(isAnime: Boolean): AnimeTvdbSettings {
+        if (isAnime) {
             AnimeTvdbSettingsRepository.ensureLoaded()
             val s = AnimeTvdbSettingsRepository.snapshot()
             if (s.enabled && s.hasApiKey) return s
@@ -315,6 +320,7 @@ object MetaDetailsRepository {
         type: String,
         id: String,
         includeMdbList: Boolean,
+        isAnime: Boolean,
     ): MetaDetails? {
         val url = buildAddonResourceUrl(
             manifestUrl = manifest.transportUrl,
@@ -334,7 +340,7 @@ object MetaDetailsRepository {
                 TmdbMetadataService.enrichMeta(
                     meta = result,
                     fallbackItemId = id,
-                    settings = resolveTmdbSettings(type),
+                    settings = resolveTmdbSettings(isAnime),
                 )
             } ?: result
             val enriched = if (includeMdbList) {
@@ -342,7 +348,7 @@ object MetaDetailsRepository {
                     MdbListMetadataService.enrichMeta(
                         meta = tmdbEnriched,
                         fallbackItemId = id,
-                        settings = resolveMdbListSettings(type),
+                        settings = resolveMdbListSettings(isAnime),
                     )
                 } ?: tmdbEnriched
             } else {
@@ -352,7 +358,7 @@ object MetaDetailsRepository {
                 TvdbMetadataService.enrichMeta(
                     meta = enriched,
                     fallbackItemId = id,
-                    settings = resolveAnimeTvdbSettings(type),
+                    settings = resolveAnimeTvdbSettings(isAnime),
                 )
             } ?: enriched
             log.d { "Parsed meta: type=${tvdbEnriched.type}, name=${tvdbEnriched.name}, videos=${tvdbEnriched.videos.size}" }
@@ -435,12 +441,12 @@ object MetaDetailsRepository {
             ?: itemId
     }
 
-    private suspend fun tryFetchTmdbFallbackMeta(type: String, id: String): MetaDetails? =
+    private suspend fun tryFetchTmdbFallbackMeta(type: String, id: String, isAnime: Boolean): MetaDetails? =
         withTimeoutOrNull(TMDB_ENRICH_TIMEOUT_MS) {
             TmdbMetadataService.fetchStandaloneMeta(
                 type = type,
                 id = id,
-                settings = resolveTmdbSettings(type),
+                settings = resolveTmdbSettings(isAnime),
             )
         }
 
@@ -451,11 +457,12 @@ object MetaDetailsRepository {
         fallbackItemType: String,
         mdbListSettings: com.nuvio.app.features.mdblist.MdbListSettings,
         metaScreenSettingsFingerprint: String,
+        isAnime: Boolean,
     ) {
         val cachedEntry = CachedMetaEntry(baseMeta = meta)
         cachedMetaByRequestKey[requestKey] = cachedEntry
 
-        if (!shouldEnrichForMetaScreen(meta, fallbackItemId, mdbListSettings)) {
+        if (!shouldEnrichForMetaScreen(meta, fallbackItemId, mdbListSettings, isAnime)) {
             _uiState.value = MetaDetailsUiState(meta = meta.withUnreleasedFilter())
             activeRequestKey = requestKey
             return
@@ -473,6 +480,7 @@ object MetaDetailsRepository {
                 fallbackItemType = fallbackItemType,
                 settings = mdbListSettings,
                 settingsFingerprint = metaScreenSettingsFingerprint,
+                isAnime = isAnime,
             )
         }
         cachedMetaByRequestKey[requestKey] = cachedEntry.copy(
@@ -490,25 +498,27 @@ object MetaDetailsRepository {
         fallbackItemType: String,
         settings: com.nuvio.app.features.mdblist.MdbListSettings,
         settingsFingerprint: String,
+        isAnime: Boolean,
     ): MetaDetails {
         val mdbListEnrichedMeta = withTimeoutOrNull(MDBLIST_ENRICH_TIMEOUT_MS) {
             MdbListMetadataService.enrichMeta(
                 meta = meta,
                 fallbackItemId = fallbackItemId,
-                settings = resolveMdbListSettings(fallbackItemType),
+                settings = resolveMdbListSettings(isAnime),
             )
         } ?: meta
         val tvdbEnrichedMeta = withTimeoutOrNull(TVDB_ENRICH_TIMEOUT_MS) {
             TvdbMetadataService.enrichMeta(
                 meta = mdbListEnrichedMeta,
                 fallbackItemId = fallbackItemId,
-                settings = resolveAnimeTvdbSettings(fallbackItemType),
+                settings = resolveAnimeTvdbSettings(isAnime),
             )
         } ?: mdbListEnrichedMeta
         val enrichedMeta = applyMoreLikeThisSource(
             meta = tvdbEnrichedMeta,
             fallbackItemId = fallbackItemId,
             fallbackItemType = fallbackItemType,
+            isAnime = isAnime,
         )
 
         cachedMetaByRequestKey[requestKey] = cachedMetaByRequestKey[requestKey]
@@ -529,11 +539,12 @@ object MetaDetailsRepository {
         meta: MetaDetails,
         fallbackItemId: String,
         fallbackItemType: String,
+        isAnime: Boolean,
     ): MetaDetails {
         TraktSettingsRepository.ensureLoaded()
         TraktAuthRepository.ensureLoaded()
 
-        val tmdbSettings = resolveTmdbSettings(fallbackItemType)
+        val tmdbSettings = resolveTmdbSettings(isAnime)
 
         val traktSettings = TraktSettingsRepository.uiState.value
         val isTraktAuthenticated = TraktAuthRepository.uiState.value.mode == TraktConnectionMode.CONNECTED
@@ -572,26 +583,28 @@ object MetaDetailsRepository {
         meta: MetaDetails,
         fallbackItemId: String,
         settings: com.nuvio.app.features.mdblist.MdbListSettings,
+        isAnime: Boolean,
     ): Boolean = MdbListMetadataService.shouldFetchForMeta(
         meta = meta,
         fallbackItemId = fallbackItemId,
-        settings = resolveMdbListSettings(meta.type),
+        settings = resolveMdbListSettings(isAnime),
     )
 
     private fun shouldEnrichForMetaScreen(
         meta: MetaDetails,
         fallbackItemId: String,
         settings: com.nuvio.app.features.mdblist.MdbListSettings,
+        isAnime: Boolean,
     ): Boolean {
-        if (shouldFetchMdbListOnMetaScreen(meta, fallbackItemId, settings)) return true
-        return shouldApplyMoreLikeThisSource(meta)
+        if (shouldFetchMdbListOnMetaScreen(meta, fallbackItemId, settings, isAnime)) return true
+        return shouldApplyMoreLikeThisSource(meta, isAnime)
     }
 
-    private fun shouldApplyMoreLikeThisSource(meta: MetaDetails): Boolean {
+    private fun shouldApplyMoreLikeThisSource(meta: MetaDetails, isAnime: Boolean): Boolean {
         TraktSettingsRepository.ensureLoaded()
         TraktAuthRepository.ensureLoaded()
 
-        val tmdbSettings = resolveTmdbSettings(meta.type)
+        val tmdbSettings = resolveTmdbSettings(isAnime)
 
         val traktSettings = TraktSettingsRepository.uiState.value
         val isTraktAuthenticated = TraktAuthRepository.uiState.value.mode == TraktConnectionMode.CONNECTED
@@ -606,15 +619,12 @@ object MetaDetailsRepository {
     ): String {
         TraktSettingsRepository.ensureLoaded()
         TraktAuthRepository.ensureLoaded()
-        TmdbSettingsRepository.ensureLoaded()
         val providers = settings.enabledProvidersInPriorityOrder().joinToString(",")
         val traktSettings = TraktSettingsRepository.uiState.value
         val traktAuthMode = TraktAuthRepository.uiState.value.mode
-        val tmdbSettings = TmdbSettingsRepository.snapshot()
         return buildString {
             append("${settings.enabled}:${settings.apiKey.trim()}:$providers")
             append("|more_like=${traktSettings.moreLikeThisSource}:$traktAuthMode")
-            append("|tmdb=${tmdbSettings.enabled}:${tmdbSettings.useMoreLikeThis}:${tmdbSettings.hasApiKey}:${tmdbSettings.language}")
         }
     }
 

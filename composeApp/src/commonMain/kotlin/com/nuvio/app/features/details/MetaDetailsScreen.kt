@@ -158,9 +158,9 @@ fun MetaDetailsScreen(
     modifier: Modifier = Modifier,
 ) {
     val uiState by MetaDetailsRepository.uiState.collectAsStateWithLifecycle()
-    val displayedMeta = uiState.meta?.takeIf { it.type == type && it.id == id }
-        ?: MetaDetailsRepository.peek(type, id)
     val isAnimeMetaScreen = isAnime || type.startsWith("anime", ignoreCase = true)
+    val displayedMeta = uiState.meta?.takeIf { it.type == type && it.id == id }
+        ?: MetaDetailsRepository.peek(type, id, isAnime = isAnimeMetaScreen)
     val metaScreenSettingsUiState by remember(isAnimeMetaScreen) {
         if (isAnimeMetaScreen) {
             AnimeMetaScreenSettingsRepository.ensureLoaded()
@@ -297,7 +297,7 @@ fun MetaDetailsScreen(
     LaunchedEffect(type, id, displayedMeta, uiState.isLoading, autoLoadAttempted) {
         if (!autoLoadAttempted && displayedMeta == null && !uiState.isLoading) {
             autoLoadAttempted = true
-            MetaDetailsRepository.load(type, id)
+            MetaDetailsRepository.load(type, id, isAnime = isAnimeMetaScreen)
         }
     }
 
@@ -313,7 +313,7 @@ fun MetaDetailsScreen(
         tmdbSettingsUiState.language,
     ) {
         if (displayedMeta != null && !uiState.isLoading) {
-            MetaDetailsRepository.load(type, id)
+            MetaDetailsRepository.load(type, id, isAnime = isAnimeMetaScreen)
         }
     }
 
@@ -329,7 +329,7 @@ fun MetaDetailsScreen(
                 if (!observedOfflineState) return@LaunchedEffect
                 observedOfflineState = false
                 if (displayedMeta == null && !uiState.isLoading) {
-                    MetaDetailsRepository.load(type, id)
+                    MetaDetailsRepository.load(type, id, isAnime = isAnimeMetaScreen)
                 }
             }
 
@@ -390,7 +390,7 @@ fun MetaDetailsScreen(
                     Button(
                         onClick = {
                             NetworkStatusRepository.requestRefresh(force = true)
-                            MetaDetailsRepository.load(type, id)
+                            MetaDetailsRepository.load(type, id, isAnime = isAnimeMetaScreen)
                         },
                     ) {
                         Text(stringResource(Res.string.action_retry))
