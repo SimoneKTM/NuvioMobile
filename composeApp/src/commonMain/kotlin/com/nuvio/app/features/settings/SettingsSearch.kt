@@ -45,8 +45,6 @@ import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.isIos
-import nuvio.composeapp.generated.resources.compose_settings_page_telegram
-import nuvio.composeapp.generated.resources.settings_integrations_telegram_description
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
@@ -900,14 +898,6 @@ internal fun settingsSearchEntries(
         description = stringResource(Res.string.settings_integrations_subdl_description),
         icon = Icons.Rounded.Link,
     )
-    addPage(
-        page = SettingsPage.Telegram,
-        key = "telegram",
-        title = stringResource(Res.string.compose_settings_page_telegram),
-        description = stringResource(Res.string.settings_integrations_telegram_description),
-        icon = Icons.Rounded.Link,
-    )
-
     val notificationsAlerts = stringResource(Res.string.settings_notifications_section_alerts)
     addRow(
         page = SettingsPage.Notifications,

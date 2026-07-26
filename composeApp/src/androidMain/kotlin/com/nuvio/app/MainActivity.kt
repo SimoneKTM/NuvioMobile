@@ -78,7 +78,6 @@ import com.nuvio.app.features.watchprogress.ResumePromptStorage
 import com.nuvio.app.features.watchprogress.WatchProgressStorage
 import com.nuvio.app.features.home.Top10CatalogStorage
 import com.nuvio.app.features.streams.StreamsAppearanceStorage
-import com.nuvio.app.features.telegram.TelegramClient
 import android.util.Log
 import java.io.File
 import java.text.SimpleDateFormat
@@ -193,7 +192,6 @@ class MainActivity : AppCompatActivity() {
         EpisodeReleaseNotificationPlatform.bindActivity(this)
         handleIncomingAppIntent(intent)
 
-        TelegramClient.initialize(applicationContext)
         KitsuSyncCoordinator.syncOnLaunchIfNeeded()
         AniListSyncCoordinator.syncOnLaunchIfNeeded()
 
