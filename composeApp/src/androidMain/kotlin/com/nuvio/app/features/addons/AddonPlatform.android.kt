@@ -6,6 +6,7 @@ import android.util.Log
 import com.nuvio.app.core.network.IPv4FirstDns
 import com.nuvio.app.core.network.CloudflareSolver
 import com.nuvio.app.core.network.isCloudflareChallenge
+import java.net.Proxy
 import com.nuvio.app.features.settings.globalNetworkSettingsRepository
 import kotlinx.coroutines.Dispatchers
 import java.net.URI
@@ -90,6 +91,7 @@ private val addonHttpClient = OkHttpClient.Builder()
     .writeTimeout(60, TimeUnit.SECONDS)
     .followRedirects(true)
     .followSslRedirects(true)
+    .proxy(Proxy.NO_PROXY)
     .addInterceptor(CloudflareKillerInterceptor())
     .build()
 
