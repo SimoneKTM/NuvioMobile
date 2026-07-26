@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -345,12 +346,26 @@ private fun KitsuConnectionCard(isTablet: Boolean) {
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                     Button(
-                        onClick = { showLoginDialog = true },
-                        modifier = Modifier.fillMaxWidth()
+                        onClick = {
+                            val authUrl = KitsuAuthRepository.onConnectRequested()
+                            runCatching { uriHandler.openUri(authUrl) }
+                        },
+                        modifier = Modifier.weight(1f),
                     ) {
-                        Text("Connetti Kitsu")
+                        Text("Connetti con Browser")
                     }
+                    OutlinedButton(
+                        onClick = { showLoginDialog = true },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Email / Password")
+                    }
+                }
             }
 
             KitsuConnectionMode.LOADING -> {
