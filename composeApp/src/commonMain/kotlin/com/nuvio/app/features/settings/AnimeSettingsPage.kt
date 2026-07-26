@@ -217,6 +217,7 @@ internal fun LazyListScope.animeLayoutSettingsContent(
                 SettingsNavigationRow(
                     title = stringResource(Res.string.compose_settings_page_meta_screen),
                     description = stringResource(Res.string.settings_content_discovery_meta_screen_description),
+                    icon = Icons.Rounded.Tune,
                     isTablet = isTablet,
                     onClick = onMetaScreenClick,
                 )
