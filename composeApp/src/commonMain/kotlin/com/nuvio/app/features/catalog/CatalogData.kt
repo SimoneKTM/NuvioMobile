@@ -6,13 +6,17 @@ import com.nuvio.app.features.addons.httpGetText
 import com.nuvio.app.features.home.HomeCatalogParser
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.stableKey
+import com.nuvio.app.features.tmdb.TmdbService
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 
 const val CATALOG_PAGE_SIZE = 100
 private const val DUPLICATE_CATALOG_PAGE_ADVANCE_LIMIT = 3
@@ -77,16 +81,46 @@ suspend fun fetchCatalogPage(
         payload = payload,
         maxItems = maxItems,
     )
+    val enrichedItems = enrichWithTmdbTitles(parsed.items)
     val nextSkip = if (parsed.rawItemCount > 0) {
         (skip ?: 0) + parsed.rawItemCount
     } else {
         null
     }
     return CatalogPage(
-        items = parsed.items,
+        items = enrichedItems,
         rawItemCount = parsed.rawItemCount,
         nextSkip = nextSkip,
     )
+}
+
+private suspend fun enrichWithTmdbTitles(items: List<MetaPreview>): List<MetaPreview> = coroutineScope {
+    items.map { item ->
+        async {
+            val tmdbId = item.id
+                .removePrefix("tmdb:")
+                .substringBefore(':')
+                .substringBefore('/')
+                .trim()
+                .toIntOrNull()
+            if (tmdbId != null) {
+                val tmdbType = when (item.type.lowercase()) {
+                    "movie", "film" -> "movie"
+                    else -> "tv"
+                }
+                val canonical = withTimeoutOrNull(2_000L) {
+                    TmdbService.fetchTitle(tmdbId, tmdbType)
+                }
+                if (canonical != null) {
+                    item.copy(name = canonical)
+                } else {
+                    item
+                }
+            } else {
+                item
+            }
+        }
+    }.map { it.await() }
 }
 
 fun AddonCatalog.supportsPagination(): Boolean =

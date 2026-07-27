@@ -13,7 +13,27 @@ object TmdbService {
     private val json = Json { ignoreUnknownKeys = true }
     private val imdbToTmdbCache = linkedMapOf<String, String>()
     private val tmdbToImdbCache = linkedMapOf<String, String>()
+    private val titleCache = linkedMapOf<String, String>()
     private val cacheMutex = Mutex()
+
+    suspend fun fetchTitle(tmdbId: Int, mediaType: String): String? {
+        val apiKey = currentApiKey() ?: return null
+        val normalizedType = normalizeMediaType(mediaType)
+        val cacheKey = "$tmdbId:$normalizedType"
+        cacheMutex.withLock {
+            titleCache[cacheKey]?.let { return it }
+        }
+        val endpoint = when (normalizedType) {
+            "tv" -> "tv/$tmdbId"
+            else -> "movie/$tmdbId"
+        }
+        val body = fetch<TmdbTitleResponse>(endpoint = endpoint, apiKey = apiKey) ?: return null
+        val title = (body.title ?: body.name)?.trim()?.takeIf(String::isNotBlank) ?: return null
+        cacheMutex.withLock {
+            titleCache[cacheKey] = title
+        }
+        return title
+    }
 
     suspend fun ensureTmdbId(videoId: String, mediaType: String): String? {
         val apiKey = currentApiKey() ?: return null
@@ -189,4 +209,10 @@ private data class TmdbExternalResult(
 @Serializable
 private data class TmdbExternalIdsResponse(
     @SerialName("imdb_id") val imdbId: String? = null,
+)
+
+@Serializable
+private data class TmdbTitleResponse(
+    val title: String? = null,
+    val name: String? = null,
 )
