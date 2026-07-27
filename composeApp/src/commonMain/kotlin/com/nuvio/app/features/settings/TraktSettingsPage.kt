@@ -782,7 +782,7 @@ private fun TraktConnectionCard(
                 ) {
                     Button(
                         onClick = {
-                            val url = uiState.verificationUrl?.let { "https://$it" }
+                            val url = uiState.verificationUrl
                             if (url != null) {
                                 runCatching { uriHandler.openUri(url) }
                             }
@@ -791,7 +791,7 @@ private fun TraktConnectionCard(
                         modifier = Modifier.weight(1f),
                     ) {
                         Text(
-                            text = stringResource(Res.string.trakt_device_code_verification_url),
+                            text = "Apri trakt.tv/activate",
                         )
                     }
                     OutlinedButton(
