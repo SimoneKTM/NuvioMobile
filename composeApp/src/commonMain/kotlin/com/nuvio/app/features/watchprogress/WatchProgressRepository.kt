@@ -527,7 +527,7 @@ object WatchProgressRepository {
         }
 
         return try {
-            SimklSyncRepository.refresh(com.nuvio.app.features.tracking.TrackingRefreshIntent.ALWAYS)
+            SimklSyncRepository.refresh(TrackingRefreshIntent.AUTOMATIC)
             if (!isActiveOperation(profileId, operationGeneration) || activeSource != WatchProgressSource.SIMKL) {
                 return false
             }

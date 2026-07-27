@@ -7,6 +7,8 @@ import com.nuvio.app.features.simkl.SimklAuthRepository
 import com.nuvio.app.features.simkl.SimklConnectionMode
 import com.nuvio.app.features.trakt.TraktAuthRepository
 import com.nuvio.app.features.trakt.TraktConnectionMode
+import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.features.trakt.DEFAULT_WATCH_PROGRESS_SOURCE
 import com.nuvio.app.features.trakt.TraktSettingsRepository
 import com.nuvio.app.features.trakt.WatchProgressSource
 import com.nuvio.app.features.trakt.effectiveWatchProgressSource
@@ -239,7 +241,11 @@ object WatchProgressSourceCoordinator {
                     SimklAuthRepository.uiState,
                     AuthRepository.state,
                     ProfileRepository.state,
-                ) { settings, isTraktAuthenticated, simklUiState, authState, profileState ->
+                ) { settings: com.nuvio.app.features.trakt.TraktSettingsUiState,
+                    isTraktAuthenticated: Boolean,
+                    simklUiState: com.nuvio.app.features.simkl.SimklAuthUiState,
+                    authState: AuthState,
+                    profileState: com.nuvio.app.features.profiles.ProfileState ->
                     buildContext(
                         profileId = profileState.activeProfile?.profileIndex
                             ?: ProfileRepository.activeProfileId,

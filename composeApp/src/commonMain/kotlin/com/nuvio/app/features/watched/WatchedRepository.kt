@@ -68,6 +68,7 @@ internal fun watchedItemsForSource(
 ): Collection<WatchedItem> = when (source) {
     WatchProgressSource.NUVIO_SYNC -> nuvioItems
     WatchProgressSource.TRAKT -> traktItems
+    WatchProgressSource.SIMKL -> traktItems
 }
 
 internal fun shouldPersistWatchedSource(source: WatchProgressSource): Boolean =
@@ -82,6 +83,7 @@ internal fun replaceWatchedItemsForSource(
     val target = when (source) {
         WatchProgressSource.NUVIO_SYNC -> nuvioItems
         WatchProgressSource.TRAKT -> traktItems
+        WatchProgressSource.SIMKL -> traktItems
     }
     target.clear()
     target.putAll(replacement)
@@ -604,12 +606,14 @@ object WatchedRepository {
         when (source) {
             WatchProgressSource.NUVIO_SYNC -> nuvioItemsByKey
             WatchProgressSource.TRAKT -> traktItemsByKey
+            WatchProgressSource.SIMKL -> traktItemsByKey
         }
 
     private fun fullyWatchedSeriesKeysForSource(source: WatchProgressSource): Set<String> =
         when (source) {
             WatchProgressSource.NUVIO_SYNC -> nuvioFullyWatchedSeriesKeys
             WatchProgressSource.TRAKT -> traktFullyWatchedSeriesKeys
+            WatchProgressSource.SIMKL -> traktFullyWatchedSeriesKeys
         }
 
     private fun setFullyWatchedSeriesKeysForSource(
@@ -619,6 +623,7 @@ object WatchedRepository {
         when (source) {
             WatchProgressSource.NUVIO_SYNC -> nuvioFullyWatchedSeriesKeys = keys
             WatchProgressSource.TRAKT -> traktFullyWatchedSeriesKeys = keys
+            WatchProgressSource.SIMKL -> traktFullyWatchedSeriesKeys = keys
         }
     }
 
@@ -626,6 +631,7 @@ object WatchedRepository {
         when (source) {
             WatchProgressSource.NUVIO_SYNC -> nuvioHasLoaded
             WatchProgressSource.TRAKT -> traktHasLoaded
+            WatchProgressSource.SIMKL -> traktHasLoaded
         }
 
     fun toggleWatched(item: WatchedItem) {
@@ -885,6 +891,7 @@ object WatchedRepository {
             hasLoadedRemoteItems = when (activeSource) {
                 WatchProgressSource.NUVIO_SYNC -> nuvioHasLoadedRemote
                 WatchProgressSource.TRAKT -> traktHasLoadedRemote
+                WatchProgressSource.SIMKL -> traktHasLoadedRemote
             },
         )
     }
