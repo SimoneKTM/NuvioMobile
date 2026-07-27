@@ -847,6 +847,8 @@ object LibraryRepository {
             genres = genres,
             posterShape = PosterShape.Poster,
             savedAtEpochMs = updatedAtEpochMs ?: now,
+            startDate = startDate,
+            nextEpisodeAtEpochMs = nextEpisodeAtEpochMs,
         )
     }
 

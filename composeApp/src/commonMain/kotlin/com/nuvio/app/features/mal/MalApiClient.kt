@@ -53,7 +53,7 @@ object MalApiClient {
         status: String? = null,
         limit: Int = 1000,
         offset: Int = 0,
-        fields: String = "id,title,main_picture,synopsis,mean,num_episodes,status,genres,media_type",
+        fields: String = "id,title,main_picture,synopsis,mean,num_episodes,status,genres,media_type,start_date",
     ): MalUserAnimeListResponse {
         val url = buildString {
             append("$BASE_URL/users/$userName/animelist?limit=$limit&offset=$offset&fields=$fields")

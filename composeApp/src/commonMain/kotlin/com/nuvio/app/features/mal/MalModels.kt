@@ -79,6 +79,7 @@ data class MalAnime(
     val status: String? = null,
     val genres: List<MalGenre>? = null,
     val mediaType: String? = null,
+    @SerialName("start_date") val startDate: String? = null,
     val averageEpisodeDuration: Int? = null,
     val ratings: MalRatings? = null,
 )
@@ -152,4 +153,6 @@ data class MalLibraryItem(
     val userScore: Int? = null,
     val episodesWatched: Int? = null,
     val updatedAtEpochMs: Long? = null,
+    val startDate: String? = null,
+    val nextEpisodeAtEpochMs: Long? = null,
 )

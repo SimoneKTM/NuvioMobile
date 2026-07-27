@@ -141,6 +141,22 @@ object MalLibraryRepository {
                     val listStatus = entry.listStatus ?: return@mapNotNull null
                     val statusValue = listStatus.status ?: return@mapNotNull null
 
+                    val nextEpisodeMs = if (anime.status == "currently_airing" && anime.startDate != null) {
+                        val startEpochMs = parseMalDateToEpochMs(anime.startDate)
+                        if (startEpochMs != null) {
+                            val nowMs = MalPlatformClock.nowEpochMs()
+                            val daysSinceStart = (nowMs - startEpochMs) / 86400000L
+                            if (daysSinceStart >= 0) {
+                                val weeksSinceStart = daysSinceStart / 7
+                                val nextEpNumber = weeksSinceStart + 1
+                                val totalEp = anime.numEpisodes
+                                if (totalEp == null || nextEpNumber <= totalEp) {
+                                    startEpochMs + (nextEpNumber * 7 * 86400000L)
+                                } else null
+                            } else null
+                        } else null
+                    } else null
+
                     MalLibraryItem(
                         id = anime.id ?: return@mapNotNull null,
                         title = anime.title ?: "Unknown",
@@ -155,6 +171,8 @@ object MalLibraryRepository {
                         userScore = listStatus.score,
                         episodesWatched = listStatus.numEpisodesWatched,
                         updatedAtEpochMs = listStatus.updatedAt?.let { parseMalDateTime(it) },
+                        startDate = anime.startDate,
+                        nextEpisodeAtEpochMs = nextEpisodeMs,
                     )
                 }
 
@@ -171,6 +189,26 @@ object MalLibraryRepository {
         return runCatching {
             java.time.Instant.parse(dateTime).toEpochMilli()
         }.getOrNull()
+    }
+
+    private fun parseMalDateToEpochMs(dateStr: String): Long? {
+        val parts = dateStr.split('-')
+        if (parts.size != 3) return null
+        val year = parts[0].toIntOrNull() ?: return null
+        val month = parts[1].toIntOrNull() ?: return null
+        val day = parts[2].toIntOrNull() ?: return null
+        return daysFrom0(year, month, day).minus(daysFrom0(1970, 1, 1)) * 86400000L
+    }
+
+    private fun daysFrom0(year: Int, month: Int, day: Int): Long {
+        var y = year
+        var m = month
+        if (m <= 2) { y--; m += 12 }
+        val era = (y / 400).toLong()
+        val yoe = (y - 400 * era).toLong()
+        val doy = (153 * (m - 3) + 2) / 5 + day - 1
+        val doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
+        return era * 146097 + doe
     }
 
     private fun loadFromDisk() {
