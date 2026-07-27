@@ -2220,13 +2220,21 @@ private fun defaultLibraryCalendarSelection(
     month: LibraryCalendarMonth,
     todayIso: String,
 ): LibraryCalendarSelection {
+    val today = parseLibraryCalendarDate(todayIso) ?: LibraryCalendarDate(1970, 1, 1)
+    val futureEvents = events.filter { it.date.iso >= todayIso }.sortedBy { it.date.iso }
+    val targetMonth = if (futureEvents.isNotEmpty()) {
+        val firstEvent = futureEvents.first()
+        LibraryCalendarMonth(firstEvent.date.year, firstEvent.date.month)
+    } else {
+        month
+    }
     val monthEvents = events
-        .filter { event -> event.date.year == month.year && event.date.month == month.month }
+        .filter { event -> event.date.year == targetMonth.year && event.date.month == targetMonth.month }
         .sortedWith(compareBy<LibraryCalendarEvent> { it.date.iso }.thenBy { it.sortTitle.lowercase() })
     return LibraryCalendarSelection(
-        month = month,
-        dateIso = defaultLibraryCalendarSelectedDate(monthEvents, month, todayIso)
-            ?: LibraryCalendarDate(month.year, month.month, 1).iso,
+        month = targetMonth,
+        dateIso = defaultLibraryCalendarSelectedDate(monthEvents, targetMonth, todayIso)
+            ?: LibraryCalendarDate(targetMonth.year, targetMonth.month, 1).iso,
     )
 }
 
