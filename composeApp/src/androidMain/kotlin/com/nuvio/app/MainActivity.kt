@@ -79,6 +79,7 @@ import com.nuvio.app.features.watchprogress.ResumePromptStorage
 import com.nuvio.app.features.watchprogress.WatchProgressStorage
 import com.nuvio.app.features.home.Top10CatalogStorage
 import com.nuvio.app.features.streams.StreamsAppearanceStorage
+import com.nuvio.app.features.simkl.SimklAuthStorage
 import android.util.Log
 import java.io.File
 import java.text.SimpleDateFormat
@@ -167,6 +168,7 @@ class MainActivity : AppCompatActivity() {
         KitsuStorage.initialize(applicationContext)
         AniListStorage.initialize(applicationContext)
         TraktAuthStorage.initialize(applicationContext)
+        SimklAuthStorage.initialize(applicationContext)
         TraktCommentsStorage.initialize(applicationContext)
         TraktLibraryStorage.initialize(applicationContext)
         TraktSettingsStorage.initialize(applicationContext)
