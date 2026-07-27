@@ -155,6 +155,22 @@ object KitsuLibraryRepository {
                     ?: incAttrs?.posterImage?.medium
                     ?: incAttrs?.posterImage?.original
 
+                val nextEpisodeAtEpochMs = if (attrs.status == "current" && incAttrs?.startDate != null) {
+                    val startEpochMs = parseKitsuDateToEpochMs(incAttrs.startDate)
+                    if (startEpochMs != null) {
+                        val nowMs = WatchProgressClock.nowEpochMs()
+                        val daysSinceStart = (nowMs - startEpochMs) / 86400000L
+                        if (daysSinceStart >= 0) {
+                            val weeksSinceStart = daysSinceStart / 7
+                            val nextEpNumber = weeksSinceStart + 1
+                            val totalEp = incAttrs.episodeCount
+                            if (totalEp == null || nextEpNumber <= totalEp) {
+                                startEpochMs + (nextEpNumber * 7 * 86400000L)
+                            } else null
+                        } else null
+                    } else null
+                } else null
+
                 KitsuLibraryItem(
                     id = entry.id.toLongOrNull() ?: 0L,
                     kitsuMediaId = animeId.toLongOrNull() ?: 0L,
@@ -167,7 +183,8 @@ object KitsuLibraryRepository {
                     updatedAt = attrs.updatedAt,
                     entryId = entry.id,
                     synopsis = incAttrs?.synopsis,
-                    startDate = incAttrs?.startDate
+                    startDate = incAttrs?.startDate,
+                    nextEpisodeAtEpochMs = nextEpisodeAtEpochMs,
                 )
             }
 
@@ -210,6 +227,27 @@ object KitsuLibraryRepository {
             log.w { "Failed to parse cached Kitsu library items: ${it.message}" }
             _uiState.value = KitsuLibraryUiState()
         }
+    }
+
+    private fun parseKitsuDateToEpochMs(dateStr: String): Long? {
+        val parts = dateStr.split('-')
+        if (parts.size != 3) return null
+        val year = parts[0].toIntOrNull() ?: return null
+        val month = parts[1].toIntOrNull() ?: return null
+        val day = parts[2].toIntOrNull() ?: return null
+        val daysFromEpoch = daysFrom0(year, month, day) - daysFrom0(1970, 1, 1)
+        return daysFromEpoch * 86400000L
+    }
+
+    private fun daysFrom0(year: Int, month: Int, day: Int): Long {
+        var y = year
+        var m = month
+        if (m <= 2) { y--; m += 12 }
+        val era = (y / 400).toLong()
+        val yoe = (y - 400 * era).toLong()
+        val doy = (153 * (m - 3) + 2) / 5 + day - 1
+        val doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
+        return era * 146097 + doe
     }
 
     private fun persistSnapshot(items: List<KitsuLibraryItem>) {

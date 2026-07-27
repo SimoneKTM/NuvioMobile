@@ -71,6 +71,7 @@ data class KitsuLibraryItem(
     val entryId: String? = null,
     val synopsis: String? = null,
     val startDate: String? = null,
+    val nextEpisodeAtEpochMs: Long? = null,
 )
 
 data class KitsuLibraryUiState(
