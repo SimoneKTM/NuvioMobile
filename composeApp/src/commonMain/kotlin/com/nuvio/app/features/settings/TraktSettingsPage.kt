@@ -791,8 +791,7 @@ private fun TraktConnectionCard(
                         modifier = Modifier.weight(1f),
                     ) {
                         Text(
-                            text = uiState.verificationUrl?.let { "Apri $it" }
-                                ?: stringResource(Res.string.trakt_device_code_verification_url),
+                            text = stringResource(Res.string.trakt_device_code_verification_url),
                         )
                     }
                     OutlinedButton(
