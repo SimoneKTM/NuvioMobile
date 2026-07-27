@@ -1262,6 +1262,10 @@
     <string name="settings_trakt_open_login">Apri accesso Trakt</string>
     <string name="settings_trakt_save_actions_description">Le tue azioni di salvataggio possono ora essere indirizzate alla watchlist di Trakt e alle liste personali.</string>
     <string name="settings_trakt_sign_in_description">Accedi con Trakt per abilitare il salvataggio basato su liste e la modalità libreria Trakt.</string>
+    <string name="trakt_device_code_verification_url">trakt.tv/activate</string>
+    <string name="trakt_device_code_instructions">Visita %1$s sul tuo telefono o computer e inserisci il codice qui sotto:</string>
+    <string name="trakt_device_code_polling">In attesa dell'autorizzazione Trakt…</string>
+    <string name="trakt_device_code_expired">Il codice di autorizzazione è scaduto. Riprova.</string>
     <string name="trakt_library_source_title">Fonte libreria</string>
     <string name="trakt_library_source_subtitle">Scegli quale libreria usare per salvare e visualizzare la tua collezione</string>
     <string name="trakt_library_source_dialog_title">Fonte libreria</string>
