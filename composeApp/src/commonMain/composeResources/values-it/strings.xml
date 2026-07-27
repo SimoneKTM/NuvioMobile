@@ -1250,7 +1250,7 @@
     <string name="settings_trakt_authentication">AUTENTICAZIONE</string>
     <string name="settings_trakt_comments">Commenti</string>
     <string name="settings_trakt_comments_description">Mostra le recensioni di Trakt sulle pagine dei metadati</string>
-    <string name="settings_trakt_connect">Connetti Trakt</string>
+    <string name="settings_trakt_connect">Accedi con Trakt</string>
     <string name="settings_trakt_connected_as">Connesso come %1$s</string>
     <string name="settings_trakt_default_user">Utente Trakt</string>
     <string name="settings_trakt_disconnect">Disconnetti</string>

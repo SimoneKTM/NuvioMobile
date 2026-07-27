@@ -814,33 +814,18 @@ private fun TraktConnectionCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Row(
+                Button(
+                    onClick = { TraktAuthRepository.onConnectRequested() },
+                    enabled = uiState.credentialsConfigured && !uiState.isLoading,
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Button(
-                        onClick = { TraktAuthRepository.onConnectRequested() },
-                        enabled = uiState.credentialsConfigured && !uiState.isLoading,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        if (uiState.isLoading) {
-                            NuvioLoadingIndicator(
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        } else {
-                            Text(stringResource(Res.string.settings_trakt_connect))
-                        }
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            val url = "https://trakt.tv/activate"
-                            runCatching { uriHandler.openUri(url) }
-                        },
-                        enabled = uiState.credentialsConfigured,
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(stringResource(Res.string.settings_trakt_open_browser_btn))
+                    if (uiState.isLoading) {
+                        NuvioLoadingIndicator(
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    } else {
+                        Text(stringResource(Res.string.settings_trakt_connect))
                     }
                 }
                 if (!uiState.credentialsConfigured) {
