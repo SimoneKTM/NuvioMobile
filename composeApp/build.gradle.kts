@@ -177,6 +177,7 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
                 |
                 |object MalConfig {
                 |    const val CLIENT_ID = "${props.getProperty("MAL_CLIENT_ID", "")}" 
+                |    const val CLIENT_SECRET = "${props.getProperty("MAL_CLIENT_SECRET", "")}" 
                 |    const val REDIRECT_URI = "${props.getProperty("MAL_REDIRECT_URI", "nuvio://auth/mal")}" 
                 |}
                 """.trimMargin()

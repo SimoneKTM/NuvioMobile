@@ -7,6 +7,7 @@ import com.nuvio.app.core.storage.ProfileScopedKey
 internal actual object MalAuthStorage {
     private const val preferencesName = "nuvio_mal_auth"
     private const val payloadKey = "mal_auth_payload"
+    private const val codeVerifierKey = "mal_code_verifier"
 
     private var preferences: SharedPreferences? = null
 
@@ -19,5 +20,18 @@ internal actual object MalAuthStorage {
 
     actual fun savePayload(payload: String) {
         preferences?.edit()?.putString(ProfileScopedKey.of(payloadKey), payload)?.apply()
+    }
+
+    actual fun loadCodeVerifier(): String? =
+        preferences?.getString(ProfileScopedKey.of(codeVerifierKey), null)
+
+    actual fun saveCodeVerifier(value: String?) {
+        val editor = preferences?.edit() ?: return
+        if (value.isNullOrBlank()) {
+            editor.remove(ProfileScopedKey.of(codeVerifierKey))
+        } else {
+            editor.putString(ProfileScopedKey.of(codeVerifierKey), value)
+        }
+        editor.apply()
     }
 }

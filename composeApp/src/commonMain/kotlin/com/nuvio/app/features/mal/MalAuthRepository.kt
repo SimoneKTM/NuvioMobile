@@ -68,12 +68,17 @@ object MalAuthRepository {
     fun onConnectRequested(): String? {
         ensureLoaded()
         if (!hasRequiredCredentials()) {
-            publish(errorMessage = "MAL client ID not configured")
+            publish(errorMessage = "ID client MAL non configurato")
             return null
         }
 
+        clearPendingAuthorization()
+        codeVerifier = null
+        MalAuthStorage.saveCodeVerifier(null)
+
         val stateVerifier = SimklPkceCrypto.secureRandomBytes(32).base64UrlWithoutPadding()
         codeVerifier = stateVerifier
+        MalAuthStorage.saveCodeVerifier(stateVerifier)
         val codeChallenge = SimklPkceCrypto.sha256(stateVerifier.encodeToByteArray()).base64UrlWithoutPadding()
         authState = authState.copy(
             pendingAuthorizationState = stateVerifier,
@@ -81,7 +86,7 @@ object MalAuthRepository {
         )
         persist()
         publish(
-            statusMessage = "Complete sign-in in your browser",
+            statusMessage = "Completa l'accesso nel browser",
             errorMessage = null,
         )
 
@@ -172,8 +177,9 @@ object MalAuthRepository {
         if (parsedUrl == null) {
             clearPendingAuthorization()
             codeVerifier = null
+            MalAuthStorage.saveCodeVerifier(null)
             persist()
-            publish(isLoading = false, errorMessage = "Invalid callback URL")
+            publish(isLoading = false, errorMessage = "URL di callback non valido")
             return
         }
 
@@ -181,8 +187,9 @@ object MalAuthRepository {
         if (!errorCode.isNullOrBlank()) {
             clearPendingAuthorization()
             codeVerifier = null
+            MalAuthStorage.saveCodeVerifier(null)
             persist()
-            publish(isLoading = false, errorMessage = "Authorization denied")
+            publish(isLoading = false, errorMessage = "Accesso negato")
             return
         }
 
@@ -190,8 +197,9 @@ object MalAuthRepository {
         if (code.isBlank()) {
             clearPendingAuthorization()
             codeVerifier = null
+            MalAuthStorage.saveCodeVerifier(null)
             persist()
-            publish(isLoading = false, errorMessage = "Missing authorization code")
+            publish(isLoading = false, errorMessage = "Codice di autorizzazione mancante")
             return
         }
 
@@ -200,8 +208,9 @@ object MalAuthRepository {
         if (!expectedState.isNullOrBlank() && callbackState != expectedState) {
             clearPendingAuthorization()
             codeVerifier = null
+            MalAuthStorage.saveCodeVerifier(null)
             persist()
-            publish(isLoading = false, errorMessage = "State mismatch - authorization cancelled")
+            publish(isLoading = false, errorMessage = "Mismatch dello stato - accesso annullato")
             return
         }
 
@@ -209,10 +218,10 @@ object MalAuthRepository {
     }
 
     private suspend fun exchangeAuthorizationCode(code: String) {
-        val verifier = codeVerifier ?: run {
+        val verifier = codeVerifier ?: MalAuthStorage.loadCodeVerifier() ?: run {
             clearPendingAuthorization()
             persist()
-            publish(isLoading = false, errorMessage = "Missing code verifier")
+            publish(isLoading = false, errorMessage = "Codice di verifica mancante")
             return
         }
 
@@ -222,6 +231,9 @@ object MalAuthRepository {
             append("&code_verifier=").append(verifier.encodeURLParameter())
             append("&grant_type=authorization_code")
             append("&redirect_uri=").append(MalConfig.REDIRECT_URI.encodeURLParameter())
+            if (MalConfig.CLIENT_SECRET.isNotBlank()) {
+                append("&client_secret=").append(MalConfig.CLIENT_SECRET.encodeURLParameter())
+            }
         }
 
         val response = runCatching {
@@ -236,11 +248,12 @@ object MalAuthRepository {
         }.getOrNull()
 
         codeVerifier = null
+        MalAuthStorage.saveCodeVerifier(null)
 
         if (response == null) {
             clearPendingAuthorization()
             persist()
-            publish(isLoading = false, errorMessage = "Failed to complete sign-in")
+            publish(isLoading = false, errorMessage = "Accesso non riuscito")
             return
         }
 
@@ -251,7 +264,7 @@ object MalAuthRepository {
         if (parsed == null) {
             clearPendingAuthorization()
             persist()
-            publish(isLoading = false, errorMessage = "Invalid token response")
+            publish(isLoading = false, errorMessage = "Risposta del token non valida")
             return
         }
 
@@ -276,7 +289,7 @@ object MalAuthRepository {
         }
         publish(
             isLoading = false,
-            statusMessage = "Connected to MyAnimeList",
+            statusMessage = "Connesso a MyAnimeList",
             errorMessage = null,
         )
     }
@@ -288,7 +301,7 @@ object MalAuthRepository {
         persist()
         publish(
             isLoading = false,
-            statusMessage = "Disconnected from MyAnimeList",
+            statusMessage = "Disconnesso da MyAnimeList",
             errorMessage = null,
         )
     }
@@ -304,6 +317,9 @@ object MalAuthRepository {
             append("client_id=").append(MalConfig.CLIENT_ID.encodeURLParameter())
             append("&grant_type=refresh_token")
             append("&refresh_token=").append(refreshToken.encodeURLParameter())
+            if (MalConfig.CLIENT_SECRET.isNotBlank()) {
+                append("&client_secret=").append(MalConfig.CLIENT_SECRET.encodeURLParameter())
+            }
         }
 
         val response = runCatching {
