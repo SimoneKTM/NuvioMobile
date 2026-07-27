@@ -17,6 +17,7 @@ data class AnimeProfileConfig(
     val preferredLanguage: String = "sub",
     val excludeDubs: Boolean = false,
     val showOnHomeTab: Boolean = true,
+    val showInNavigation: Boolean = true,
     @SerialName("tmdb_config")
     val tmdbConfig: AnimeTmdbConfig = AnimeTmdbConfig(),
 )

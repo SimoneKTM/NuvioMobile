@@ -21,8 +21,21 @@ internal actual object AnimeTvdbSettingsStorage {
 
     actual fun saveApiKey(apiKey: String) { store.putString("anime_tvdb_api_key", apiKey) }
 
-    private fun elem(key: String, value: Boolean): Pair<String, JsonElement> =
-        key to JsonPrimitive(value)
+    actual fun loadUseTrailers(): Boolean? = bool("anime_tvdb_use_trailers")
+    actual fun saveUseTrailers(enabled: Boolean) { store.putBoolean("anime_tvdb_use_trailers", enabled) }
+    actual fun loadUseArtwork(): Boolean? = bool("anime_tvdb_use_artwork")
+    actual fun saveUseArtwork(enabled: Boolean) { store.putBoolean("anime_tvdb_use_artwork", enabled) }
+    actual fun loadUseBasicInfo(): Boolean? = bool("anime_tvdb_use_basic_info")
+    actual fun saveUseBasicInfo(enabled: Boolean) { store.putBoolean("anime_tvdb_use_basic_info", enabled) }
+    actual fun loadUseCredits(): Boolean? = bool("anime_tvdb_use_credits")
+    actual fun saveUseCredits(enabled: Boolean) { store.putBoolean("anime_tvdb_use_credits", enabled) }
+    actual fun loadUseEpisodes(): Boolean? = bool("anime_tvdb_use_episodes")
+    actual fun saveUseEpisodes(enabled: Boolean) { store.putBoolean("anime_tvdb_use_episodes", enabled) }
+    actual fun loadUseSeasonPosters(): Boolean? = bool("anime_tvdb_use_season_posters")
+    actual fun saveUseSeasonPosters(enabled: Boolean) { store.putBoolean("anime_tvdb_use_season_posters", enabled) }
+
+    private fun extractBoolean(element: JsonElement?): Boolean? =
+        (element as? JsonPrimitive)?.content?.toBooleanStrictOrNull()
 
     actual fun exportToSyncPayload(): JsonObject = buildJsonObject {
         loadEnabled()?.let { put("anime_tvdb_enabled", it) }
@@ -33,7 +46,7 @@ internal actual object AnimeTvdbSettingsStorage {
         val keys = listOf("anime_tvdb_enabled", "anime_tvdb_api_key")
         keys.forEach { store.remove(it) }
 
-        payload["anime_tvdb_enabled"]?.jsonPrimitive?.booleanOrNull?.let(::saveEnabled)
-        payload["anime_tvdb_api_key"]?.jsonPrimitive?.contentOrNull?.let(::saveApiKey)
+        extractBoolean(payload["anime_tvdb_enabled"])?.let(::saveEnabled)
+        (payload["anime_tvdb_api_key"] as? JsonPrimitive)?.content?.let(::saveApiKey)
     }
 }

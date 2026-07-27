@@ -86,6 +86,7 @@ jobs:
           printf 'DONATIONS_DONATE_URL=%s\n' "https://ko-fi.com/tapframe" >> local.properties
           printf 'CONTRIBUTIONS_URL=%s\n' "${{ secrets.CONTRIBUTION_URL }}" >> local.properties
           printf 'DIRECT_DEBRID_API_BASE_URL=%s\n' "https://api.torbox.app/v1/api" >> local.properties
+          printf 'SIMKL_CLIENT_ID=%s\n' "${{ secrets.SIMKL_CLIENT_ID }}" >> local.properties
 
       - name: Generate Changelog
         id: changelog
@@ -225,6 +226,7 @@ jobs:
           DONATIONS_DONATE_URL=https://ko-fi.com/tapframe
           CONTRIBUTIONS_URL=${{ secrets.CONTRIBUTION_URL }}
           DIRECT_DEBRID_API_BASE_URL=https://api.torbox.app/v1/api
+          SIMKL_CLIENT_ID=${{ secrets.SIMKL_CLIENT_ID }}
           "@ | Out-File -FilePath local.properties -Encoding utf8
 
       - name: Install WebView2 SDK (NuGet)

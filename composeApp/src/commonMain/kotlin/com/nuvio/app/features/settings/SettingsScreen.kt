@@ -56,6 +56,7 @@ import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.details.MetaScreenSettingsRepository
 import com.nuvio.app.features.details.MetaScreenSettingsUiState
 import com.nuvio.app.features.anime.AnimeHomeCatalogSettingsRepository
+import com.nuvio.app.features.animeprofile.AnimeProfileRepository
 import com.nuvio.app.features.anime.metascreen.AnimeMetaScreenSettingsRepository
 import com.nuvio.app.core.ui.PosterCardStyleRepository
 import com.nuvio.app.core.ui.PosterCardStyleUiState
@@ -263,6 +264,9 @@ fun SettingsScreen(
         val animeHomescreenSettingsUiState by remember {
             AnimeHomeCatalogSettingsRepository.ensureLoaded()
             AnimeHomeCatalogSettingsRepository.uiState
+        }.collectAsStateWithLifecycle()
+        val animeProfileState by remember {
+            AnimeProfileRepository.state
         }.collectAsStateWithLifecycle()
         val collections by CollectionRepository.collections.collectAsStateWithLifecycle()
         val metaScreenSettingsUiState by remember {
@@ -523,6 +527,8 @@ fun SettingsScreen(
                 animeMdbListSettings = animeMdbListSettings,
                 animeTvdbSettings = animeTvdbSettings,
                 tvdbSettings = tvdbSettings,
+                animeShowInNavigation = animeProfileState.config.showInNavigation,
+                onAnimeShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
             )
         } else {
             MobileSettingsScreen(
@@ -613,6 +619,8 @@ fun SettingsScreen(
                 animeMdbListSettings = animeMdbListSettings,
                 animeTvdbSettings = animeTvdbSettings,
                 tvdbSettings = tvdbSettings,
+                animeShowInNavigation = animeProfileState.config.showInNavigation,
+                onAnimeShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
             )
         }
     }
@@ -708,6 +716,8 @@ private fun MobileSettingsScreen(
     animeMdbListSettings: AnimeMdbListSettings,
     animeTvdbSettings: AnimeTvdbSettings,
     tvdbSettings: TvdbSettings,
+    animeShowInNavigation: Boolean = true,
+    onAnimeShowInNavigationChanged: (Boolean) -> Unit = {},
 ) {
     val saveableStateHolder = rememberSaveableStateHolder()
     saveableStateHolder.SaveableStateProvider("settings_mobile") {
@@ -828,6 +838,8 @@ private fun MobileSettingsScreen(
                                 onAnimeContentDiscoveryClick = { onPageChange(SettingsPage.AnimeContentDiscovery) },
                                 onAnimeLayoutClick = { onPageChange(SettingsPage.AnimeLayout) },
                                 onAnimeIntegrationsClick = { onPageChange(SettingsPage.AnimeIntegrations) },
+                                animeShowInNavigation = animeShowInNavigation,
+                                onAnimeShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
                             )
                         }
                     }
@@ -1025,6 +1037,8 @@ private fun MobileSettingsScreen(
                 SettingsPage.AnimeProfile -> {
                     animeRootSettingsContent(
                         isTablet = false,
+                        showInNavigation = animeShowInNavigation,
+                        onShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
                         onContentDiscoveryClick = { onPageChange(SettingsPage.AnimeContentDiscovery) },
                         onLayoutClick = { onPageChange(SettingsPage.AnimeLayout) },
                         onIntegrationsClick = { onPageChange(SettingsPage.AnimeIntegrations) },
@@ -1033,6 +1047,8 @@ private fun MobileSettingsScreen(
                 SettingsPage.AnimeRoot -> {
                     animeRootSettingsContent(
                         isTablet = false,
+                        showInNavigation = animeShowInNavigation,
+                        onShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
                         onContentDiscoveryClick = { onPageChange(SettingsPage.AnimeContentDiscovery) },
                         onLayoutClick = { onPageChange(SettingsPage.AnimeLayout) },
                         onIntegrationsClick = { onPageChange(SettingsPage.AnimeIntegrations) },
@@ -1047,9 +1063,7 @@ private fun MobileSettingsScreen(
                 SettingsPage.AnimeLayout -> animeLayoutSettingsContent(
                     isTablet = false,
                     onHomescreenClick = { onPageChange(SettingsPage.AnimeHomescreen) },
-                    onCollectionsClick = { onPageChange(SettingsPage.AnimeCollections) },
                     onContinueWatchingClick = { onPageChange(SettingsPage.AnimeContinueWatching) },
-                    onStreamsClick = { onPageChange(SettingsPage.AnimeStreams) },
                     onMetaScreenClick = { onPageChange(SettingsPage.AnimeMetaScreen) },
                 )
                 SettingsPage.AnimeAddons -> animeAddonsSettingsContent()
@@ -1099,9 +1113,9 @@ private fun MobileSettingsScreen(
                     onTmdbClick = { onPageChange(SettingsPage.AnimeTmdbEnrichment) },
                     onMdbListClick = { onPageChange(SettingsPage.AnimeMdbListRatings) },
                     onTvdbClick = { onPageChange(SettingsPage.AnimeTvdb) },
-                    onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
-                    onDebridClick = { onPageChange(SettingsPage.Debrid) },
-                )
+                        onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
+                        onDebridClick = { onPageChange(SettingsPage.Debrid) },
+                    )
                 SettingsPage.AnimeStreams -> streamsSettingsContent(isTablet = false)
                 SettingsPage.AnimeMetaScreen -> animeMetaScreenSettingsContent(
                     isTablet = false,
@@ -1257,6 +1271,8 @@ private fun TabletSettingsScreen(
     animeMdbListSettings: AnimeMdbListSettings,
     animeTvdbSettings: AnimeTvdbSettings,
     tvdbSettings: TvdbSettings,
+    animeShowInNavigation: Boolean = true,
+    onAnimeShowInNavigationChanged: (Boolean) -> Unit = {},
 ) {
     var selectedCategory by rememberSaveable { mutableStateOf(SettingsCategory.General.name) }
     val activeCategory = SettingsCategory.valueOf(selectedCategory)
@@ -1440,6 +1456,8 @@ private fun TabletSettingsScreen(
                                 onAnimeContentDiscoveryClick = { openInlinePage(SettingsPage.AnimeContentDiscovery) },
                                 onAnimeLayoutClick = { openInlinePage(SettingsPage.AnimeLayout) },
                                 onAnimeIntegrationsClick = { openInlinePage(SettingsPage.AnimeIntegrations) },
+                                animeShowInNavigation = animeShowInNavigation,
+                                onAnimeShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
                             )
                         }
                     }
@@ -1564,7 +1582,7 @@ private fun TabletSettingsScreen(
                         isTablet = true,
                         uiState = metaScreenSettingsUiState,
                     )
-                    SettingsPage.Integrations -> integrationsContent(
+                     SettingsPage.Integrations -> integrationsContent(
                         isTablet = true,
                         onAiAssistantClick = { onPageChange(SettingsPage.AiAssistant) },
                         onTraktClick = { onPageChange(SettingsPage.TraktAuthentication) },
@@ -1636,12 +1654,16 @@ private fun TabletSettingsScreen(
                     )
                      SettingsPage.AnimeProfile -> animeRootSettingsContent(
                         isTablet = true,
+                        showInNavigation = animeShowInNavigation,
+                        onShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
                         onContentDiscoveryClick = { openInlinePage(SettingsPage.AnimeContentDiscovery) },
                         onLayoutClick = { openInlinePage(SettingsPage.AnimeLayout) },
                         onIntegrationsClick = { openInlinePage(SettingsPage.AnimeIntegrations) },
                     )
                     SettingsPage.AnimeRoot -> animeRootSettingsContent(
                         isTablet = true,
+                        showInNavigation = animeShowInNavigation,
+                        onShowInNavigationChanged = { AnimeProfileRepository.setShowInNavigation(it) },
                         onContentDiscoveryClick = { openInlinePage(SettingsPage.AnimeContentDiscovery) },
                         onLayoutClick = { openInlinePage(SettingsPage.AnimeLayout) },
                         onIntegrationsClick = { openInlinePage(SettingsPage.AnimeIntegrations) },
@@ -1655,9 +1677,7 @@ private fun TabletSettingsScreen(
                 SettingsPage.AnimeLayout -> animeLayoutSettingsContent(
                     isTablet = true,
                     onHomescreenClick = { openInlinePage(SettingsPage.AnimeHomescreen) },
-                    onCollectionsClick = { openInlinePage(SettingsPage.AnimeCollections) },
                     onContinueWatchingClick = { openInlinePage(SettingsPage.AnimeContinueWatching) },
-                    onStreamsClick = { openInlinePage(SettingsPage.AnimeStreams) },
                     onMetaScreenClick = { openInlinePage(SettingsPage.AnimeMetaScreen) },
                 )
                 SettingsPage.AnimeAddons -> animeAddonsSettingsContent()

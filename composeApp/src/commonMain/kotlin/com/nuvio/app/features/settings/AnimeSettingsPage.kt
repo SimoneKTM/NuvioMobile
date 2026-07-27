@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CollectionsBookmark
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Home
@@ -53,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.features.anime.AnimeCollectionRepository
 import com.nuvio.app.features.anime.AnimeHomeCatalogSettingsRepository
+import com.nuvio.app.features.animeprofile.AnimeProfileRepository
 import com.nuvio.app.features.collection.Collection
 import com.nuvio.app.core.ui.NuvioActionLabel
 import com.nuvio.app.core.ui.NuvioToastController
@@ -78,7 +78,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import nuvio.composeapp.generated.resources.Res
-import nuvio.composeapp.generated.resources.collections_header
 import nuvio.composeapp.generated.resources.compose_settings_page_addons
 import nuvio.composeapp.generated.resources.compose_settings_page_anime_layout
 import nuvio.composeapp.generated.resources.compose_settings_page_anime_profile
@@ -96,7 +95,6 @@ import nuvio.composeapp.generated.resources.layout_catalog_type_sub
 import nuvio.composeapp.generated.resources.layout_hide_unreleased
 import nuvio.composeapp.generated.resources.layout_hide_unreleased_sub
 import nuvio.composeapp.generated.resources.settings_appearance_continue_watching_description
-import nuvio.composeapp.generated.resources.settings_content_discovery_collections_description
 import nuvio.composeapp.generated.resources.settings_content_discovery_homescreen_description
 import nuvio.composeapp.generated.resources.settings_content_discovery_meta_screen_description
 import nuvio.composeapp.generated.resources.settings_content_discovery_section_sources
@@ -117,6 +115,8 @@ import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.animeRootSettingsContent(
     isTablet: Boolean,
+    showInNavigation: Boolean,
+    onShowInNavigationChanged: (Boolean) -> Unit,
     onContentDiscoveryClick: () -> Unit,
     onLayoutClick: () -> Unit,
     onIntegrationsClick: () -> Unit,
@@ -127,6 +127,14 @@ internal fun LazyListScope.animeRootSettingsContent(
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
+                SettingsSwitchRow(
+                    title = "Mostra scheda Anime",
+                    description = "Mostra o nascondi la scheda Anime nella barra di navigazione",
+                    checked = showInNavigation,
+                    isTablet = isTablet,
+                    onCheckedChange = onShowInNavigationChanged,
+                )
+                SettingsGroupDivider(isTablet = isTablet)
                 SettingsNavigationRow(
                     title = stringResource(Res.string.compose_settings_page_content_discovery),
                     description = "Gestisci componenti aggiuntivi e plugin per la scheda Anime",
@@ -192,9 +200,7 @@ internal fun LazyListScope.animeContentDiscoveryContent(
 internal fun LazyListScope.animeLayoutSettingsContent(
     isTablet: Boolean,
     onHomescreenClick: () -> Unit,
-    onCollectionsClick: () -> Unit,
     onContinueWatchingClick: () -> Unit,
-    onStreamsClick: () -> Unit = {},
     onMetaScreenClick: () -> Unit = {},
 ) {
     item {
@@ -212,14 +218,6 @@ internal fun LazyListScope.animeLayoutSettingsContent(
                 )
                 SettingsGroupDivider(isTablet = isTablet)
                 SettingsNavigationRow(
-                    title = stringResource(Res.string.collections_header),
-                    description = stringResource(Res.string.settings_content_discovery_collections_description),
-                    icon = Icons.Rounded.CollectionsBookmark,
-                    isTablet = isTablet,
-                    onClick = onCollectionsClick,
-                )
-                SettingsGroupDivider(isTablet = isTablet)
-                SettingsNavigationRow(
                     title = stringResource(Res.string.compose_settings_page_continue_watching),
                     description = stringResource(Res.string.settings_appearance_continue_watching_description),
                     icon = Icons.Rounded.PlayCircle,
@@ -228,15 +226,9 @@ internal fun LazyListScope.animeLayoutSettingsContent(
                 )
                 SettingsGroupDivider(isTablet = isTablet)
                 SettingsNavigationRow(
-                    title = stringResource(Res.string.compose_settings_page_streams),
-                    description = stringResource(Res.string.compose_settings_root_streams_description),
-                    isTablet = isTablet,
-                    onClick = onStreamsClick,
-                )
-                SettingsGroupDivider(isTablet = isTablet)
-                SettingsNavigationRow(
                     title = stringResource(Res.string.compose_settings_page_meta_screen),
                     description = stringResource(Res.string.settings_content_discovery_meta_screen_description),
+                    icon = Icons.Rounded.Tune,
                     isTablet = isTablet,
                     onClick = onMetaScreenClick,
                 )

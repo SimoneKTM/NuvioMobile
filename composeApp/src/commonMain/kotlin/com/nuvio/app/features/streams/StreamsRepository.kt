@@ -7,6 +7,7 @@ import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.buildAddonResourceUrl
 import com.nuvio.app.features.addons.enabledAddons
 import com.nuvio.app.features.addons.httpGetText
+import com.nuvio.app.features.anime.AnimeAddonRepository
 import com.nuvio.app.features.cloudstream.CloudStreamRepository
 import com.nuvio.app.features.cloudstream.parseCloudStreamRouteId
 import com.nuvio.app.features.cloudstream.toStreamItem
@@ -285,7 +286,9 @@ object StreamsRepository {
             return
         }
 
-        val installedAddons = AddonRepository.uiState.value.addons.enabledAddons()
+        AnimeAddonRepository.initialize()
+        val installedAddons = AddonRepository.uiState.value.addons.enabledAddons() +
+            AnimeAddonRepository.uiState.value.addons.enabledAddons()
         val pluginScrapers = if (AppFeaturePolicy.pluginsEnabled) {
             PluginRepository.getEnabledScrapersForType(type)
         } else {
@@ -339,6 +342,7 @@ object StreamsRepository {
 
         // Initialise loading placeholders
         val installedAddonOrder = streamAddons.map { it.addonName }
+
         val initialGroups = StreamAutoPlaySelector.orderAddonStreams(streamAddons.map { addon ->
             AddonStreamGroup(
                 addonName = addon.addonName,
@@ -596,16 +600,14 @@ object StreamsRepository {
                     val url = buildAddonResourceUrl(
                         manifestUrl = addon.manifest.transportUrl,
                         resource = "stream",
-                        type = type,
+                        type = ContentType.streamMatchKey(type),
                         id = videoId,
                     )
                     log.d { "Fetching streams from: $url" }
 
                     val displayName = addon.addonName
                     val group = runCatchingUnlessCancelled {
-                        val payload = withTimeoutOrNull(STREAM_PROVIDER_TIMEOUT_MS) {
-                            httpGetText(url)
-                        } ?: error("$displayName timed out")
+                        val payload = httpGetText(url)
                         StreamParser.parse(
                             payload = payload,
                             addonName = displayName,

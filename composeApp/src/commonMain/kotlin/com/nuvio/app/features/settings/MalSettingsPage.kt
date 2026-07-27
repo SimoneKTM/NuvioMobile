@@ -16,6 +16,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.features.mal.MalAuthRepository
@@ -95,6 +96,8 @@ private fun MalConnectionCard(
     val horizontalPadding = if (isTablet) 20.dp else 16.dp
     val verticalPadding = if (isTablet) 16.dp else 14.dp
 
+    val uriHandler = LocalUriHandler.current
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -119,7 +122,11 @@ private fun MalConnectionCard(
                 ) {
                     Button(
                         onClick = {
-                            MalAuthRepository.onConnectRequested()
+                            val authUrl = MalAuthRepository.onConnectRequested()
+                            if (authUrl != null) {
+                                runCatching { uriHandler.openUri(authUrl) }
+                                    .onFailure { MalAuthRepository.onAuthLaunchFailed(it.message ?: "Unknown error") }
+                            }
                         },
                     ) {
                         Text(stringResource(Res.string.settings_mal_connect))

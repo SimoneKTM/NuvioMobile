@@ -3,13 +3,14 @@ package com.nuvio.app.features.anime.tvdb
 import co.touchlab.kermit.Logger
 import com.nuvio.app.features.addons.httpGetTextWithHeaders
 import com.nuvio.app.features.addons.httpPostJson
+import com.nuvio.app.features.tvdb.TvdbSettingsRepository
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 object TvdbApi {
     private val log = Logger.withTag("TvdbApi")
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
     private const val BASE_URL = "https://api4.thetvdb.com/v4"
 
     private var cachedToken: String? = null
@@ -18,10 +19,11 @@ object TvdbApi {
     suspend fun ensureAuthenticated(apiKey: String? = null): String? {
         val resolvedKey = apiKey?.takeIf { it.isNotBlank() }
             ?: AnimeTvdbSettingsRepository.snapshot().apiKey.trim().takeIf { it.isNotBlank() }
+            ?: TvdbSettingsRepository.snapshot().apiKey.trim().takeIf { it.isNotBlank() }
             ?: return null
         if (cachedToken != null && tokenApiKey == resolvedKey) return cachedToken
         val response = login(resolvedKey) ?: return null
-        cachedToken = response.token
+        cachedToken = response.data.token
         tokenApiKey = resolvedKey
         return cachedToken
     }
@@ -47,7 +49,7 @@ object TvdbApi {
             val url = "$BASE_URL/search?query=${encodeQuery(query)}&type=series"
             val responseText = httpGetTextWithHeaders(url, headers = authHeaders(token))
             val response = json.decodeFromString<TvdbSearchResponse>(responseText)
-            response.data
+            response.data.orEmpty()
         }.onFailure { e ->
             log.w { "TVDB search failed: ${e.message}" }
         }.getOrNull().orEmpty()
@@ -56,7 +58,7 @@ object TvdbApi {
     suspend fun searchByRemoteId(remoteId: String): List<TvdbSearchResult> {
         val token = ensureAuthenticated() ?: return emptyList()
         return runCatching {
-            val url = "$BASE_URL/search?remote_id=${encodeQuery(remoteId)}&type=series"
+            val url = "$BASE_URL/search/remoteid/${encodeQuery(remoteId)}"
             val responseText = httpGetTextWithHeaders(url, headers = authHeaders(token))
             val response = json.decodeFromString<TvdbSearchResponse>(responseText)
             response.data
@@ -65,10 +67,11 @@ object TvdbApi {
         }.getOrNull().orEmpty()
     }
 
-    suspend fun getSeriesExtended(id: Int): TvdbSeriesExtended? {
+    suspend fun getSeriesExtended(id: String): TvdbSeriesExtended? {
         val token = ensureAuthenticated() ?: return null
+        val numericId = id.removePrefix("series-").removePrefix("movie-")
         return runCatching {
-            val url = "$BASE_URL/series/$id/extended"
+            val url = "$BASE_URL/series/$numericId/extended"
             val responseText = httpGetTextWithHeaders(url, headers = authHeaders(token))
             val response = json.decodeFromString<TvdbSeriesExtendedResponse>(responseText)
             response.data
@@ -108,18 +111,23 @@ object TvdbApi {
             .replace(":", "%3A")
 
     @Serializable
-    data class TvdbLoginResponse(
+    data class TvdbLoginData(
         val token: String = "",
     )
 
     @Serializable
+    data class TvdbLoginResponse(
+        val data: TvdbLoginData = TvdbLoginData(),
+    )
+
+    @Serializable
     data class TvdbSearchResponse(
-        val data: List<TvdbSearchResult> = emptyList(),
+        val data: List<TvdbSearchResult>? = null,
     )
 
     @Serializable
     data class TvdbSearchResult(
-        val id: Int = 0,
+        val id: String = "",
         val name: String = "",
         @SerialName("aliases") val aliases: List<String> = emptyList(),
         @SerialName("first_air_time") val firstAirTime: String? = null,
@@ -130,7 +138,7 @@ object TvdbApi {
         val overviewTranslations: List<String> = emptyList(),
         @SerialName("remote_ids") val remoteIds: List<TvdbRemoteId> = emptyList(),
         val slug: String? = null,
-        val status: TvdbStatus? = null,
+        val status: String? = null,
         val year: String? = null,
     )
 
@@ -189,6 +197,12 @@ object TvdbApi {
     )
 
     @Serializable
+    data class TvdbSeasonCompanies(
+        val studio: TvdbCompany? = null,
+        val network: TvdbCompany? = null,
+    )
+
+    @Serializable
     data class TvdbSeason(
         val id: Int = 0,
         val number: Int = 0,
@@ -196,7 +210,7 @@ object TvdbApi {
         @SerialName("image") val image: String? = null,
         @SerialName("image_type") val imageType: Int? = null,
         val overview: String? = null,
-        val companies: List<TvdbCompany> = emptyList(),
+        val companies: TvdbSeasonCompanies? = null,
         val seasons: List<TvdbSeason>? = null,
         val trailers: List<TvdbTrailer>? = null,
         val artwork: List<TvdbArtwork>? = null,
@@ -214,7 +228,7 @@ object TvdbApi {
 
     @Serializable
     data class TvdbCompany(
-        val id: Int = 0,
+        val id: Int? = null,
         val name: String = "",
         val slug: String? = null,
         @SerialName("primary_company_type") val primaryCompanyType: Int? = null,

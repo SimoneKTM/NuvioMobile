@@ -523,6 +523,8 @@
     <string name="settings_licenses_attributions_nuvio_license">Concesso in licenza con GNU General Public License v3.0.</string>
     <string name="settings_licenses_attributions_tmdb_title">The Movie Database (TMDB)</string>
     <string name="settings_licenses_attributions_tmdb_body">Nuvio utilizza l'API TMDB per metadati di film e TV, opere, trailer, cast, dettagli di produzione, raccolte e raccomandazioni. Questo prodotto utilizza l'API TMDB ma non è approvato o certificato da TMDB.</string>
+    <string name="settings_licenses_attributions_tvdb_title">The TV Database (TVDB)</string>
+    <string name="settings_licenses_attributions_tvdb_body">Nuvio utilizza l'API TVDB per metadati TV, opere, trailer, cast, dettagli episodi e poster stagionali. Nuvio non è affiliato o approvato da TVDB.</string>
     <string name="settings_licenses_attributions_imdb_title">Set di dati non commerciali IMDb</string>
     <string name="settings_licenses_attributions_imdb_body">Nuvio utilizza i set di dati non commerciali di IMDb, inclusi title.ratings.tsv.gz, per le valutazioni e i conteggi dei voti di IMDb. Le informazioni sono per gentile concessione di IMDb (https://www.imdb.com). Utilizzate con permesso. I dati IMDb sono per uso personale e non commerciale secondo i termini di IMDb.</string>
     <string name="settings_licenses_attributions_trakt_title">Trakt</string>

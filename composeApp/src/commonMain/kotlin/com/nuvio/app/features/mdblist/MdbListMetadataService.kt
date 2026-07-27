@@ -1,6 +1,7 @@
 package com.nuvio.app.features.mdblist
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.features.anime.mdblist.AnimeMdbListSettings
 import com.nuvio.app.features.addons.httpPostJson
 import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.features.details.MetaExternalRating
@@ -75,6 +76,26 @@ object MdbListMetadataService {
 
         return meta.copy(externalRatings = ratings)
     }
+
+    fun shouldFetchForMeta(
+        meta: MetaDetails,
+        fallbackItemId: String,
+        settings: AnimeMdbListSettings,
+    ): Boolean = shouldFetchForMeta(
+        meta = meta,
+        fallbackItemId = fallbackItemId,
+        settings = settings.toMdbListSettings(),
+    )
+
+    suspend fun enrichMeta(
+        meta: MetaDetails,
+        fallbackItemId: String,
+        settings: AnimeMdbListSettings,
+    ): MetaDetails = enrichMeta(
+        meta = meta,
+        fallbackItemId = fallbackItemId,
+        settings = settings.toMdbListSettings(),
+    )
 
     fun clearCache() {
         ratingsCache.clear()

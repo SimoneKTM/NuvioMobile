@@ -195,7 +195,7 @@ private fun DiscoverFilterRow(
 }
 
 @Composable
-private fun DiscoverGridRow(
+internal fun DiscoverGridRow(
     items: List<MetaPreview>,
     columns: Int,
     modifier: Modifier = Modifier,
@@ -208,7 +208,7 @@ private fun DiscoverGridRow(
 
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Top,
     ) {
         items.forEach { item ->

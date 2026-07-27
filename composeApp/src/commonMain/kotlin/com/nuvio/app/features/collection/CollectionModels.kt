@@ -54,6 +54,9 @@ data class CollectionSource(
     val isTrakt: Boolean
         get() = provider.equals("trakt", ignoreCase = true)
 
+    val isLiveTv: Boolean
+        get() = provider.equals("livetv", ignoreCase = true)
+
     fun addonCatalogSource(): CollectionCatalogSource? {
         if (isTmdb || isTrakt) return null
         val sourceAddonId = addonId?.takeIf { it.isNotBlank() } ?: return null
@@ -77,6 +80,8 @@ internal fun CollectionSource.catalogRouteKey(): String =
         isTrakt -> {
             "trakt_${traktListId}_${mediaType}_${TraktListSort.normalize(sortBy)}_${TraktSortHow.normalize(sortHow)}"
         }
+
+        isLiveTv -> "livetv"
 
         else -> {
             "addon_${addonId}_${type}_${catalogId}_${genre.orEmpty()}"

@@ -6,6 +6,7 @@ import android.util.Log
 import com.nuvio.app.core.network.IPv4FirstDns
 import com.nuvio.app.core.network.CloudflareSolver
 import com.nuvio.app.core.network.isCloudflareChallenge
+import java.net.Proxy
 import com.nuvio.app.features.settings.globalNetworkSettingsRepository
 import kotlinx.coroutines.Dispatchers
 import java.net.URI
@@ -22,7 +23,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.net.Proxy
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import kotlin.text.Charsets

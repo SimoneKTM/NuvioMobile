@@ -4,6 +4,8 @@ import co.touchlab.kermit.Logger
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.addons.enabledAddons
+import com.nuvio.app.features.anime.AnimeAddonRepository
+import com.nuvio.app.features.livetv.LiveTvRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -173,8 +175,10 @@ object CollectionRepository : CollectionRepositoryContract {
     override fun generateId(): String = Uuid.random().toString()
 
     override fun getAvailableCatalogs(): List<AvailableCatalog> {
+        val result = mutableListOf<AvailableCatalog>()
+
         val addons = AddonRepository.uiState.value.addons.enabledAddons()
-        return addons.mapNotNull { addon ->
+        result.addAll(addons.mapNotNull { addon ->
             val manifest = addon.manifest ?: return@mapNotNull null
             addon to manifest
         }.flatMap { (addon, manifest) ->
@@ -192,7 +196,42 @@ object CollectionRepository : CollectionRepositoryContract {
                         genreRequired = genreExtra?.isRequired == true,
                     )
                 }
+        })
+
+        val animeAddons = AnimeAddonRepository.uiState.value.addons.filter { it.enabled }
+        result.addAll(animeAddons.mapNotNull { addon ->
+            val manifest = addon.manifest ?: return@mapNotNull null
+            addon to manifest
+        }.flatMap { (addon, manifest) ->
+            manifest.catalogs
+                .filter { catalog -> catalog.extra.none { it.isRequired && it.name != "genre" } }
+                .map { catalog ->
+                    val genreExtra = catalog.extra.firstOrNull { it.name == "genre" }
+                    AvailableCatalog(
+                        addonId = manifest.id,
+                        addonName = addon.displayTitle,
+                        type = catalog.type,
+                        catalogId = catalog.id,
+                        catalogName = catalog.name,
+                        genreOptions = genreExtra?.options.orEmpty(),
+                        genreRequired = genreExtra?.isRequired == true,
+                    )
+                }
+        })
+
+        if (LiveTvRepository.uiState.value.hasPlaylist) {
+            result.add(
+                AvailableCatalog(
+                    addonId = "livetv",
+                    addonName = "Live TV",
+                    type = "live_tv",
+                    catalogId = "live_tv_channels",
+                    catalogName = "Live TV",
+                ),
+            )
         }
+
+        return result
     }
 
     internal fun applyFromRemote(collections: List<Collection>, rawJson: JsonElement) {
@@ -267,7 +306,7 @@ internal fun validateImportModel(collections: List<Collection>): CollectionImpor
                     return CollectionImportModelError.InvalidTraktListId(si + 1, f.title)
                 }
 
-                val invalidAddon = !s.isTmdb && !s.isTrakt &&
+                val invalidAddon = !s.isTmdb && !s.isTrakt && !s.isLiveTv &&
                     (s.addonId.isNullOrBlank() || s.type.isNullOrBlank() || s.catalogId.isNullOrBlank())
                 val invalidTmdb = s.isTmdb &&
                     s.tmdbSourceType.isNullOrBlank()

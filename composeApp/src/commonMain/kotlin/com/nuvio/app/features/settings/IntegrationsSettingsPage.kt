@@ -82,7 +82,7 @@ internal fun LazyListScope.integrationsContent(
                 SettingsGroupDivider(isTablet = isTablet)
                 SettingsNavigationRow(
                     title = stringResource(Res.string.compose_settings_page_tvdb_enrichment),
-                    description = stringResource(Res.string.settings_integrations_tvdb_description),
+                    description = "Controlli di arricchimento dei metadati",
                     iconPainter = integrationLogoPainter(IntegrationLogo.Tvdb),
                     isTablet = isTablet,
                     onClick = onTvdbClick,
@@ -163,7 +163,6 @@ internal fun LazyListScope.integrationsContent(
         }
     }
     item {
-        val aiAssistantSettings by AiAssistantSettingsRepository.uiState.collectAsState()
         SettingsSection(
             title = stringResource(Res.string.settings_integrations_section_extra),
             isTablet = isTablet,

@@ -4,35 +4,38 @@ data class LiveTvChannel(
     val id: String,
     val name: String,
     val streamUrl: String,
-    val tvgId: String? = null,
     val logoUrl: String? = null,
-    val group: String = "",
-    val headers: Map<String, String> = emptyMap(),
+    val group: String? = null,
+    val playlistId: String? = null,
+    val playlistName: String? = null,
 )
 
-data class LiveTvRecentChannel(
-    val streamUrl: String,
+enum class LiveTvPlaylistType {
+    Url,
+    LocalFile,
+}
+
+data class LiveTvPlaylist(
+    val id: String,
     val name: String,
-    val logoUrl: String? = null,
-    val group: String = "",
-    val tvgId: String? = null,
-)
-
-data class LiveTvProgramme(
-    val title: String,
-    val startEpochMs: Long,
-    val stopEpochMs: Long,
-    val timeLabel: String,
+    val type: LiveTvPlaylistType,
+    val source: String,
+    val isEnabled: Boolean = true,
 )
 
 data class LiveTvUiState(
-    val sourceUrl: String = "",
+    val playlistUrl: String = "",
+    val playlists: List<LiveTvPlaylist> = emptyList(),
     val channels: List<LiveTvChannel> = emptyList(),
-    val currentProgrammes: Map<String, LiveTvProgramme> = emptyMap(),
-    val recentChannel: LiveTvRecentChannel? = null,
-    val favoriteUrls: Set<String> = emptySet(),
-    val isEpgLoading: Boolean = false,
+    val favoriteChannelIds: Set<String> = emptySet(),
+    val lastWatchedChannelId: String? = null,
+    val isNavigationEnabled: Boolean = true,
     val isLoading: Boolean = false,
-    val isLoaded: Boolean = false,
     val errorMessage: String? = null,
-)
+) {
+    val hasPlaylist: Boolean
+        get() = playlists.isNotEmpty() || playlistUrl.isNotBlank()
+
+    val showInNavigation: Boolean
+        get() = hasPlaylist && isNavigationEnabled
+}

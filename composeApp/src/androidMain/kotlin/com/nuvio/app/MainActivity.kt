@@ -15,6 +15,7 @@ import com.nuvio.app.core.deeplink.handleAppUrl
 import com.nuvio.app.core.storage.PlatformLocalAccountDataCleaner
 import com.nuvio.app.core.sync.SyncClientIdentityStorage
 import com.nuvio.app.features.addons.AddonStorage
+import com.nuvio.app.features.anime.AnimeAddonStorage
 import com.nuvio.app.features.collection.CollectionMobileSettingsStorage
 import com.nuvio.app.features.collection.CollectionStorage
 import com.nuvio.app.features.debrid.DebridSettingsStorage
@@ -127,6 +128,7 @@ class MainActivity : AppCompatActivity() {
         pipRemoteActionReceiver = PipRemoteActionReceiver.register(this)
         SyncClientIdentityStorage.initialize(applicationContext)
         AddonStorage.initialize(applicationContext)
+        AnimeAddonStorage.initialize(applicationContext)
         CloudflareSolver.initialize(applicationContext)
         AuthStorage.initialize(applicationContext)
         LibraryStorage.initialize(applicationContext)

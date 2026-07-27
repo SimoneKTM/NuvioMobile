@@ -176,6 +176,7 @@ import com.nuvio.app.features.library.LibraryScreen
 import com.nuvio.app.features.library.toLibraryItem
 import com.nuvio.app.features.library.toMetaPreview
 import com.nuvio.app.features.livetv.LiveTvChannel
+import com.nuvio.app.features.livetv.LiveTvRepository
 import com.nuvio.app.features.livetv.LiveTvScreen
 import com.nuvio.app.features.notifications.EpisodeReleaseNotificationsRepository
 import com.nuvio.app.features.p2p.P2pConsentDialog
@@ -249,6 +250,7 @@ import com.nuvio.app.features.watchprogress.WatchProgressSourceCoordinator
 import com.nuvio.app.features.watchprogress.nextUpDismissKey
 import com.nuvio.app.features.watchprogress.toContinueWatchingItem
 import com.nuvio.app.features.anime.AnimeCollectionRepository
+import com.nuvio.app.features.animeprofile.AnimeProfileRepository
 import com.nuvio.app.features.anilist.AniListApi
 import com.nuvio.app.features.anilist.AniListAuthRepository
 import com.nuvio.app.features.anilist.AniListLibraryItem
@@ -907,7 +909,24 @@ private fun MainAppContent(
             LibraryRepository.ensureLoaded()
             LibraryRepository.uiState
         }.collectAsStateWithLifecycle()
+        val liveTvUiState by remember {
+            LiveTvRepository.ensureLoaded()
+            LiveTvRepository.uiState
+        }.collectAsStateWithLifecycle()
+        val animeProfileState by remember {
+            AnimeProfileRepository.state
+        }.collectAsStateWithLifecycle()
         val authState by AuthRepository.state.collectAsStateWithLifecycle()
+        LaunchedEffect(liveTvUiState.showInNavigation) {
+            if (!liveTvUiState.showInNavigation && selectedTab == AppScreenTab.LiveTv) {
+                selectedTab = AppScreenTab.Home
+            }
+        }
+        LaunchedEffect(animeProfileState.config.showInNavigation) {
+            if (!animeProfileState.config.showInNavigation && selectedTab == AppScreenTab.Anime) {
+                selectedTab = AppScreenTab.Home
+            }
+        }
         val openPosterActions: (PosterActionTarget) -> Unit = { target ->
             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
             focusManager.clearFocus(force = true)
@@ -1996,12 +2015,14 @@ private fun MainAppContent(
                                                 icon = Icons.Filled.Home,
                                                 contentDescription = stringResource(Res.string.compose_nav_home),
                                             )
-                                            NavItem(
-                                                selected = selectedTab == AppScreenTab.Anime,
-                                                onClick = { handleRootTabClick(AppScreenTab.Anime) },
-                                                icon = Icons.Rounded.FilterDrama,
-                                                contentDescription = stringResource(Res.string.compose_nav_anime),
-                                            )
+                                            if (animeProfileState.config.showInNavigation) {
+                                                NavItem(
+                                                    selected = selectedTab == AppScreenTab.Anime,
+                                                    onClick = { handleRootTabClick(AppScreenTab.Anime) },
+                                                    icon = Icons.Rounded.FilterDrama,
+                                                    contentDescription = stringResource(Res.string.compose_nav_anime),
+                                                )
+                                            }
                                             NavItem(
                                                 selected = selectedTab == AppScreenTab.Search,
                                                 onClick = { handleRootTabClick(AppScreenTab.Search) },
@@ -2014,12 +2035,14 @@ private fun MainAppContent(
                                                 icon = Res.drawable.sidebar_library,
                                                 contentDescription = stringResource(Res.string.compose_nav_library),
                                             )
-                                            NavItem(
-                                                selected = selectedTab == AppScreenTab.LiveTv,
-                                                onClick = { handleRootTabClick(AppScreenTab.LiveTv) },
-                                                icon = Icons.Rounded.LiveTv,
-                                                contentDescription = stringResource(Res.string.compose_nav_live_tv),
-                                            )
+                                            if (liveTvUiState.showInNavigation) {
+                                                NavItem(
+                                                    selected = selectedTab == AppScreenTab.LiveTv,
+                                                    onClick = { handleRootTabClick(AppScreenTab.LiveTv) },
+                                                    icon = Icons.Rounded.LiveTv,
+                                                    contentDescription = stringResource(Res.string.compose_nav_live_tv),
+                                                )
+                                            }
                                             NavItem(
                                                 selected = selectedTab == AppScreenTab.Settings,
                                                 onClick = { handleRootTabClick(AppScreenTab.Settings) },
@@ -2236,6 +2259,8 @@ private fun MainAppContent(
                                         onTabSelected = ::handleRootTabClick,
                                         onProfileSelected = onProfileSelected,
                                         onAddProfileRequested = onSwitchProfile,
+                                        showLiveTvTab = liveTvUiState.showInNavigation,
+                                        showAnimeTab = animeProfileState.config.showInNavigation,
                                     )
                                 }
                             }
@@ -4057,6 +4082,8 @@ private fun TabletFloatingTopBar(
     onTabSelected: (AppScreenTab) -> Unit,
     onProfileSelected: (NuvioProfile) -> Unit,
     onAddProfileRequested: () -> Unit,
+    showLiveTvTab: Boolean = true,
+    showAnimeTab: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.nuvio
@@ -4096,23 +4123,25 @@ private fun TabletFloatingTopBar(
                         )
                     },
                 )
-                TabletTopPillItem(
-                    label = stringResource(Res.string.compose_nav_anime),
-                    selected = selectedTab == AppScreenTab.Anime,
-                    onClick = { onTabSelected(AppScreenTab.Anime) },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Rounded.FilterDrama,
-                            contentDescription = stringResource(Res.string.compose_nav_anime),
-                            modifier = Modifier.size(NuvioTokens.Space.s18),
-                            tint = if (selectedTab == AppScreenTab.Anime) {
-                                tokens.colors.textPrimary
-                            } else {
-                                tokens.colors.textMuted
-                            },
-                        )
-                    },
-                )
+                if (showAnimeTab) {
+                    TabletTopPillItem(
+                        label = stringResource(Res.string.compose_nav_anime),
+                        selected = selectedTab == AppScreenTab.Anime,
+                        onClick = { onTabSelected(AppScreenTab.Anime) },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Rounded.FilterDrama,
+                                contentDescription = stringResource(Res.string.compose_nav_anime),
+                                modifier = Modifier.size(NuvioTokens.Space.s18),
+                                tint = if (selectedTab == AppScreenTab.Anime) {
+                                    tokens.colors.textPrimary
+                                } else {
+                                    tokens.colors.textMuted
+                                },
+                            )
+                        },
+                    )
+                }
                 TabletTopPillItem(
                     label = stringResource(Res.string.compose_nav_search),
                     selected = selectedTab == AppScreenTab.Search,
@@ -4147,23 +4176,25 @@ private fun TabletFloatingTopBar(
                         )
                     },
                 )
-                TabletTopPillItem(
-                    label = stringResource(Res.string.compose_nav_live_tv),
-                    selected = selectedTab == AppScreenTab.LiveTv,
-                    onClick = { onTabSelected(AppScreenTab.LiveTv) },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Rounded.LiveTv,
-                            contentDescription = stringResource(Res.string.compose_nav_live_tv),
-                            modifier = Modifier.size(18.dp),
-                            tint = if (selectedTab == AppScreenTab.LiveTv) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                        )
-                    },
-                )
+                if (showLiveTvTab) {
+                    TabletTopPillItem(
+                        label = stringResource(Res.string.compose_nav_live_tv),
+                        selected = selectedTab == AppScreenTab.LiveTv,
+                        onClick = { onTabSelected(AppScreenTab.LiveTv) },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Rounded.LiveTv,
+                                contentDescription = stringResource(Res.string.compose_nav_live_tv),
+                                modifier = Modifier.size(18.dp),
+                                tint = if (selectedTab == AppScreenTab.LiveTv) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                            )
+                        },
+                    )
+                }
                 Surface(
                     color = if (selectedTab == AppScreenTab.Settings) {
                         tokens.colors.overlaySelected

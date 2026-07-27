@@ -362,26 +362,47 @@ fun SearchScreen(
                     }
 
                     else -> {
-                        items(
-                            items = uiState.sections.withDuplicateSafeLazyKeys { section -> section.key },
-                            key = { section -> section.lazyKey },
-                        ) { keyedSection ->
-                            val section = keyedSection.value
-                            HomeCatalogRowSection(
-                                section = section,
-                                modifier = Modifier.padding(bottom = 12.dp),
-                                watchedKeys = watchedUiState.watchedKeys,
-                                fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                                onPosterClick = onPosterClick,
-                                onPosterLongClick = onPosterLongClick,
-                            )
-                        }
-                        if (uiState.isLoading) {
-                            item(key = "search_loading_more") {
-                                HomeSkeletonRow(
+                        val allItems = uiState.sections
+                            .flatMap { it.items }
+                            .distinctBy { "${it.type}:${it.id}" }
+                            .sortedWith(compareByDescending<MetaPreview> { it.popularity }.thenByDescending { it.releaseInfo?.take(4)?.toIntOrNull() })
+                        if (allItems.isEmpty() && !uiState.isLoading) {
+                            item {
+                                SearchEmptyStateCard(
+                                    reason = uiState.emptyStateReason,
+                                    errorMessage = uiState.errorMessage,
+                                    networkCondition = networkStatusUiState.condition,
+                                    onRetry = {
+                                        if (normalizedQuery.isNotBlank()) {
+                                            NetworkStatusRepository.requestRefresh(force = true)
+                                            SearchRepository.search(
+                                                query = normalizedQuery,
+                                                addons = allAddons,
+                                            )
+                                        }
+                                    },
                                     modifier = Modifier.padding(horizontal = homeSectionPadding),
-                                    showHeaderAccent = !homeCatalogSettingsUiState.hideCatalogUnderline,
                                 )
+                            }
+                        } else {
+                            items(allItems.chunked(discoverColumns)) { rowItems ->
+                                DiscoverGridRow(
+                                    items = rowItems,
+                                    columns = discoverColumns,
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                    watchedKeys = watchedUiState.watchedKeys,
+                                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                                    onPosterClick = onPosterClick,
+                                    onPosterLongClick = onPosterLongClick,
+                                )
+                            }
+                            if (uiState.isLoading) {
+                                item(key = "search_loading_more") {
+                                    HomeSkeletonRow(
+                                        modifier = Modifier.padding(horizontal = homeSectionPadding),
+                                        showHeaderAccent = !homeCatalogSettingsUiState.hideCatalogUnderline,
+                                    )
+                                }
                             }
                         }
                     }
@@ -393,11 +414,11 @@ fun SearchScreen(
 
 private fun discoverColumnCountForWidth(screenWidth: Dp): Int =
     when {
-        screenWidth >= 1400.dp -> 7
-        screenWidth >= 1200.dp -> 6
-        screenWidth >= 1000.dp -> 5
-        screenWidth >= 840.dp -> 4
-        else -> 3
+        screenWidth >= 1400.dp -> 10
+        screenWidth >= 1200.dp -> 9
+        screenWidth >= 1000.dp -> 8
+        screenWidth >= 840.dp -> 7
+        else -> 6
     }
 
 @Composable

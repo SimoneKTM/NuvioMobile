@@ -3,6 +3,7 @@ package com.nuvio.app.features.livetv
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,17 +12,21 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Tv
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,28 +37,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.nuvio.app.core.ui.NuvioBottomSheetActionRow
-import com.nuvio.app.core.ui.NuvioBottomSheetDivider
 import com.nuvio.app.core.ui.NuvioModalBottomSheet
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.dismissNuvioBottomSheet
 import com.nuvio.app.core.ui.nuvio
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.lazy.items
 import nuvio.composeapp.generated.resources.Res
-import nuvio.composeapp.generated.resources.live_tv_all_channels
-import nuvio.composeapp.generated.resources.live_tv_choose_category
-import nuvio.composeapp.generated.resources.live_tv_favorites
 import nuvio.composeapp.generated.resources.live_tv_categories
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-internal fun LiveTvFilterRow(
+internal fun LiveTvFilterPanelRow(
     groups: List<String>,
-    selectedGroup: String,
+    selectedGroup: String?,
     favoritesOnly: Boolean,
     allLabel: String,
     favoritesLabel: String,
@@ -68,22 +68,25 @@ internal fun LiveTvFilterRow(
         horizontalArrangement = Arrangement.spacedBy(NuvioTokens.Space.s8),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LiveTvFilterChip(
+        LiveTvPanelFilterChip(
             label = allLabel,
-            selected = selectedGroup.isBlank() && !favoritesOnly,
+            selected = selectedGroup.isNullOrBlank() && !favoritesOnly,
             onClick = onAllSelected,
         )
-        LiveTvFilterChip(
+        LiveTvPanelFilterChip(
             label = favoritesLabel,
             selected = favoritesOnly,
             onClick = onFavoritesSelected,
         )
         if (groups.isNotEmpty()) {
-            LiveTvCategoryDropdownChip(
-                label = if (selectedGroup.isBlank()) categoryLabel else selectedGroup,
-                selectedGroup = selectedGroup.takeIf { it.isNotBlank() && !favoritesOnly },
+            LiveTvCategoryPanelChip(
+                label = selectedGroup?.takeIf { it.isNotBlank() && !favoritesOnly } ?: categoryLabel,
+                selectedGroup = selectedGroup?.takeIf { it.isNotBlank() && !favoritesOnly },
+                favoritesOnly = favoritesOnly,
                 groups = groups,
                 categoryTitle = categoryLabel,
+                allLabel = allLabel,
+                favoritesLabel = favoritesLabel,
                 onAllSelected = onAllSelected,
                 onFavoritesSelected = onFavoritesSelected,
                 onGroupSelected = onGroupSelected,
@@ -93,7 +96,7 @@ internal fun LiveTvFilterRow(
 }
 
 @Composable
-private fun LiveTvFilterChip(
+private fun LiveTvPanelFilterChip(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
@@ -104,11 +107,15 @@ private fun LiveTvFilterChip(
             .clip(tokens.shapes.chip)
             .background(if (selected) tokens.colors.overlaySelected else tokens.colors.surface)
             .then(
-                if (selected) Modifier else Modifier.border(
-                    width = NuvioTokens.Border.thin,
-                    color = tokens.colors.borderSubtle,
-                    shape = tokens.shapes.chip,
-                ),
+                if (selected) {
+                    Modifier
+                } else {
+                    Modifier.border(
+                        width = NuvioTokens.Border.thin,
+                        color = tokens.colors.borderSubtle,
+                        shape = tokens.shapes.chip,
+                    )
+                },
             )
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 9.dp),
@@ -128,27 +135,29 @@ private fun LiveTvFilterChip(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LiveTvCategoryDropdownChip(
+private fun LiveTvCategoryPanelChip(
     label: String,
     selectedGroup: String?,
+    favoritesOnly: Boolean,
     groups: List<String>,
     categoryTitle: String,
+    allLabel: String,
+    favoritesLabel: String,
     onAllSelected: () -> Unit,
     onFavoritesSelected: () -> Unit,
     onGroupSelected: (String) -> Unit,
 ) {
     val tokens = MaterialTheme.nuvio
     var isSheetVisible by remember { mutableStateOf(false) }
-    val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val coroutineScope = rememberCoroutineScope()
     val selected = selectedGroup != null
     val shape = tokens.shapes.chip
-    val containerColor = if (selected) tokens.colors.overlaySelected else tokens.colors.surface
 
     Row(
         modifier = Modifier
             .clip(shape)
-            .background(containerColor)
+            .background(if (selected) tokens.colors.overlaySelected else tokens.colors.surface)
             .border(
                 width = if (selected) 0.dp else NuvioTokens.Border.thin,
                 color = if (selected) Color.Transparent else tokens.colors.borderSubtle,
@@ -180,6 +189,9 @@ private fun LiveTvCategoryDropdownChip(
             title = categoryTitle,
             groups = groups,
             selectedGroup = selectedGroup,
+            favoritesOnly = favoritesOnly,
+            allLabel = allLabel,
+            favoritesLabel = favoritesLabel,
             sheetState = sheetState,
             onDismiss = {
                 coroutineScope.launch {
@@ -226,6 +238,9 @@ private fun LiveTvCategoryOptionsSheet(
     title: String,
     groups: List<String>,
     selectedGroup: String?,
+    favoritesOnly: Boolean,
+    allLabel: String,
+    favoritesLabel: String,
     sheetState: SheetState,
     onDismiss: () -> Unit,
     onAllSelected: () -> Unit,
@@ -236,7 +251,7 @@ private fun LiveTvCategoryOptionsSheet(
     NuvioModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        modifier = Modifier.widthIn(max = tokens.components.playerPanelMaxWidth),
+        modifier = Modifier.widthIn(max = 520.dp),
     ) {
         Column(
             modifier = Modifier
@@ -245,60 +260,107 @@ private fun LiveTvCategoryOptionsSheet(
         ) {
             Text(
                 text = title,
-                modifier = Modifier.padding(horizontal = tokens.spacing.screenHorizontal, vertical = NuvioTokens.Space.s14),
+                modifier = Modifier.padding(
+                    horizontal = tokens.spacing.screenHorizontal,
+                    vertical = NuvioTokens.Space.s14,
+                ),
                 style = MaterialTheme.typography.titleLarge,
                 color = tokens.colors.textPrimary,
+                fontWeight = FontWeight.SemiBold,
             )
-            NuvioBottomSheetDivider()
-            NuvioBottomSheetActionRow(
-                title = stringResource(Res.string.live_tv_all_channels),
-                onClick = onAllSelected,
+            LiveTvFilterSheetDivider()
+            LiveTvFilterSheetRow(
+                title = allLabel,
                 icon = Icons.Rounded.Tv,
+                selected = selectedGroup.isNullOrBlank() && !favoritesOnly,
+                onClick = onAllSelected,
             )
-            NuvioBottomSheetDivider()
-            NuvioBottomSheetActionRow(
-                title = stringResource(Res.string.live_tv_favorites),
-                onClick = onFavoritesSelected,
+            LiveTvFilterSheetDivider()
+            LiveTvFilterSheetRow(
+                title = favoritesLabel,
                 icon = Icons.Rounded.Star,
+                selected = favoritesOnly,
+                onClick = onFavoritesSelected,
             )
-            NuvioBottomSheetDivider()
+            LiveTvFilterSheetDivider()
             Text(
                 text = stringResource(Res.string.live_tv_categories),
-                modifier = Modifier.padding(horizontal = tokens.spacing.screenHorizontal, vertical = NuvioTokens.Space.s10),
+                modifier = Modifier.padding(
+                    horizontal = tokens.spacing.screenHorizontal,
+                    vertical = NuvioTokens.Space.s10,
+                ),
                 style = MaterialTheme.typography.labelLarge,
                 color = tokens.colors.textMuted,
                 fontWeight = FontWeight.SemiBold,
             )
-            NuvioBottomSheetDivider()
-            androidx.compose.foundation.lazy.LazyColumn(
+            LiveTvFilterSheetDivider()
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = tokens.breakpoints.largePhone),
+                    .heightIn(max = 420.dp),
             ) {
                 items(
-                    count = groups.size,
-                    key = { index -> groups[index] },
-                ) { index ->
-                    val group = groups[index]
-                    NuvioBottomSheetActionRow(
+                    items = groups,
+                    key = { group -> group },
+                ) { group ->
+                    LiveTvFilterSheetRow(
                         title = group,
+                        selected = group == selectedGroup,
                         onClick = { onGroupSelected(group) },
-                        trailingContent = {
-                            if (group == selectedGroup) {
-                                Icon(
-                                    imageVector = androidx.compose.material.icons.Icons.Rounded.KeyboardArrowDown,
-                                    contentDescription = null,
-                                    tint = tokens.colors.accent,
-                                    modifier = Modifier.size(tokens.icons.md),
-                                )
-                            }
-                        },
                     )
-                    if (index < groups.lastIndex) {
-                        NuvioBottomSheetDivider()
+                    if (group != groups.lastOrNull()) {
+                        LiveTvFilterSheetDivider()
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun LiveTvFilterSheetRow(
+    title: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    icon: ImageVector? = null,
+) {
+    val tokens = MaterialTheme.nuvio
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = tokens.spacing.screenHorizontal, vertical = NuvioTokens.Space.s12),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(NuvioTokens.Space.s12),
+    ) {
+        icon?.let {
+            Icon(
+                imageVector = it,
+                contentDescription = null,
+                modifier = Modifier.size(NuvioTokens.Icon.md),
+                tint = tokens.colors.textSecondary,
+            )
+        }
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge,
+            color = tokens.colors.textPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (selected) {
+            Icon(
+                imageVector = Icons.Rounded.Check,
+                contentDescription = null,
+                modifier = Modifier.size(NuvioTokens.Icon.md),
+                tint = tokens.colors.accent,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LiveTvFilterSheetDivider() {
+    HorizontalDivider(color = MaterialTheme.nuvio.colors.borderSubtle.copy(alpha = 0.7f))
 }

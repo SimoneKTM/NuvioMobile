@@ -898,7 +898,6 @@ internal fun settingsSearchEntries(
         description = stringResource(Res.string.settings_integrations_subdl_description),
         icon = Icons.Rounded.Link,
     )
-
     val notificationsAlerts = stringResource(Res.string.settings_notifications_section_alerts)
     addRow(
         page = SettingsPage.Notifications,

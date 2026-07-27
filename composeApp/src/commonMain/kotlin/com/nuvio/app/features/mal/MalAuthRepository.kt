@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import com.nuvio.app.features.simkl.SimklPkceCrypto
+import com.nuvio.app.features.simkl.base64UrlWithoutPadding
 import kotlin.random.Random
 
 object MalAuthRepository {
@@ -70,10 +72,11 @@ object MalAuthRepository {
             return null
         }
 
-        val oauthState = generateOauthState()
-        codeVerifier = oauthState
+        val stateVerifier = SimklPkceCrypto.secureRandomBytes(32).base64UrlWithoutPadding()
+        codeVerifier = stateVerifier
+        val codeChallenge = SimklPkceCrypto.sha256(stateVerifier.encodeToByteArray()).base64UrlWithoutPadding()
         authState = authState.copy(
-            pendingAuthorizationState = oauthState,
+            pendingAuthorizationState = stateVerifier,
             pendingAuthorizationStartedAtMillis = nowEpochMs(),
         )
         persist()
@@ -82,13 +85,14 @@ object MalAuthRepository {
             errorMessage = null,
         )
 
-        return buildAuthorizationUrl(oauthState)
+        return buildAuthorizationUrl(stateVerifier, codeChallenge)
     }
 
     fun pendingAuthorizationUrl(): String? {
         ensureLoaded()
-        val oauthState = authState.pendingAuthorizationState ?: return null
-        return buildAuthorizationUrl(oauthState)
+        val stateVerifier = authState.pendingAuthorizationState ?: return null
+        val codeChallenge = SimklPkceCrypto.sha256(stateVerifier.encodeToByteArray()).base64UrlWithoutPadding()
+        return buildAuthorizationUrl(stateVerifier, codeChallenge)
     }
 
     fun onCancelAuthorization() {
@@ -386,13 +390,13 @@ object MalAuthRepository {
         MalAuthStorage.savePayload(json.encodeToString(authState))
     }
 
-    private fun buildAuthorizationUrl(state: String): String {
+    private fun buildAuthorizationUrl(state: String, codeChallenge: String): String {
         val responseType = "code"
         val encodedClientId = MalConfig.CLIENT_ID.encodeURLParameter()
         val encodedRedirectUri = MalConfig.REDIRECT_URI.encodeURLParameter()
         val encodedState = state.encodeURLParameter()
-        val encodedChallenge = state.encodeURLParameter()
-        return "${AUTH_BASE_URL}/authorize?response_type=$responseType&client_id=$encodedClientId&redirect_uri=$encodedRedirectUri&state=$encodedState&code_challenge=$encodedChallenge&code_challenge_method=plain"
+        val encodedChallenge = codeChallenge.encodeURLParameter()
+        return "${AUTH_BASE_URL}/authorize?response_type=$responseType&client_id=$encodedClientId&redirect_uri=$encodedRedirectUri&state=$encodedState&code_challenge=$encodedChallenge&code_challenge_method=S256"
     }
 
     private fun generateOauthState(): String {

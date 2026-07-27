@@ -4,7 +4,7 @@ import com.nuvio.app.features.livetv.LiveTvChannel
 import com.nuvio.app.features.livetv.LiveTvRepository
 
 internal fun PlayerScreenRuntime.switchToLiveTvChannel(channel: LiveTvChannel) {
-    LiveTvRepository.recordRecentChannel(channel)
+    LiveTvRepository.markChannelWatched(channel)
     if (channel.streamUrl == activeSourceUrl) {
         showLiveTvChannelsPanel = false
         controlsVisible = true
@@ -13,7 +13,7 @@ internal fun PlayerScreenRuntime.switchToLiveTvChannel(channel: LiveTvChannel) {
 
     activeSourceUrl = channel.streamUrl
     activeSourceAudioUrl = null
-    activeSourceHeaders = sanitizePlaybackHeaders(channel.headers)
+    activeSourceHeaders = emptyMap()
     activeSourceResponseHeaders = emptyMap()
     activeStreamType = null
     activeSourceIdentityKey = "live-tv:${channel.streamUrl}"
@@ -30,7 +30,7 @@ internal fun PlayerScreenRuntime.switchToLiveTvChannel(channel: LiveTvChannel) {
         streamTitle = channel.name,
         streamSubtitle = null,
         sourceUrl = channel.streamUrl,
-        sourceHeaders = channel.headers,
+        sourceHeaders = emptyMap(),
     )
     showLiveTvChannelsPanel = false
     controlsVisible = true

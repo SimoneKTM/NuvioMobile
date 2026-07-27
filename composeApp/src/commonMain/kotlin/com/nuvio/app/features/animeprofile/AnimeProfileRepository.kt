@@ -98,6 +98,12 @@ object AnimeProfileRepository {
         saveConfig()
     }
 
+    fun setShowInNavigation(show: Boolean) {
+        val config = _state.value.config.copy(showInNavigation = show)
+        _state.value = _state.value.copy(config = config)
+        saveConfig()
+    }
+
     fun setTmdbConfig(tmdbConfig: AnimeTmdbConfig) {
         val config = _state.value.config.copy(tmdbConfig = tmdbConfig)
         _state.value = _state.value.copy(config = config)
