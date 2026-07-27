@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
@@ -71,7 +72,10 @@ internal fun LazyListScope.simklSettingsContent(
     }
 
     item {
-        val authUiState by SimklAuthRepository.uiState.collectAsState()
+        val authUiState by remember {
+            SimklAuthRepository.ensureLoaded()
+            SimklAuthRepository.uiState
+        }.collectAsState()
         SimklConnectionCard(
             isTablet = isTablet,
             uiState = authUiState,
