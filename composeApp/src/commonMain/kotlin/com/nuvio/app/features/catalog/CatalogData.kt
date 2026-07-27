@@ -1,12 +1,11 @@
 package com.nuvio.app.features.catalog
 
 import com.nuvio.app.features.addons.AddonCatalog
-import com.nuvio.app.features.addons.buildAddonResourceUrl
 import com.nuvio.app.features.addons.httpGetText
+import com.nuvio.app.features.details.MetaDetailsRepository
 import com.nuvio.app.features.home.HomeCatalogParser
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.stableKey
-import com.nuvio.app.features.tmdb.TmdbService
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,10 +16,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.contentOrNull
 
 const val CATALOG_PAGE_SIZE = 100
 private const val DUPLICATE_CATALOG_PAGE_ADVANCE_LIMIT = 3
@@ -103,26 +98,16 @@ private suspend fun enrichTitlesFromMeta(
     type: String,
     items: List<MetaPreview>,
 ): List<MetaPreview> = coroutineScope {
-    val metaJson = Json { ignoreUnknownKeys = true }
     items.map { item ->
         async {
-            val metaUrl = runCatching {
-                buildAddonResourceUrl(
-                    manifestUrl = manifestUrl,
-                    resource = "meta",
-                    type = type,
-                    id = item.id,
-                )
-            }.getOrNull() ?: return@async item
-            val metaPayload = withTimeoutOrNull(1_500L) {
-                runCatching { httpGetText(metaUrl) }.getOrNull()
-            } ?: return@async item
-            val metaName = runCatching {
-                metaJson.parseToJsonElement(metaPayload)
-                    .jsonObject["meta"]
-                    ?.jsonObject?.get("name")
-                    ?.jsonPrimitive?.contentOrNull
-            }.getOrNull()?.trim()?.takeIf(String::isNotBlank)
+            val isAnime = item.type.equals("anime", ignoreCase = true) ||
+                item.id.startsWith("anilist:", ignoreCase = true) ||
+                item.id.startsWith("kitsu:", ignoreCase = true) ||
+                item.id.startsWith("mal:", ignoreCase = true)
+            val details = withTimeoutOrNull(3_000L) {
+                MetaDetailsRepository.fetch(type = type, id = item.id, isAnime = isAnime)
+            }
+            val metaName = details?.name?.trim()?.takeIf(String::isNotBlank)
             if (metaName != null && metaName != item.name) {
                 item.copy(name = metaName)
             } else {
