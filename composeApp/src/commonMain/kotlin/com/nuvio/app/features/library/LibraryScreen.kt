@@ -2089,7 +2089,7 @@ private fun buildLibraryReleaseCalendarFallbackEvents(items: List<LibraryItem>):
                 val nextEpDate = epochMsToCalendarDate(nextEpMs)
                 if (nextEpDate != null) {
                     events.add(LibraryCalendarEvent(
-                        key = "anilist:nextep:${item.id}:${nextEpDate.iso}",
+                        key = "nextep:${item.id}:${nextEpDate.iso}",
                         date = nextEpDate,
                         rawReleaseInfo = nextEpDate.iso,
                         item = item,
