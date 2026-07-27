@@ -115,7 +115,7 @@ object KitsuLibraryRepository {
                 log.e { "Failed to refresh Kitsu library: ${e.message}" }
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = e.message ?: "Failed to refresh library collections."
+                    errorMessage = e.message ?: "Impossibile aggiornare le librerie Kitsu."
                 )
             }
         }

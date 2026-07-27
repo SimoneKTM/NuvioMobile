@@ -60,7 +60,7 @@ object KitsuAuthRepository {
                     expiresInSeconds = result.expiresIn
                 )
             } else {
-                publish(isLoading = false, errorMessage = "Login failed. Check your email and password.")
+                publish(isLoading = false, errorMessage = "Login fallito. Controlla email e password.")
             }
         }
     }
@@ -130,7 +130,7 @@ object KitsuAuthRepository {
     private suspend fun completeAuthWithToken(token: String, refreshToken: String?, expiresInSeconds: Long) {
         val user = KitsuApi.fetchUser(token)
         if (user == null) {
-            publish(isLoading = false, errorMessage = "Failed to fetch user profile from Kitsu.")
+            publish(isLoading = false, errorMessage = "Impossibile recuperare il profilo utente da Kitsu.")
             return
         }
 

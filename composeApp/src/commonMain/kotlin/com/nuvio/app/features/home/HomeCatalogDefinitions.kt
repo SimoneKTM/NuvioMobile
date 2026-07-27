@@ -138,12 +138,12 @@ private fun buildHomeCatalogDescriptorSignature(
 internal fun String.displayLabel(): String = localizedMediaTypeLabel(this)
 
 private val aniListGroupLabels: Map<String, String> = mapOf(
-    "watching" to "Currently Watching",
-    "rewatching" to "Rewatching",
-    "completed" to "Completed",
-    "planning" to "Plan to Watch",
-    "paused" to "Paused",
-    "dropped" to "Dropped",
+    "watching" to "In Visione",
+    "rewatching" to "Riguardati",
+    "completed" to "Completati",
+    "planning" to "Da Guardare",
+    "paused" to "In Pausa",
+    "dropped" to "Abbandonati",
 )
 
 fun buildAniListDefinitions(isAuthenticated: Boolean): List<HomeCatalogDefinition> {

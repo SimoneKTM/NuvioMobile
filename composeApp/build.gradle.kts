@@ -206,7 +206,7 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
                 |package com.nuvio.app.features.kitsu
                 |
                 |object KitsuConfig {
-                |    const val CLIENT_ID = "${props.getProperty("KITSU_CLIENT_ID", "dd031b32d2f56c990b1425efe6c42ad8476d9c324c6fba8aa7b2f20c25b63f8c")}" 
+                |    const val CLIENT_ID = "${props.getProperty("KITSU_CLIENT_ID", "dd031b32d2f56c990b1425efe6c42ad847e7fe3ab46bf1299f05ecd856bdb7dd")}" 
                 |    const val CLIENT_SECRET = "${props.getProperty("KITSU_CLIENT_SECRET", "")}" 
                 |    const val REDIRECT_URI = "${props.getProperty("KITSU_REDIRECT_URI", "nuvio://auth/kitsu")}" 
                 |}

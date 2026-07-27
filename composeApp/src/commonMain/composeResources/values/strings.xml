@@ -559,7 +559,7 @@
     <string name="settings_anilist_attribution_body">Nuvio can connect to AniList for anime and manga list synchronization. AniList is a service of AniList.co. Nuvio is not affiliated with or endorsed by AniList.</string>
     <string name="settings_simkl_attribution_title">SIMKL</string>
     <string name="settings_simkl_attribution_body">Nuvio can connect to SIMKL for watch status synchronization across devices. SIMKL is a trademark of SIMKL. Nuvio is not affiliated with or endorsed by SIMKL.</string>
-    <string name="settings_simkl_connect">Connect Simkl</string>
+    <string name="settings_simkl_connect">Sign in with Simkl</string>
     <string name="settings_simkl_connected_as">Connected as %1$s</string>
     <string name="settings_simkl_disconnect">Disconnect</string>
     <string name="settings_simkl_finish_sign_in">Finish connection approval</string>

@@ -2,6 +2,7 @@ package com.nuvio.app.features.settings
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +31,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -47,8 +49,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.core.animateDpAsState
 import coil3.compose.AsyncImage
@@ -167,7 +171,6 @@ private fun KitsuConnectionCard(isTablet: Boolean) {
     val isSyncing by KitsuSyncCoordinator.isSyncing.collectAsState()
     val syncMessage by KitsuSyncCoordinator.syncMessage.collectAsState()
 
-    val uriHandler = LocalUriHandler.current
     var showDisconnectConfirm by remember { mutableStateOf(false) }
 
     Column(
@@ -328,29 +331,54 @@ private fun KitsuConnectionCard(isTablet: Boolean) {
             }
 
             KitsuConnectionMode.DISCONNECTED -> {
+                var email by remember { mutableStateOf("") }
+                var password by remember { mutableStateOf("") }
+
                 Text(
-                    text = "Non sei connesso a Kitsu. Connetti il tuo account per sincronizzare le librerie anime e lo stato di tracciamento.",
+                    text = "Accedi con email e password Kitsu per sincronizzare le librerie anime e lo stato di tracciamento.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = { KitsuAuthRepository.loginWithPassword(email.trim(), password) },
+                    enabled = email.isNotBlank() && password.isNotBlank() && !authUiState.isLoading,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (authUiState.isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Accesso in corso...")
+                    } else {
+                        Text("Accedi")
+                    }
+                }
                 if (!authUiState.errorMessage.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = authUiState.errorMessage.orEmpty(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = {
-                        val authUrl = KitsuAuthRepository.onConnectRequested()
-                        runCatching { uriHandler.openUri(authUrl) }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Accedi con Kitsu")
-                }
-
             }
 
             KitsuConnectionMode.LOADING -> {
