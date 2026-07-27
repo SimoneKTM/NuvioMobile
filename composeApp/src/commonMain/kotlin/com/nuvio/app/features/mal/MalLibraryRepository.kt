@@ -76,7 +76,11 @@ object MalLibraryRepository {
                 return
             }
 
-            val username = MalAuthRepository.snapshot().username?.takeIf { it.isNotBlank() } ?: return
+            var username = MalAuthRepository.snapshot().username?.takeIf { it.isNotBlank() }
+            if (username == null) {
+                username = MalAuthRepository.fetchUserProfile()
+            }
+            if (username == null) return
             MalAuthRepository.refreshTokenIfNeeded(force = false)
             val token = MalAuthRepository.currentAccessToken() ?: return
 
