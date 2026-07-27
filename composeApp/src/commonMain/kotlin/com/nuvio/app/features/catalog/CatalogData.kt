@@ -17,6 +17,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
 const val CATALOG_PAGE_SIZE = 100
 private const val DUPLICATE_CATALOG_PAGE_ADVANCE_LIMIT = 3
@@ -81,7 +85,7 @@ suspend fun fetchCatalogPage(
         payload = payload,
         maxItems = maxItems,
     )
-    val enrichedItems = enrichWithTmdbTitles(parsed.items)
+    val enrichedItems = enrichTitlesFromMeta(manifestUrl, type, parsed.items)
     val nextSkip = if (parsed.rawItemCount > 0) {
         (skip ?: 0) + parsed.rawItemCount
     } else {
@@ -94,28 +98,33 @@ suspend fun fetchCatalogPage(
     )
 }
 
-private suspend fun enrichWithTmdbTitles(items: List<MetaPreview>): List<MetaPreview> = coroutineScope {
+private suspend fun enrichTitlesFromMeta(
+    manifestUrl: String,
+    type: String,
+    items: List<MetaPreview>,
+): List<MetaPreview> = coroutineScope {
+    val metaJson = Json { ignoreUnknownKeys = true }
     items.map { item ->
         async {
-            val tmdbId = item.id
-                .removePrefix("tmdb:")
-                .substringBefore(':')
-                .substringBefore('/')
-                .trim()
-                .toIntOrNull()
-            if (tmdbId != null) {
-                val tmdbType = when (item.type.lowercase()) {
-                    "movie", "film" -> "movie"
-                    else -> "tv"
-                }
-                val canonical = withTimeoutOrNull(2_000L) {
-                    TmdbService.fetchTitle(tmdbId, tmdbType)
-                }
-                if (canonical != null) {
-                    item.copy(name = canonical)
-                } else {
-                    item
-                }
+            val metaUrl = runCatching {
+                buildAddonResourceUrl(
+                    manifestUrl = manifestUrl,
+                    resource = "meta",
+                    type = type,
+                    id = item.id,
+                )
+            }.getOrNull() ?: return@async item
+            val metaPayload = withTimeoutOrNull(1_500L) {
+                runCatching { httpGetText(metaUrl) }.getOrNull()
+            } ?: return@async item
+            val metaName = runCatching {
+                metaJson.parseToJsonElement(metaPayload)
+                    .jsonObject["meta"]
+                    ?.jsonObject?.get("name")
+                    ?.jsonPrimitive?.contentOrNull
+            }.getOrNull()?.trim()?.takeIf(String::isNotBlank)
+            if (metaName != null && metaName != item.name) {
+                item.copy(name = metaName)
             } else {
                 item
             }
