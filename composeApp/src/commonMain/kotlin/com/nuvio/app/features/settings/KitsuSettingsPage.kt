@@ -348,7 +348,7 @@ private fun KitsuConnectionCard(isTablet: Boolean) {
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Connetti con Browser")
+                    Text("Accedi con Kitsu")
                 }
 
             }
