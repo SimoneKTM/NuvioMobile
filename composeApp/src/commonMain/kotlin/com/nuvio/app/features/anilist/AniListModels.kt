@@ -80,10 +80,10 @@ data class AniListLibraryItem(
     val airingStatus: String? = null,
     val status: String,           // Watching, Completed, Planning, Paused, Dropped, Repeating
     val updatedAt: Long = 0L,     // Epoch seconds from AniList
-    val imdbId: String? = null,
     val entryId: Int? = null,
     val format: String? = null,
     val startDate: String? = null,
+    val nextEpisodeAtEpochMs: Long? = null,
 )
 
 data class AniListLibraryUiState(

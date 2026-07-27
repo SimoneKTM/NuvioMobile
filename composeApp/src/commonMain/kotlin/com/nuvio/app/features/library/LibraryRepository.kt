@@ -866,6 +866,7 @@ object LibraryRepository {
             posterShape = PosterShape.Poster,
             savedAtEpochMs = updatedAt * 1000L,
             startDate = startDate,
+            nextEpisodeAtEpochMs = nextEpisodeAtEpochMs,
         )
     }
 

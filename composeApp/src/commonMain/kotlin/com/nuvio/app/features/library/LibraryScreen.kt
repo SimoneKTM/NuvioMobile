@@ -2066,23 +2066,43 @@ private suspend fun buildNextUpCalendarEvents(
 private fun buildLibraryReleaseCalendarFallbackEvents(items: List<LibraryItem>): List<LibraryCalendarEvent> =
     items
         .asSequence()
-        .mapNotNull { item ->
+        .flatMap { item ->
+            val events = mutableListOf<LibraryCalendarEvent>()
             val rawReleaseInfo = item.releaseInfo?.takeIf { it.isNotBlank() }
             val rawDate = rawReleaseInfo?.let { parseLibraryCalendarDate(it) }
             val startDate = item.startDate?.takeIf { it.isNotBlank() }
-            val date = rawDate ?: startDate?.let { parseLibraryCalendarDate(it) } ?: return@mapNotNull null
-            val info = rawReleaseInfo ?: date.iso ?: return@mapNotNull null
-            LibraryCalendarEvent(
-                key = "item:${item.type}:${item.id}:${date.iso}",
-                date = date,
-                rawReleaseInfo = info,
-                item = item,
-                title = item.name,
-                imageUrl = item.banner ?: item.poster,
-                sortTitle = item.name,
-            )
+            val date = rawDate ?: startDate?.let { parseLibraryCalendarDate(it) }
+            if (date != null) {
+                val info = rawReleaseInfo ?: date.iso
+                events.add(LibraryCalendarEvent(
+                    key = "item:${item.type}:${item.id}:${date.iso}",
+                    date = date,
+                    rawReleaseInfo = info,
+                    item = item,
+                    title = item.name,
+                    imageUrl = item.banner ?: item.poster,
+                    sortTitle = item.name,
+                ))
+            }
+            val nextEpMs = item.nextEpisodeAtEpochMs
+            if (nextEpMs != null && nextEpMs > 0L) {
+                val nextEpDate = epochMsToCalendarDate(nextEpMs)
+                if (nextEpDate != null) {
+                    events.add(LibraryCalendarEvent(
+                        key = "anilist:nextep:${item.id}:${nextEpDate.iso}",
+                        date = nextEpDate,
+                        rawReleaseInfo = nextEpDate.iso,
+                        item = item,
+                        title = item.name,
+                        subtitle = "Nuovo episodio",
+                        imageUrl = item.banner ?: item.poster,
+                        sortTitle = "${item.name} new",
+                    ))
+                }
+            }
+            events
         }
-        .sortedWith(compareBy<LibraryCalendarEvent> { it.date.iso }.thenBy { it.item.name.lowercase() })
+        .sortedWith(compareBy<LibraryCalendarEvent> { it.date.iso }.thenBy { it.sortTitle.lowercase() })
         .toList()
 
 private suspend fun buildLibraryEpisodeCalendarEvents(items: List<LibraryItem>): List<LibraryCalendarEvent> =
@@ -2146,6 +2166,35 @@ private fun parseLibraryCalendarDate(raw: String?): LibraryCalendarDate? {
     val day = parts[2].toIntOrNull()?.takeIf { it in 1..daysInLibraryCalendarMonth(year, month) } ?: return null
     return LibraryCalendarDate(year, month, day)
 }
+
+private fun epochMsToCalendarDate(epochMs: Long): LibraryCalendarDate? {
+    val totalSeconds = epochMs / 1000L
+    val days = totalSeconds / 86400L
+    if (days < 0) return null
+    var year = 1970L
+    var remainingDays = days
+    while (true) {
+        val daysInYear = if (isLeapYear(year.toInt())) 366 else 365
+        if (remainingDays < daysInYear) break
+        remainingDays -= daysInYear
+        year++
+    }
+    val months = if (isLeapYear(year.toInt())) leapYearMonths else normalYearMonths
+    var month = 0
+    while (month < 12 && remainingDays >= months[month]) {
+        remainingDays -= months[month]
+        month++
+    }
+    month++
+    val day = (remainingDays + 1).toInt()
+    return LibraryCalendarDate(year.toInt(), month, day)
+}
+
+private val normalYearMonths = intArrayOf(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+private val leapYearMonths = intArrayOf(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+
+private fun isLeapYear(year: Int): Boolean =
+    (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
 
 private fun initialLibraryCalendarMonth(): LibraryCalendarMonth {
     val today = parseLibraryCalendarDate(CurrentDateProvider.todayIsoDate())

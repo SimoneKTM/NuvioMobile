@@ -136,6 +136,10 @@ object AniListApi {
                                     month
                                     day
                                 }
+                                nextAiringEpisode {
+                                    timeUntilAiring
+                                    episode
+                                }
                             }
                         }
                     }
@@ -161,6 +165,11 @@ object AniListApi {
                     val startDateStr = if (date != null && date.year != null && date.month != null && date.day != null) {
                         "${date.year}-${date.month.toString().padStart(2, '0')}-${date.day.toString().padStart(2, '0')}"
                     } else null
+                    val nextEpisodeAtEpochMs = media.nextAiringEpisode?.let { next ->
+                        if (next.timeUntilAiring != null) {
+                            WatchProgressClock.nowEpochMs() + (next.timeUntilAiring * 1000L)
+                        } else null
+                    }
                     AniListLibraryItem(
                         id = media.id,
                         title = media.title?.userPreferred ?: media.title?.english ?: media.title?.romaji ?: "Unknown Title",
@@ -173,7 +182,8 @@ object AniListApi {
                         updatedAt = entry.updatedAt,
                         entryId = entry.id,
                         format = media.format,
-                        startDate = startDateStr
+                        startDate = startDateStr,
+                        nextEpisodeAtEpochMs = nextEpisodeAtEpochMs,
                     )
                 }
             }
