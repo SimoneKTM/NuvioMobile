@@ -2068,15 +2068,13 @@ private fun buildLibraryReleaseCalendarFallbackEvents(items: List<LibraryItem>):
         .asSequence()
         .mapNotNull { item ->
             val rawReleaseInfo = item.releaseInfo?.takeIf { it.isNotBlank() }
-            var date = rawReleaseInfo?.let { parseLibraryCalendarDate(it) }
-            if (date == null) {
-                val startDate = item.startDate?.takeIf { it.isNotBlank() }
-                date = startDate?.let { parseLibraryCalendarDate(it) }
-            }
+            val rawDate = rawReleaseInfo?.let { parseLibraryCalendarDate(it) }
+            val startDate = item.startDate?.takeIf { it.isNotBlank() }
+            val date = rawDate ?: startDate?.let { parseLibraryCalendarDate(it) }
             val info = rawReleaseInfo ?: date?.iso ?: return@mapNotNull null
             LibraryCalendarEvent(
-                key = "item:${item.type}:${item.id}:${date.iso}",
-                date = date,
+                key = "item:${item.type}:${item.id}:${date!!.iso}",
+                date = date!!,
                 rawReleaseInfo = info,
                 item = item,
                 title = item.name,

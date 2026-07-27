@@ -2,6 +2,7 @@ package com.nuvio.app.features.mal
 
 import co.touchlab.kermit.Logger
 import com.nuvio.app.features.addons.httpGetTextWithHeaders
+import com.nuvio.app.features.addons.httpPostJsonWithHeaders
 import com.nuvio.app.features.addons.httpRequestRaw
 import io.ktor.http.Url
 import io.ktor.http.encodeURLParameter

@@ -1,6 +1,7 @@
 package com.nuvio.app.features.catalog
 
 import com.nuvio.app.features.addons.AddonCatalog
+import com.nuvio.app.features.addons.buildAddonResourceUrl
 import com.nuvio.app.features.addons.httpGetText
 import com.nuvio.app.features.details.MetaDetailsRepository
 import com.nuvio.app.features.home.HomeCatalogParser
