@@ -184,9 +184,9 @@ fun AnimeHomeScreen(
                     item {
                         HomeEmptyStateCard(
                             modifier = Modifier.padding(horizontal = 16.dp),
-                            title = "No anime addons configured",
-                            message = "Add anime addons in the Anime settings to start browsing anime content.",
-                            actionLabel = "Open Anime Settings",
+                            title = "Nessun addon anime configurato",
+                            message = "Aggiungi addon anime nelle impostazioni Anime per iniziare a navigare tra i contenuti anime.",
+                            actionLabel = "Apri Impostazioni Anime",
                             onActionClick = onNavigateToSettings,
                         )
                     }
@@ -205,8 +205,8 @@ fun AnimeHomeScreen(
                     item {
                         HomeEmptyStateCard(
                             modifier = Modifier.padding(horizontal = 16.dp),
-                            title = "No anime content available",
-                            message = homeUiState.errorMessage ?: "Your anime addons are configured but no content was found.",
+                            title = "Nessun contenuto anime disponibile",
+                            message = homeUiState.errorMessage ?: "I tuoi addon anime sono configurati ma non è stato trovato alcun contenuto.",
                         )
                     }
                 }

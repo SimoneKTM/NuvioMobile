@@ -3,6 +3,7 @@ package com.nuvio.app.features.anime.tvdb
 import co.touchlab.kermit.Logger
 import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.features.details.MetaExternalRating
+import com.nuvio.app.features.details.MetaPerson
 import com.nuvio.app.features.details.MetaTrailer
 import com.nuvio.app.features.tvdb.TvdbSettings
 import kotlinx.coroutines.Dispatchers
@@ -62,6 +63,19 @@ object TvdbMetadataService {
                         }
                     }
                     enriched = enriched.copy(trailers = trailers)
+                }
+
+                if (settings.useCredits && extended.characters.isNotEmpty()) {
+                    val people = extended.characters.mapNotNull { character ->
+                        val actorName = character.personName?.trim()?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                        MetaPerson(
+                            name = actorName,
+                            role = character.name.trim().takeIf { it.isNotBlank() },
+                            photo = character.image?.takeIf { it.isNotBlank() },
+                            tmdbId = null,
+                        )
+                    }
+                    enriched = enriched.copy(cast = people)
                 }
 
                 log.d { "TVDB enriched ${meta.name}: seriesId=$seriesId" }

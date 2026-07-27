@@ -345,12 +345,22 @@ private fun KitsuConnectionCard(isTablet: Boolean) {
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                    Button(
-                        onClick = { showLoginDialog = true },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Connetti Kitsu")
-                    }
+                Button(
+                    onClick = {
+                        val authUrl = KitsuAuthRepository.onConnectRequested()
+                        runCatching { uriHandler.openUri(authUrl) }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Connetti con Browser")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { showLoginDialog = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Connetti Kitsu (Email / Password)")
+                }
             }
 
             KitsuConnectionMode.LOADING -> {
