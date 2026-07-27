@@ -421,6 +421,10 @@ object WatchedRepository {
                 traktHasLoaded = true
                 traktHasLoadedRemote = true
             }
+            WatchProgressSource.SIMKL -> {
+                traktHasLoaded = true
+                traktHasLoadedRemote = true
+            }
         }
         publish()
         if (shouldPersistWatchedSource(operation.sourceOperation.source)) {
