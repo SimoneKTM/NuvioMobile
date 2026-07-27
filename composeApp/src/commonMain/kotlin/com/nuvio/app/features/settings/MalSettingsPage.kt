@@ -125,7 +125,7 @@ private fun MalConnectionCard(
                             val authUrl = MalAuthRepository.onConnectRequested()
                             if (authUrl != null) {
                                 runCatching { uriHandler.openUri(authUrl) }
-                                    .onFailure { MalAuthRepository.onAuthLaunchFailed(it.message ?: "Unknown error") }
+                                    .onFailure { MalAuthRepository.onAuthLaunchFailed(it.message ?: "Errore sconosciuto") }
                             }
                         },
                     ) {

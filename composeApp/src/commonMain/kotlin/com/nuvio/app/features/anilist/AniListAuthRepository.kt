@@ -85,7 +85,7 @@ object AniListAuthRepository {
                 .getOrNull()
 
             if (parsedUrl == null) {
-                publish(isLoading = false, errorMessage = "Invalid callback URL received.")
+                publish(isLoading = false, errorMessage = "URL di callback non valido.")
                 return@launch
             }
 
@@ -115,19 +115,19 @@ object AniListAuthRepository {
                         expiresInSeconds = tokenResult.expiresInSeconds
                     )
                 } else {
-                    publish(isLoading = false, errorMessage = "Failed to exchange authorization code.")
+                    publish(isLoading = false, errorMessage = "Scambio del codice di autorizzazione fallito.")
                 }
                 return@launch
             }
 
-            publish(isLoading = false, errorMessage = "No access token or authorization code found in callback.")
+            publish(isLoading = false, errorMessage = "Nessun token o codice di autorizzazione trovato nel callback.")
         }
     }
 
     private suspend fun completeAuthWithToken(token: String, refreshToken: String?, expiresInSeconds: Long) {
         val viewer = AniListApi.fetchViewer(token)
         if (viewer == null) {
-            publish(isLoading = false, errorMessage = "Failed to fetch user profile details from AniList.")
+            publish(isLoading = false, errorMessage = "Impossibile recuperare il profilo utente da AniList.")
             return
         }
 

@@ -357,7 +357,7 @@ private fun AniListConnectionCard(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Connetti AniList")
+                    Text("Accedi con AniList")
                 }
             }
 
