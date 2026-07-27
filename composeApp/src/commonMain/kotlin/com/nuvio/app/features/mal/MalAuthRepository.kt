@@ -2,7 +2,7 @@ package com.nuvio.app.features.mal
 
 import co.touchlab.kermit.Logger
 import com.nuvio.app.features.addons.httpGetTextWithHeaders
-import com.nuvio.app.features.addons.httpPostJsonWithHeaders
+import com.nuvio.app.features.addons.httpRequestRaw
 import io.ktor.http.Url
 import io.ktor.http.encodeURLParameter
 import kotlinx.coroutines.CancellationException
@@ -237,10 +237,15 @@ object MalAuthRepository {
         }
 
         val response = runCatching {
-            httpPostJsonWithHeaders(
+            httpRequestRaw(
+                method = "POST",
                 url = "$AUTH_BASE_URL/token",
                 body = body,
-                headers = mapOf("Content-Type" to "application/x-www-form-urlencoded"),
+                headers = mapOf(
+                    "Accept" to "application/json",
+                    "Content-Type" to "application/x-www-form-urlencoded",
+                ),
+                followRedirects = false,
             )
         }.onFailure { e ->
             if (e is CancellationException) throw e
@@ -257,8 +262,24 @@ object MalAuthRepository {
             return
         }
 
+        if (response.status != 200) {
+            val errorDetail = response.body.trim().take(200)
+            log.w { "MAL token exchange failed: HTTP ${response.status} - $errorDetail" }
+            clearPendingAuthorization()
+            persist()
+            val malError = runCatching {
+                json.decodeFromString<MalTokenErrorResponse>(response.body)
+            }.getOrNull()
+            publish(
+                isLoading = false,
+                errorMessage = malError?.error?.replaceFirstChar { it.uppercase() }
+                    ?: "Accesso non riuscito (HTTP ${response.status})",
+            )
+            return
+        }
+
         val parsed = runCatching {
-            json.decodeFromString<MalTokenResponse>(response)
+            json.decodeFromString<MalTokenResponse>(response.body)
         }.getOrNull()
 
         if (parsed == null) {

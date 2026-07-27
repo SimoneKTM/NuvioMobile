@@ -36,6 +36,12 @@ data class MalAuthUiState(
 )
 
 @Serializable
+data class MalTokenErrorResponse(
+    val error: String,
+    val errorDescription: String? = null,
+)
+
+@Serializable
 data class MalTokenResponse(
     @SerialName("access_token") val accessToken: String,
     @SerialName("refresh_token") val refreshToken: String,
