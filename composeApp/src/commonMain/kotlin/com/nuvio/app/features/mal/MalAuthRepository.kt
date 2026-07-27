@@ -16,8 +16,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import com.nuvio.app.features.simkl.SimklPkceCrypto
-import com.nuvio.app.features.simkl.base64UrlWithoutPadding
 import kotlin.random.Random
 
 object MalAuthRepository {
@@ -77,10 +75,10 @@ object MalAuthRepository {
         codeVerifier = null
         MalAuthStorage.saveCodeVerifier(null)
 
-        val codeVerifierValue = SimklPkceCrypto.secureRandomBytes(32).base64UrlWithoutPadding()
+        val codeVerifierValue = generateOauthState(43)
         codeVerifier = codeVerifierValue
         MalAuthStorage.saveCodeVerifier(codeVerifierValue)
-        val state = SimklPkceCrypto.secureRandomBytes(16).base64UrlWithoutPadding()
+        val state = generateOauthState(16)
         authState = authState.copy(
             pendingAuthorizationState = state,
             pendingAuthorizationStartedAtMillis = nowEpochMs(),
@@ -437,10 +435,13 @@ object MalAuthRepository {
         return "${AUTH_BASE_URL}/authorize?response_type=$responseType&client_id=$encodedClientId&redirect_uri=$encodedRedirectUri&state=$encodedState&code_challenge=$encodedChallenge&code_challenge_method=plain"
     }
 
-    private fun generateOauthState(): String {
+    private fun generateOauthState(minLength: Int = 16): String {
         val nowPart = (nowEpochMs()).toString(16)
-        val randomPart = Random.nextLong().toULong().toString(16)
-        return "$nowPart$randomPart"
+        val parts = mutableListOf(nowPart)
+        while (parts.sumOf { it.length } < minLength) {
+            parts.add(Random.nextLong().toULong().toString(16))
+        }
+        return parts.joinToString("")
     }
 
     private fun isTokenExpiredOrExpiring(state: MalAuthState): Boolean {
