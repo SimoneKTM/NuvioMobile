@@ -9,12 +9,28 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @Serializable
+data class MalSectionSettings(
+    val type: String,
+    val enabled: Boolean = true,
+)
+
+val defaultMalLibrarySections = listOf(
+    MalSectionSettings("watching", true),
+    MalSectionSettings("completed", true),
+    MalSectionSettings("plan_to_watch", true),
+    MalSectionSettings("on_hold", true),
+    MalSectionSettings("dropped", true),
+)
+
+@Serializable
 data class MalSettingsUiState(
     val enableSync: Boolean = false,
     val syncWatching: Boolean = true,
     val autoSync: Boolean = true,
     val syncOnLaunch: Boolean = true,
     val lastSyncTimestamp: Long = 0L,
+    val librarySections: List<MalSectionSettings> = defaultMalLibrarySections,
+    val markWatchedThreshold: Float = 0.90f,
     val autoAddNewAnime: Boolean = false,
 )
 
@@ -79,6 +95,20 @@ object MalSettingsRepository {
         ensureLoaded()
         if (_uiState.value.autoAddNewAnime == enabled) return
         _uiState.value = _uiState.value.copy(autoAddNewAnime = enabled)
+        persist()
+    }
+
+    fun setMarkWatchedThreshold(threshold: Float) {
+        ensureLoaded()
+        val clamped = threshold.coerceIn(0f, 1f)
+        if (_uiState.value.markWatchedThreshold == clamped) return
+        _uiState.value = _uiState.value.copy(markWatchedThreshold = clamped)
+        persist()
+    }
+
+    fun setLibrarySections(sections: List<MalSectionSettings>) {
+        ensureLoaded()
+        _uiState.value = _uiState.value.copy(librarySections = sections)
         persist()
     }
 

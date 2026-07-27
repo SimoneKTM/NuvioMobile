@@ -113,12 +113,10 @@ import com.nuvio.app.features.kitsu.KitsuAuthRepository
 import com.nuvio.app.features.mal.MalAuthRepository
 import com.nuvio.app.features.trakt.TraktAuthRepository
 import com.nuvio.app.features.trakt.TraktSettingsRepository
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.*
@@ -235,12 +233,7 @@ fun LibraryScreen(
         releaseCalendarEvents = buildLibraryReleaseCalendarFallbackEvents(itemsSnapshot)
         releaseCalendarLoading = true
         try {
-            withTimeout(15_000L) {
-                releaseCalendarEvents = buildLibraryReleaseCalendarEvents(itemsSnapshot, episodeCodeFormat)
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
+            releaseCalendarEvents = buildLibraryReleaseCalendarEvents(itemsSnapshot, episodeCodeFormat)
         } finally {
             releaseCalendarLoading = false
         }
