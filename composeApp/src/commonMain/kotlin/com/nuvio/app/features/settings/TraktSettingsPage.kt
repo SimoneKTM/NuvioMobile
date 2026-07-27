@@ -102,10 +102,13 @@ import nuvio.composeapp.generated.resources.trakt_more_like_this_source_subtitle
 import nuvio.composeapp.generated.resources.trakt_more_like_this_source_title
 import nuvio.composeapp.generated.resources.trakt_more_like_this_source_tmdb
 import nuvio.composeapp.generated.resources.trakt_more_like_this_source_trakt
+import nuvio.composeapp.generated.resources.trakt_more_like_this_source_tvdb
 import nuvio.composeapp.generated.resources.trakt_watch_progress_dialog_subtitle
 import nuvio.composeapp.generated.resources.trakt_watch_progress_dialog_title
 import nuvio.composeapp.generated.resources.trakt_watch_progress_nuvio_selected
+import nuvio.composeapp.generated.resources.trakt_watch_progress_simkl_selected
 import nuvio.composeapp.generated.resources.trakt_watch_progress_source_nuvio
+import nuvio.composeapp.generated.resources.trakt_watch_progress_source_simkl
 import nuvio.composeapp.generated.resources.trakt_watch_progress_source_trakt
 import nuvio.composeapp.generated.resources.trakt_watch_progress_subtitle
 import nuvio.composeapp.generated.resources.trakt_watch_progress_title
@@ -177,6 +180,7 @@ private fun TraktFeatureRows(
     val continueWatchingWindowValue = continueWatchingDaysCapLabel(settingsUiState.continueWatchingDaysCap)
     val moreLikeThisSourceValue = moreLikeThisSourceLabel(settingsUiState.moreLikeThisSource)
     val traktProgressSelectedMessage = stringResource(Res.string.trakt_watch_progress_trakt_selected)
+    val simklProgressSelectedMessage = stringResource(Res.string.trakt_watch_progress_simkl_selected)
     val nuvioProgressSelectedMessage = stringResource(Res.string.trakt_watch_progress_nuvio_selected)
     val traktLibrarySelectedMessage = stringResource(Res.string.trakt_library_source_trakt_selected)
     val nuvioLibrarySelectedMessage = stringResource(Res.string.trakt_library_source_nuvio_selected)
@@ -255,10 +259,10 @@ private fun TraktFeatureRows(
                         source = source,
                     )
                     statusMessage = if (result.succeeded) {
-                        if (result.requestedSource == WatchProgressSource.TRAKT) {
-                            traktProgressSelectedMessage
-                        } else {
-                            nuvioProgressSelectedMessage
+                        when (result.requestedSource) {
+                            WatchProgressSource.TRAKT -> traktProgressSelectedMessage
+                            WatchProgressSource.SIMKL -> simklProgressSelectedMessage
+                            WatchProgressSource.NUVIO_SYNC -> nuvioProgressSelectedMessage
                         }
                     } else {
                         null
@@ -374,6 +378,7 @@ private fun librarySourceModeLabel(source: LibrarySourceMode): String =
 private fun watchProgressSourceLabel(source: WatchProgressSource): String =
     when (source) {
         WatchProgressSource.TRAKT -> stringResource(Res.string.trakt_watch_progress_source_trakt)
+        WatchProgressSource.SIMKL -> stringResource(Res.string.trakt_watch_progress_source_simkl)
         WatchProgressSource.NUVIO_SYNC -> stringResource(Res.string.trakt_watch_progress_source_nuvio)
     }
 
@@ -382,6 +387,7 @@ private fun moreLikeThisSourceLabel(source: MoreLikeThisSourcePreference): Strin
     when (source) {
         MoreLikeThisSourcePreference.TRAKT -> stringResource(Res.string.trakt_more_like_this_source_trakt)
         MoreLikeThisSourcePreference.TMDB -> stringResource(Res.string.trakt_more_like_this_source_tmdb)
+        MoreLikeThisSourcePreference.TVDB -> stringResource(Res.string.trakt_more_like_this_source_tvdb)
     }
 
 @Composable
@@ -480,7 +486,7 @@ private fun WatchProgressSourceDialog(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    listOf(WatchProgressSource.TRAKT, WatchProgressSource.NUVIO_SYNC).forEach { source ->
+                    WatchProgressSource.entries.forEach { source ->
                         TraktDialogOption(
                             label = watchProgressSourceLabel(source),
                             selected = source == selectedSource,
@@ -589,7 +595,7 @@ private fun MoreLikeThisSourceDialog(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    listOf(MoreLikeThisSourcePreference.TRAKT, MoreLikeThisSourcePreference.TMDB).forEach { source ->
+                    MoreLikeThisSourcePreference.entries.forEach { source ->
                         TraktDialogOption(
                             label = moreLikeThisSourceLabel(source),
                             selected = source == selectedSource,

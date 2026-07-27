@@ -570,6 +570,12 @@ object MetaDetailsRepository {
             )
         }
 
+        if (com.nuvio.app.features.trakt.shouldUseTvdbMoreLikeThis(traktSettings.moreLikeThisSource)) {
+            return meta.copy(
+                moreLikeThisSource = MoreLikeThisSource.TVDB.takeIf { meta.moreLikeThis.isNotEmpty() },
+            )
+        }
+
         if (!tmdbSettings.enabled || !tmdbSettings.useMoreLikeThis) {
             return meta.copy(moreLikeThis = emptyList(), moreLikeThisSource = null)
         }
@@ -613,7 +619,8 @@ object MetaDetailsRepository {
         return shouldUseTraktMoreLikeThis(
             isAuthenticated = isTraktAuthenticated,
             source = traktSettings.moreLikeThisSource,
-        ) || !tmdbSettings.enabled || !tmdbSettings.useMoreLikeThis || meta.moreLikeThisSource == null && meta.moreLikeThis.isNotEmpty()
+        ) || com.nuvio.app.features.trakt.shouldUseTvdbMoreLikeThis(traktSettings.moreLikeThisSource) ||
+            !tmdbSettings.enabled || !tmdbSettings.useMoreLikeThis || meta.moreLikeThisSource == null && meta.moreLikeThis.isNotEmpty()
     }
 
     private fun buildMetaScreenSettingsFingerprint(

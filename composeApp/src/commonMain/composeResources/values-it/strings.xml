@@ -1256,6 +1256,7 @@
     <string name="settings_trakt_disconnect">Disconnetti</string>
     <string name="settings_trakt_failed_open_browser">Impossibile aprire il browser</string>
     <string name="settings_trakt_features">FUNZIONALITÀ</string>
+    <string name="settings_trakt_open_browser_btn">Apri trakt.tv/activate</string>
     <string name="settings_trakt_finish_sign_in">Completa l'accesso a Trakt nel tuo browser</string>
     <string name="settings_trakt_intro_description">Sincronizza la tua watchlist, i progressi di visione, Continua a guardare, gli scrobbles e le liste personali con Trakt.</string>
     <string name="settings_trakt_missing_credentials">Credenziali Trakt mancanti in local.properties (TRAKT_CLIENT_ID / TRAKT_CLIENT_SECRET).</string>
@@ -1282,8 +1283,10 @@
     <string name="trakt_watch_progress_dialog_title">Progresso visione</string>
     <string name="trakt_watch_progress_dialog_subtitle">Scegli se la ripresa e Continua a guardare dovrebbero utilizzare Trakt o Nuvio Sync mentre lo scrobbling Trakt rimane attivo.</string>
     <string name="trakt_watch_progress_source_trakt">Trakt</string>
+    <string name="trakt_watch_progress_source_simkl">Simkl</string>
     <string name="trakt_watch_progress_source_nuvio">Nuvio Sync</string>
     <string name="trakt_watch_progress_trakt_selected">Fonte del progresso visione impostata su Trakt</string>
+    <string name="trakt_watch_progress_simkl_selected">Fonte del progresso visione impostata su Simkl</string>
     <string name="trakt_watch_progress_nuvio_selected">Fonte del progresso visione impostata su Nuvio Sync</string>
     <string name="trakt_more_like_this_source_title">Fonte Altri simili</string>
     <string name="trakt_more_like_this_source_subtitle">Scegli da dove provengono le raccomandazioni sulle pagine dettagli</string>
@@ -1291,6 +1294,7 @@
     <string name="trakt_more_like_this_source_dialog_subtitle">Seleziona la fonte per le raccomandazioni mostrate sulle pagine dettagli.</string>
     <string name="trakt_more_like_this_source_trakt">Trakt</string>
     <string name="trakt_more_like_this_source_tmdb">TMDB</string>
+    <string name="trakt_more_like_this_source_tvdb">TVDB</string>
     <string name="trakt_continue_watching_window">Finestra Continua a guardare</string>
     <string name="trakt_continue_watching_subtitle">Cronologia Trakt considerata per Continua a guardare</string>
     <string name="trakt_cw_window_title">Finestra Continua a guardare</string>
@@ -1423,7 +1427,8 @@
 <string name="details_failed_to_load">Caricamento fallito</string>
 <string name="details_more_like_this">Altri simili</string>
 <string name="detail_more_like_this_powered_by_tmdb">Fornito da TMDB</string>
-<string name="detail_more_like_this_powered_by_trakt">Fornito da Trakt</string>
+    <string name="detail_more_like_this_powered_by_trakt">Fornito da Trakt</string>
+    <string name="detail_more_like_this_powered_by_tvdb">Fornito da TVDB</string>
 <string name="details_seasons">Stagioni</string>
 <string name="details_series_missing_numbers">Questo componente aggiuntivo ha restituito video per la serie, ma nessuno includeva numeri di stagione o episodio.</string>
 <string name="details_series_no_metadata">Questo componente aggiuntivo non ha fornito metadati degli episodi per questa serie.</string>
@@ -1661,7 +1666,7 @@
 <string name="trakt_public_list_request_failed">Richiesta Trakt fallita</string>
 <string name="trakt_sign_in_complete_failed">Completamento dell'accesso a Trakt fallito</string>
 <string name="trakt_user_fallback">Utente Trakt</string>
-<string name="trakt_watchlist">Watchlist</string>
+<string name="trakt_watchlist">Da Guardare</string>
 <!-- Errori di sincronizzazione della libreria Trakt -->
 <string name="trakt_error_authorization_expired">Autorizzazione Trakt scaduta</string>
 <string name="trakt_error_list_not_found">Lista Trakt non trovata</string>

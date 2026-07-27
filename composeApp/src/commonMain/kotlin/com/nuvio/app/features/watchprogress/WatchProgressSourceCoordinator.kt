@@ -3,9 +3,10 @@ package com.nuvio.app.features.watchprogress
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.auth.AuthRepository
 import com.nuvio.app.core.auth.AuthState
-import com.nuvio.app.features.profiles.ProfileRepository
-import com.nuvio.app.features.trakt.DEFAULT_WATCH_PROGRESS_SOURCE
+import com.nuvio.app.features.simkl.SimklAuthRepository
+import com.nuvio.app.features.simkl.SimklConnectionMode
 import com.nuvio.app.features.trakt.TraktAuthRepository
+import com.nuvio.app.features.trakt.TraktConnectionMode
 import com.nuvio.app.features.trakt.TraktSettingsRepository
 import com.nuvio.app.features.trakt.WatchProgressSource
 import com.nuvio.app.features.trakt.effectiveWatchProgressSource
@@ -235,14 +236,16 @@ object WatchProgressSourceCoordinator {
                 combine(
                     TraktSettingsRepository.uiState,
                     TraktAuthRepository.isAuthenticated,
+                    SimklAuthRepository.uiState,
                     AuthRepository.state,
                     ProfileRepository.state,
-                ) { settings, isTraktAuthenticated, authState, profileState ->
+                ) { settings, isTraktAuthenticated, simklUiState, authState, profileState ->
                     buildContext(
                         profileId = profileState.activeProfile?.profileIndex
                             ?: ProfileRepository.activeProfileId,
                         requestedSource = settings.watchProgressSource,
                         isTraktAuthenticated = isTraktAuthenticated,
+                        isSimklAuthenticated = simklUiState.mode == SimklConnectionMode.CONNECTED,
                         authState = authState,
                     )
                 }
@@ -465,12 +468,14 @@ object WatchProgressSourceCoordinator {
         profileId: Int,
         requestedSource: WatchProgressSource,
         isTraktAuthenticated: Boolean,
+        isSimklAuthenticated: Boolean,
         authState: AuthState,
     ): WatchProgressSourceContext = WatchProgressSourceContext(
         profileId = profileId,
         requestedSource = requestedSource,
         effectiveSource = effectiveWatchProgressSource(
             isTraktAuthenticated = isTraktAuthenticated,
+            isSimklAuthenticated = isSimklAuthenticated,
             requestedSource = requestedSource,
         ),
         isNuvioAuthenticated = authState is AuthState.Authenticated && !authState.isAnonymous,
@@ -480,6 +485,7 @@ object WatchProgressSourceCoordinator {
         profileId = profileId,
         requestedSource = TraktSettingsRepository.uiState.value.watchProgressSource,
         isTraktAuthenticated = TraktAuthRepository.isAuthenticated.value,
+        isSimklAuthenticated = SimklAuthRepository.uiState.value.mode == SimklConnectionMode.CONNECTED,
         authState = AuthRepository.state.value,
     )
 }

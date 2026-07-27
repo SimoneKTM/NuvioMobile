@@ -43,6 +43,7 @@ data class MetaDetails(
 enum class MoreLikeThisSource {
     TMDB,
     TRAKT,
+    TVDB,
 }
 
 data class MetaExternalRating(

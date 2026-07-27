@@ -11,6 +11,10 @@ import com.nuvio.app.features.details.MetaDetails
 import com.nuvio.app.features.details.MetaDetailsRepository
 import com.nuvio.app.features.player.PlayerPlaybackSnapshot
 import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.features.simkl.SimklConnectionMode
+import com.nuvio.app.features.simkl.SimklAuthRepository as SimklAuth
+import com.nuvio.app.features.simkl.SimklSyncRepository
+import com.nuvio.app.features.tracking.TrackingRefreshIntent
 import com.nuvio.app.features.trakt.TraktAuthRepository
 import com.nuvio.app.features.trakt.TraktProgressRepository
 import com.nuvio.app.features.trakt.TraktSettingsRepository
@@ -23,6 +27,7 @@ import com.nuvio.app.features.watching.sync.ProgressDeltaEvent
 import com.nuvio.app.features.watching.sync.ProgressSyncRecord
 import com.nuvio.app.features.watching.sync.ProgressSyncAdapter
 import com.nuvio.app.features.watching.sync.SupabaseProgressSyncAdapter
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.CoroutineScope
@@ -244,6 +249,14 @@ object WatchProgressRepository {
         }
 
         syncScope.launch {
+            SimklSyncRepository.state.collectLatest {
+                if (shouldUseSimklProgress()) {
+                    publish()
+                }
+            }
+        }
+
+        syncScope.launch {
             AddonRepository.uiState.collectLatest { state ->
                 retryMetadataResolutionWhenAddonMetaProvidersReady(state)
             }
@@ -255,10 +268,12 @@ object WatchProgressRepository {
         TraktAuthRepository.ensureLoaded()
         TraktSettingsRepository.ensureLoaded()
         TraktProgressRepository.ensureLoaded()
+        SimklAuth.ensureLoaded()
         if (!hasLoaded) {
             updateActiveSource(
                 effectiveWatchProgressSource(
                     isTraktAuthenticated = TraktAuthRepository.isAuthenticated.value,
+                    isSimklAuthenticated = SimklAuth.uiState.value.mode == SimklConnectionMode.CONNECTED,
                     requestedSource = TraktSettingsRepository.uiState.value.watchProgressSource,
                 ),
             )
@@ -272,6 +287,7 @@ object WatchProgressRepository {
         updateActiveSource(
             effectiveWatchProgressSource(
                 isTraktAuthenticated = TraktAuthRepository.isAuthenticated.value,
+                isSimklAuthenticated = SimklAuth.uiState.value.mode == SimklConnectionMode.CONNECTED,
                 requestedSource = TraktSettingsRepository.uiState.value.watchProgressSource,
             ),
         )
@@ -420,6 +436,12 @@ object WatchProgressRepository {
                 force = force,
             )
 
+            WatchProgressSource.SIMKL -> refreshSimklSource(
+                profileId = profileId,
+                operationGeneration = operationGeneration,
+                force = force,
+            )
+
             WatchProgressSource.NUVIO_SYNC -> refreshNuvioSource(
                 profileId = profileId,
                 operationGeneration = operationGeneration,
@@ -492,6 +514,112 @@ object WatchProgressRepository {
                 false
             }
         }
+    }
+
+    private suspend fun refreshSimklSource(
+        profileId: Int,
+        operationGeneration: Long,
+        force: Boolean,
+    ): Boolean {
+        if (SimklAuth.uiState.value.mode != SimklConnectionMode.CONNECTED) {
+            log.d { "Skipping Simkl progress refresh because Simkl is not authenticated" }
+            return false
+        }
+
+        return try {
+            SimklSyncRepository.refresh(com.nuvio.app.features.tracking.TrackingRefreshIntent.ALWAYS)
+            if (!isActiveOperation(profileId, operationGeneration) || activeSource != WatchProgressSource.SIMKL) {
+                return false
+            }
+            val snapshot = SimklSyncRepository.state.value.snapshot
+            val simklEntries = simklPlaybackToProgressEntries(snapshot.playback)
+            replaceLocalEntries(simklEntries)
+            hasLoadedNuvioRemoteProgress = true
+            publish()
+            true
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Throwable) {
+            log.e(error) { "Failed to refresh Simkl watch progress" }
+            hasLoadedNuvioRemoteProgress = true
+            publish()
+            false
+        }
+    }
+
+    private fun simklPlaybackToProgressEntries(playback: List<com.nuvio.app.features.simkl.SimklPlaybackSession>): List<WatchProgressEntry> {
+        if (playback.isEmpty()) return localEntriesSnapshot()
+        return playback.mapNotNull { session ->
+            val media = session.media ?: return@mapNotNull null
+            val mediaTitle = media.title ?: return@mapNotNull null
+            val simklId = media.ids["simkl"]?.let { simklEntry ->
+                simklEntry.jsonPrimitive.content.trim().takeIf(String::isNotBlank)
+            } ?: media.ids["simkl_id"]?.let { simklEntry ->
+                simklEntry.jsonPrimitive.content.trim().takeIf(String::isNotBlank)
+            }
+            val stableId = simklId?.let { "simkl:$it" } ?: listOf("imdb", "tmdb", "tvdb", "mal", "anidb", "anilist", "kitsu")
+                .firstNotNullOfOrNull { key ->
+                    media.ids[key]?.jsonPrimitive?.content?.trim()?.takeIf(String::isNotBlank)?.let { "$key:$it" }
+                }
+            if (stableId == null) return@mapNotNull null
+            val isEpisode = session.episode != null
+            val contentType = if (isEpisode) "series" else "movie"
+            val progress = session.progress.toFloat().coerceIn(0f, 1f)
+            val runtime = (media.runtime ?: 0) * 60 * 1000L
+            val lastPositionMs = (progress * runtime).toLong()
+
+            WatchProgressEntry(
+                contentType = contentType,
+                parentMetaId = stableId,
+                parentMetaType = when {
+                    session.movie != null -> "movie"
+                    session.anime != null -> "anime"
+                    else -> "series"
+                },
+                videoId = stableId,
+                title = mediaTitle,
+                poster = media.poster,
+                seasonNumber = session.episode?.season,
+                episodeNumber = session.episode?.number,
+                episodeTitle = session.episode?.title,
+                lastPositionMs = lastPositionMs,
+                durationMs = runtime,
+                lastUpdatedEpochMs = parseSimklTimestamp(session.pausedAt ?: session.watchedAt),
+                progressPercent = progress * 100f,
+                isCompleted = progress >= 1f,
+                source = "simkl",
+            )
+        }
+    }
+
+    private fun parseSimklTimestamp(timestamp: String?): Long {
+        if (timestamp == null) return WatchProgressClock.nowEpochMs()
+        return try {
+            val cleaned = timestamp.replace("Z", "").substringBefore("+")
+            val parts = cleaned.split("T")
+            if (parts.size != 2) return WatchProgressClock.nowEpochMs()
+            val dateParts = parts[0].split("-")
+            val timeParts = parts[1].split(":")
+            if (dateParts.size != 3 || timeParts.size < 2) return WatchProgressClock.nowEpochMs()
+            val epochDays = epochDay(dateParts[0].toInt(), dateParts[1].toInt(), dateParts[2].toInt())
+            val seconds = epochDays * 86400L +
+                timeParts[0].toLong() * 3600L +
+                timeParts[1].toLong() * 60L +
+                (timeParts.getOrNull(2)?.substringBefore(".")?.toLongOrNull() ?: 0L)
+            seconds * 1000L
+        } catch (_: Exception) {
+            WatchProgressClock.nowEpochMs()
+        }
+    }
+
+    private fun epochDay(year: Int, month: Int, day: Int): Long {
+        val y = if (month <= 2) year - 1 else year
+        val m = if (month <= 2) month + 12 else month
+        val era = (if (y >= 0) y else y - 399) / 400
+        val yoe = y - era * 400
+        val doy = (153 * (m - 3) + 2) / 5 + day - 1
+        val doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
+        return (era * 146097L + doe - 719468L)
     }
 
     private suspend fun pullNuvioSnapshotFromServer(
@@ -1373,10 +1501,10 @@ object WatchProgressRepository {
     private fun publish() {
         val entries = currentEntries()
         val sortedEntries = entries.sortedByDescending { it.lastUpdatedEpochMs }
-        val hasLoadedRemoteProgress = if (shouldUseTraktProgress()) {
-            TraktProgressRepository.uiState.value.hasLoadedRemoteProgress
-        } else {
-            hasLoadedNuvioRemoteProgress
+        val hasLoadedRemoteProgress = when {
+            shouldUseTraktProgress() -> TraktProgressRepository.uiState.value.hasLoadedRemoteProgress
+            shouldUseSimklProgress() -> hasLoadedNuvioRemoteProgress
+            else -> hasLoadedNuvioRemoteProgress
         }
         _uiState.value = WatchProgressUiState(
             entries = sortedEntries,
@@ -1472,6 +1600,9 @@ object WatchProgressRepository {
     private fun shouldUseTraktProgress(): Boolean =
         activeSource == WatchProgressSource.TRAKT
 
+    private fun shouldUseSimklProgress(): Boolean =
+        activeSource == WatchProgressSource.SIMKL
+
     private fun accountScopeSnapshot(): CoroutineScope = synchronized(accountScopeLock) {
         accountScope
     }
@@ -1502,28 +1633,30 @@ object WatchProgressRepository {
         }
 
     private fun currentEntries(): List<WatchProgressEntry> {
-        return if (shouldUseTraktProgress()) {
-            // Merge Trakt remote progress with local-only entries that use
-            // non-Trakt-compatible IDs (kitsu:, mal:, anilist:, etc.).
-            // Trakt will never return these IDs, so they must come from local storage.
-            val traktItems = TraktProgressRepository.uiState.value.entries
-            val localNonTraktItems = localEntriesSnapshot().filter {
-                !isTraktCompatibleId(it.parentMetaId)
-            }
-            if (localNonTraktItems.isEmpty()) {
-                traktItems
-            } else {
-                val traktKeys = traktItems.mapTo(mutableSetOf()) { entry -> entry.resolvedProgressKey() }
-                val merged = traktItems.toMutableList()
-                localNonTraktItems.forEach { localItem ->
-                    if (localItem.resolvedProgressKey() !in traktKeys) {
-                        merged.add(localItem)
-                    }
+        return when {
+            shouldUseTraktProgress() -> {
+                // Merge Trakt remote progress with local-only entries that use
+                // non-Trakt-compatible IDs (kitsu:, mal:, anilist:, etc.).
+                // Trakt will never return these IDs, so they must come from local storage.
+                val traktItems = TraktProgressRepository.uiState.value.entries
+                val localNonTraktItems = localEntriesSnapshot().filter {
+                    !isTraktCompatibleId(it.parentMetaId)
                 }
-                merged
+                if (localNonTraktItems.isEmpty()) {
+                    traktItems
+                } else {
+                    val traktKeys = traktItems.mapTo(mutableSetOf()) { entry -> entry.resolvedProgressKey() }
+                    val merged = traktItems.toMutableList()
+                    localNonTraktItems.forEach { localItem ->
+                        if (localItem.resolvedProgressKey() !in traktKeys) {
+                            merged.add(localItem)
+                        }
+                    }
+                    merged
+                }
             }
-        } else {
-            localEntriesSnapshot()
+            shouldUseSimklProgress() -> localEntriesSnapshot()
+            else -> localEntriesSnapshot()
         }
     }
 
