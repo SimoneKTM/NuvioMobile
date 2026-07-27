@@ -77,12 +77,12 @@ object MalAuthRepository {
         codeVerifier = null
         MalAuthStorage.saveCodeVerifier(null)
 
-        val stateVerifier = SimklPkceCrypto.secureRandomBytes(32).base64UrlWithoutPadding()
-        codeVerifier = stateVerifier
-        MalAuthStorage.saveCodeVerifier(stateVerifier)
-        val codeChallenge = SimklPkceCrypto.sha256(stateVerifier.encodeToByteArray()).base64UrlWithoutPadding()
+        val codeVerifierValue = SimklPkceCrypto.secureRandomBytes(32).base64UrlWithoutPadding()
+        codeVerifier = codeVerifierValue
+        MalAuthStorage.saveCodeVerifier(codeVerifierValue)
+        val state = SimklPkceCrypto.secureRandomBytes(16).base64UrlWithoutPadding()
         authState = authState.copy(
-            pendingAuthorizationState = stateVerifier,
+            pendingAuthorizationState = state,
             pendingAuthorizationStartedAtMillis = nowEpochMs(),
         )
         persist()
@@ -91,14 +91,14 @@ object MalAuthRepository {
             errorMessage = null,
         )
 
-        return buildAuthorizationUrl(stateVerifier, codeChallenge)
+        return buildAuthorizationUrl(state, codeVerifierValue)
     }
 
     fun pendingAuthorizationUrl(): String? {
         ensureLoaded()
-        val stateVerifier = authState.pendingAuthorizationState ?: return null
-        val codeChallenge = SimklPkceCrypto.sha256(stateVerifier.encodeToByteArray()).base64UrlWithoutPadding()
-        return buildAuthorizationUrl(stateVerifier, codeChallenge)
+        val state = authState.pendingAuthorizationState ?: return null
+        val verifier = codeVerifier ?: MalAuthStorage.loadCodeVerifier() ?: return null
+        return buildAuthorizationUrl(state, verifier)
     }
 
     fun onCancelAuthorization() {
@@ -434,7 +434,7 @@ object MalAuthRepository {
         val encodedRedirectUri = MalConfig.REDIRECT_URI.encodeURLParameter()
         val encodedState = state.encodeURLParameter()
         val encodedChallenge = codeChallenge.encodeURLParameter()
-        return "${AUTH_BASE_URL}/authorize?response_type=$responseType&client_id=$encodedClientId&redirect_uri=$encodedRedirectUri&state=$encodedState&code_challenge=$encodedChallenge&code_challenge_method=S256"
+        return "${AUTH_BASE_URL}/authorize?response_type=$responseType&client_id=$encodedClientId&redirect_uri=$encodedRedirectUri&state=$encodedState&code_challenge=$encodedChallenge&code_challenge_method=plain"
     }
 
     private fun generateOauthState(): String {
