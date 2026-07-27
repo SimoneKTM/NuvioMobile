@@ -9,13 +9,24 @@ import com.nuvio.app.features.tvdb.TvdbSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+internal fun TvdbSettings.toAnimeTvdbSettings(): AnimeTvdbSettings = AnimeTvdbSettings(
+    enabled = enabled,
+    apiKey = apiKey,
+    useTrailers = useTrailers,
+    useArtwork = useArtwork,
+    useBasicInfo = useBasicInfo,
+    useCredits = useCredits,
+    useEpisodes = useEpisodes,
+    useSeasonPosters = useSeasonPosters,
+)
+
 object TvdbMetadataService {
     private val log = Logger.withTag("TvdbMetadata")
 
     suspend fun enrichMeta(
         meta: MetaDetails,
         fallbackItemId: String,
-        settings: TvdbSettings,
+        settings: AnimeTvdbSettings,
     ): MetaDetails {
         if (!settings.enabled || !settings.hasApiKey) return meta
 
@@ -87,7 +98,7 @@ object TvdbMetadataService {
         }
     }
 
-    private suspend fun findSeriesId(meta: MetaDetails, fallbackItemId: String): Int? {
+    private suspend fun findSeriesId(meta: MetaDetails, fallbackItemId: String): String? {
         val remoteResult = tryRemoteIdSearch(fallbackItemId)
         if (remoteResult != null) return remoteResult
 
@@ -111,7 +122,7 @@ object TvdbMetadataService {
         return null
     }
 
-    private suspend fun tryRemoteIdSearch(itemId: String): Int? {
+    private suspend fun tryRemoteIdSearch(itemId: String): String? {
         val remoteId = when {
             itemId.matches(Regex("^tt\\d+$")) -> "imdb:$itemId"
             itemId.matches(Regex("^\\d+$")) -> "tmdb:$itemId"
