@@ -131,6 +131,11 @@ object AniListApi {
                                     large
                                     medium
                                 }
+                                startDate {
+                                    year
+                                    month
+                                    day
+                                }
                             }
                         }
                     }
@@ -152,6 +157,10 @@ object AniListApi {
                 val entries = listGroup.entries ?: return@flatMap emptyList()
                 entries.mapNotNull { entry ->
                     val media = entry.media ?: return@mapNotNull null
+                    val date = media.startDate
+                    val startDateStr = if (date != null && date.year != null && date.month != null && date.day != null) {
+                        "${date.year}-${date.month.toString().padStart(2, '0')}-${date.day.toString().padStart(2, '0')}"
+                    } else null
                     AniListLibraryItem(
                         id = media.id,
                         title = media.title?.userPreferred ?: media.title?.english ?: media.title?.romaji ?: "Unknown Title",
@@ -163,7 +172,8 @@ object AniListApi {
                         status = groupStatus,
                         updatedAt = entry.updatedAt,
                         entryId = entry.id,
-                        format = media.format
+                        format = media.format,
+                        startDate = startDateStr
                     )
                 }
             }

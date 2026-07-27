@@ -865,6 +865,7 @@ object LibraryRepository {
             imdbRating = score?.let { "${it / 10}" },
             posterShape = PosterShape.Poster,
             savedAtEpochMs = updatedAt * 1000L,
+            startDate = startDate,
         )
     }
 
@@ -887,6 +888,7 @@ object LibraryRepository {
             imdbRating = rating?.let { "%.1f".format(it) },
             posterShape = PosterShape.Poster,
             savedAtEpochMs = now,
+            startDate = startDate,
         )
     }
 

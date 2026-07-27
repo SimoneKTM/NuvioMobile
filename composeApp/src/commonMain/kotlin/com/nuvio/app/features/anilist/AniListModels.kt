@@ -82,7 +82,8 @@ data class AniListLibraryItem(
     val updatedAt: Long = 0L,     // Epoch seconds from AniList
     val imdbId: String? = null,
     val entryId: Int? = null,
-    val format: String? = null
+    val format: String? = null,
+    val startDate: String? = null,
 )
 
 data class AniListLibraryUiState(
@@ -169,7 +170,8 @@ data class AniListMediaDetails(
     val coverImage: AniListCoverImage? = null,
     val status: String? = null, // Airing status, e.g. FINISHED, RELEASING
     val nextAiringEpisode: AniListNextAiringEpisode? = null,
-    val format: String? = null
+    val format: String? = null,
+    val startDate: AniListDate? = null,
 )
 
 @Serializable

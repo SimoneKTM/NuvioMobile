@@ -25,6 +25,7 @@ data class LibraryItem(
     val tmdbId: Int? = null,
     val traktId: Int? = null,
     val savedAtEpochMs: Long,
+    val startDate: String? = null,
 )
 
 data class LibrarySection(

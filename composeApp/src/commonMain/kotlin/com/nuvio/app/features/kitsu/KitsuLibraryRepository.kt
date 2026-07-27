@@ -166,7 +166,8 @@ object KitsuLibraryRepository {
                     status = attrs.status ?: "current",
                     updatedAt = attrs.updatedAt,
                     entryId = entry.id,
-                    synopsis = incAttrs?.synopsis
+                    synopsis = incAttrs?.synopsis,
+                    startDate = incAttrs?.startDate
                 )
             }
 
