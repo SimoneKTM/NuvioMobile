@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.BasicAlertDialog
@@ -31,7 +30,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -51,8 +49,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.core.animateDpAsState
 import coil3.compose.AsyncImage
@@ -88,6 +84,7 @@ internal fun LazyListScope.kitsuSettingsContent(
             isTablet = isTablet,
         ) {
             SettingsGroup(isTablet = isTablet) {
+                KitsuAuthRepository.ensureLoaded()
                 KitsuConnectionCard(isTablet = isTablet)
             }
         }
@@ -172,7 +169,6 @@ private fun KitsuConnectionCard(isTablet: Boolean) {
 
     val uriHandler = LocalUriHandler.current
     var showDisconnectConfirm by remember { mutableStateOf(false) }
-    var showLoginDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -354,13 +350,7 @@ private fun KitsuConnectionCard(isTablet: Boolean) {
                 ) {
                     Text("Connetti con Browser")
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = { showLoginDialog = true },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Connetti Kitsu (Email / Password)")
-                }
+
             }
 
             KitsuConnectionMode.LOADING -> {
@@ -426,123 +416,7 @@ private fun KitsuConnectionCard(isTablet: Boolean) {
         }
     }
 
-    if (showLoginDialog) {
-        val loginAuthUiState by KitsuAuthRepository.uiState.collectAsState()
-        var email by remember { mutableStateOf("") }
-        var password by remember { mutableStateOf("") }
-        var loginError by remember { mutableStateOf<String?>(null) }
-        var isLoggingIn by remember { mutableStateOf(false) }
 
-        if (loginAuthUiState.mode == KitsuConnectionMode.CONNECTED) {
-            showLoginDialog = false
-        }
-
-        val repoError = loginAuthUiState.errorMessage
-        if (repoError != null && isLoggingIn) {
-            loginError = repoError
-            isLoggingIn = false
-        }
-
-        BasicAlertDialog(onDismissRequest = {
-            if (!isLoggingIn) {
-                showLoginDialog = false
-                loginError = null
-            }
-        }) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surface,
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "Connetti a Kitsu",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = "Inserisci email e password Kitsu per sincronizzare la tua libreria anime.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it; loginError = null },
-                        label = { Text("Email") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        enabled = !isLoggingIn,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it; loginError = null },
-                        label = { Text("Password") },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        enabled = !isLoggingIn,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    if (loginError != null) {
-                        Text(
-                            text = loginError.orEmpty(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Button(
-                            onClick = {
-                                showLoginDialog = false
-                                loginError = null
-                            },
-                            enabled = !isLoggingIn,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            )
-                        ) { Text("Annulla") }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                if (email.isBlank() || password.isBlank()) {
-                                    loginError = "Inserisci sia email che password."
-                                    return@Button
-                                }
-                                isLoggingIn = true
-                                loginError = null
-                                KitsuAuthRepository.loginWithPassword(email, password)
-                            },
-                            enabled = !isLoggingIn,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
-                        ) {
-                            if (isLoggingIn) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(18.dp),
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                    strokeWidth = 2.dp
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                            }
-                            Text("Accedi")
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
 
 @Composable

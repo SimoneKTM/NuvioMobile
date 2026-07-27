@@ -34,7 +34,9 @@ object KitsuApi {
         val body = buildString {
             append("grant_type=authorization_code")
             append("&client_id=").append(KitsuConfig.CLIENT_ID)
-            append("&client_secret=").append(KitsuConfig.CLIENT_SECRET)
+            if (KitsuConfig.CLIENT_SECRET.isNotBlank()) {
+                append("&client_secret=").append(KitsuConfig.CLIENT_SECRET)
+            }
             append("&redirect_uri=").append(KitsuConfig.REDIRECT_URI)
             append("&code=").append(code)
         }
@@ -80,7 +82,9 @@ object KitsuApi {
         val body = buildString {
             append("grant_type=refresh_token")
             append("&client_id=").append(KitsuConfig.CLIENT_ID)
-            append("&client_secret=").append(KitsuConfig.CLIENT_SECRET)
+            if (KitsuConfig.CLIENT_SECRET.isNotBlank()) {
+                append("&client_secret=").append(KitsuConfig.CLIENT_SECRET)
+            }
             append("&refresh_token=").append(refreshToken)
         }
         return try {
