@@ -199,9 +199,10 @@ private fun MalConnectionCard(isTablet: Boolean) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                if (authUiState.errorMessage != null) {
+                val errMsg = authUiState.errorMessage
+                if (errMsg != null) {
                     Text(
-                        text = authUiState.errorMessage,
+                        text = errMsg,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -340,10 +341,11 @@ private fun MalConnectionCard(isTablet: Boolean) {
             }
         }
 
-        if (authUiState.errorMessage != null && authUiState.mode != MalConnectionMode.CONNECTED) {
+        val errMsg = authUiState.errorMessage
+        if (errMsg != null && authUiState.mode != MalConnectionMode.CONNECTED) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = authUiState.errorMessage,
+                text = errMsg,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
             )
