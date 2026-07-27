@@ -36,7 +36,7 @@ fun parseCloudStreamRouteId(value: String): CloudStreamRouteData? {
 fun CloudStreamSearchItem.toMetaPreview(): MetaPreview = MetaPreview(
     id = cloudStreamRouteId(providerId, data),
     type = type.nuvioType,
-    name = name,
+    name = com.nuvio.app.features.home.HomeCatalogParser.cleanTitle(name),
     poster = posterUrl,
     banner = backgroundUrl,
     posterShape = if (type == CloudStreamTvType.Live) PosterShape.Landscape else PosterShape.Poster,

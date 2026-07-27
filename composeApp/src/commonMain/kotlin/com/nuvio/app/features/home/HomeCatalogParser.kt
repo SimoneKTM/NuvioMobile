@@ -42,10 +42,12 @@ internal object HomeCatalogParser {
                     return@forEach
                 }
 
+                val cleanedName = cleanTitle(name)
+
                 val item = MetaPreview(
                     id = id,
                     type = type,
-                    name = name,
+                    name = cleanedName,
                     poster = meta.string("poster"),
                     banner = meta.string("banner") ?: meta.string("background"),
                     logo = meta.string("logo"),
@@ -67,6 +69,21 @@ internal object HomeCatalogParser {
             items = parsedItems,
             rawItemCount = metas.size,
         )
+    }
+
+    internal fun cleanTitle(raw: String): String {
+        val decoded = raw
+            .replace("&amp;", "&")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&quot;", "\"")
+            .replace("&#39;", "'")
+            .replace("&#x27;", "'")
+            .replace("&nbsp;", " ")
+        val trimmed = decoded.trim()
+        val singleSpaced = trimmed.replace(Regex("\\s+"), " ")
+        val cleaned = singleSpaced.replace(Regex("[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]"), "")
+        return cleaned.ifBlank { raw.trim() }
     }
 
     private fun JsonObject.string(name: String): String? =
