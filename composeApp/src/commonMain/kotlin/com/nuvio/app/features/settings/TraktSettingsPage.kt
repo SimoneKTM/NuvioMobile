@@ -791,7 +791,7 @@ private fun TraktConnectionCard(
                         modifier = Modifier.weight(1f),
                     ) {
                         Text(
-                            text = "Apri trakt.tv/activate",
+                            text = "Accedi con Browser",
                         )
                     }
                     OutlinedButton(
