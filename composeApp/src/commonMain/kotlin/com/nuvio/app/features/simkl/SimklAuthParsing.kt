@@ -3,7 +3,7 @@ package com.nuvio.app.features.simkl
 import io.ktor.http.Url
 import io.ktor.http.encodeURLParameter
 
-internal const val SIMKL_AUTHORIZATION_TIMEOUT_MS = 10L * 60L * 1_000L
+internal const val SIMKL_AUTHORIZATION_TIMEOUT_MS = 5L * 60L * 1_000L
 
 internal fun parseSimklAuthCallback(
     callbackUrl: String,

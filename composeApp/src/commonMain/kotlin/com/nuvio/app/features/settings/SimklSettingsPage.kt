@@ -224,7 +224,7 @@ private fun SimklConnectionCard(
             }
         }
 
-        if (errorText != null && uiState.mode != SimklConnectionMode.CONNECTED) {
+        if (errorText != null && uiState.mode == SimklConnectionMode.CONNECTED) {
             Text(
                 text = errorText,
                 style = MaterialTheme.typography.bodySmall,
