@@ -4,6 +4,8 @@ import co.touchlab.kermit.Logger
 import com.nuvio.app.features.addons.httpGetTextWithHeaders
 import com.nuvio.app.features.addons.httpPostJsonWithHeaders
 import com.nuvio.app.features.addons.httpRequestRaw
+import com.nuvio.app.features.library.LibrarySourceMode
+import com.nuvio.app.features.trakt.TraktSettingsRepository
 import io.ktor.http.Url
 import io.ktor.http.encodeURLParameter
 import kotlinx.coroutines.CancellationException
@@ -299,6 +301,7 @@ object MalAuthRepository {
         )
         persist()
         fetchUserProfile()
+        TraktSettingsRepository.setLibrarySourceMode(LibrarySourceMode.MAL)
         scope.launch {
             runCatching {
                 MalLibraryRepository.refreshNow()
