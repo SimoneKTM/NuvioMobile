@@ -120,7 +120,8 @@ jobs:
           APK_DIR="composeApp/build/outputs/apk"
           find "$APK_DIR" -name "*.apk" | while read apk; do
             DIR=$(dirname "$apk")
-            mv "$apk" "$DIR/NuvioEnhanced-${{ steps.version.outputs.name }}.apk"
+            ABI=$(basename "$DIR")
+            mv "$apk" "$DIR/NuvioEnhanced-${{ steps.version.outputs.name }}-$ABI.apk"
           done
 
       - name: Debug generated configs
