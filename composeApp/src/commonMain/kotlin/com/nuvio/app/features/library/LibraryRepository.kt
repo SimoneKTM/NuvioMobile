@@ -19,6 +19,7 @@ import com.nuvio.app.features.trakt.shouldUseTraktLibrary
 import com.nuvio.app.features.mal.MalAuthRepository
 import com.nuvio.app.features.mal.MalLibraryRepository
 import com.nuvio.app.features.mal.MalLibraryItem
+import com.nuvio.app.features.mal.MalSettingsRepository
 import com.nuvio.app.features.anilist.AniListAuthRepository
 import com.nuvio.app.features.anilist.AniListLibraryRepository
 import com.nuvio.app.features.anilist.AniListLibraryItem
@@ -695,13 +696,14 @@ object LibraryRepository {
 
         if (isMalLibrarySourceActive()) {
             val malState = MalLibraryRepository.uiState.value
-            val sectionOrder = listOf("watching", "completed", "plan_to_watch", "on_hold", "dropped")
-            val sections = sectionOrder.mapNotNull { status ->
-                val statusItems = malState.entriesByStatus[status].orEmpty()
+            val sectionConfigs = MalSettingsRepository.uiState.value.librarySections
+            val sections = sectionConfigs.mapNotNull { config ->
+                if (!config.enabled) return@mapNotNull null
+                val statusItems = malState.entriesByStatus[config.type].orEmpty()
                 if (statusItems.isEmpty()) return@mapNotNull null
                 LibrarySection(
-                    type = "mal:$status",
-                    displayTitle = malStatusDisplayTitle(status),
+                    type = "mal:${config.type}",
+                    displayTitle = malStatusDisplayTitle(config.type),
                     items = statusItems.map { it.toLibraryItem() },
                 )
             }

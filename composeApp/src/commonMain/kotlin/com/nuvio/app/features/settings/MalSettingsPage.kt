@@ -58,6 +58,11 @@ import com.nuvio.app.features.mal.defaultMalLibrarySections
 import com.nuvio.app.features.watchprogress.WatchProgressClock
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_cancel
+import nuvio.composeapp.generated.resources.library_mal_status_completed
+import nuvio.composeapp.generated.resources.library_mal_status_dropped
+import nuvio.composeapp.generated.resources.library_mal_status_on_hold
+import nuvio.composeapp.generated.resources.library_mal_status_plan_to_watch
+import nuvio.composeapp.generated.resources.library_mal_status_watching
 import nuvio.composeapp.generated.resources.settings_mal_connected_as
 import nuvio.composeapp.generated.resources.settings_mal_connect
 import nuvio.composeapp.generated.resources.settings_mal_disconnect
@@ -406,6 +411,16 @@ private fun MalConnectionCard(isTablet: Boolean) {
 }
 
 @Composable
+private fun malSectionDisplayTitle(type: String): String = when (type) {
+    "watching" -> stringResource(Res.string.library_mal_status_watching)
+    "completed" -> stringResource(Res.string.library_mal_status_completed)
+    "on_hold" -> stringResource(Res.string.library_mal_status_on_hold)
+    "dropped" -> stringResource(Res.string.library_mal_status_dropped)
+    "plan_to_watch" -> stringResource(Res.string.library_mal_status_plan_to_watch)
+    else -> type.replace('_', ' ').replaceFirstChar { it.uppercase() }
+}
+
+@Composable
 private fun MalSectionSettingsRow(
     item: MalSectionSettings,
     isTablet: Boolean,
@@ -426,7 +441,7 @@ private fun MalSectionSettingsRow(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = item.type,
+                text = malSectionDisplayTitle(item.type),
                 style = MaterialTheme.typography.bodyLarge,
                 color = tokens.colors.textPrimary,
                 fontWeight = FontWeight.SemiBold,

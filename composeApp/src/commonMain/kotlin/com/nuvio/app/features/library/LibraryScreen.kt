@@ -234,6 +234,7 @@ fun LibraryScreen(
         releaseCalendarLoading = true
         try {
             releaseCalendarEvents = buildLibraryReleaseCalendarEvents(itemsSnapshot, episodeCodeFormat)
+        } catch (_: Exception) {
         } finally {
             releaseCalendarLoading = false
         }
