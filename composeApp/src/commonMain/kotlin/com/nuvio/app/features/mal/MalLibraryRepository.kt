@@ -80,7 +80,9 @@ object MalLibraryRepository {
             if (username == null) {
                 username = MalAuthRepository.fetchUserProfile()
             }
-            if (username == null) return
+            if (username == null) {
+                username = "@me"
+            }
             MalAuthRepository.refreshTokenIfNeeded(force = false)
             val token = MalAuthRepository.currentAccessToken() ?: return
 
