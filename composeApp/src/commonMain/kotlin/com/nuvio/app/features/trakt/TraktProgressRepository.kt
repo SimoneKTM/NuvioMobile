@@ -162,6 +162,7 @@ object TraktProgressRepository {
         hiddenProgressShowIds.value = emptySet()
         resetActivitySnapshot()
         resetShowProgressCaches()
+        TraktEpisodeMappingService.clearCache()
         _uiState.value = TraktProgressUiState()
         ensureLoaded()
     }

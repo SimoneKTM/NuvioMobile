@@ -194,45 +194,35 @@ object TraktWatchedSyncAdapter : WatchedSyncAdapter {
                     watchedAt = if (item.markedAtEpochMs > 0) epochMsToIso(item.markedAtEpochMs) else null,
                 )
             } else if (item.season != null && item.episode != null) {
-                // Episode-level mark → attach to show with specific season/episode
-                val existing = shows.firstOrNull { it.ids == ids }
-                if (existing != null) {
-                    // Append episode to existing show entry
-                    val seasonDto = existing.seasons?.firstOrNull { it.number == item.season }
-                    if (seasonDto != null) {
-                        (seasonDto.episodes as? MutableList)?.add(
-                            TraktHistoryEpisodeRequestDto(
-                                number = item.episode,
-                                watchedAt = if (item.markedAtEpochMs > 0) epochMsToIso(item.markedAtEpochMs) else null,
-                            ),
+                val episodeDto = TraktHistoryEpisodeRequestDto(
+                    number = item.episode,
+                    watchedAt = if (item.markedAtEpochMs > 0) epochMsToIso(item.markedAtEpochMs) else null,
+                )
+                val existingIdx = shows.indexOfFirst { it.ids == ids }
+                if (existingIdx >= 0) {
+                    val existing = shows[existingIdx]
+                    val seasons = existing.seasons.orEmpty().toMutableList()
+                    val seasonIdx = seasons.indexOfFirst { it.number == item.season }
+                    if (seasonIdx >= 0) {
+                        seasons[seasonIdx] = seasons[seasonIdx].copy(
+                            episodes = seasons[seasonIdx].episodes.orEmpty() + episodeDto,
                         )
                     } else {
-                        (existing.seasons as? MutableList)?.add(
-                            TraktHistorySeasonRequestDto(
-                                number = item.season,
-                                episodes = mutableListOf(
-                                    TraktHistoryEpisodeRequestDto(
-                                        number = item.episode,
-                                        watchedAt = if (item.markedAtEpochMs > 0) epochMsToIso(item.markedAtEpochMs) else null,
-                                    ),
-                                ),
-                            ),
+                        seasons += TraktHistorySeasonRequestDto(
+                            number = item.season,
+                            episodes = listOf(episodeDto),
                         )
                     }
+                    shows[existingIdx] = existing.copy(seasons = seasons)
                 } else {
                     shows += TraktHistoryShowRequestDto(
                         title = item.name.takeIf { it.isNotBlank() },
                         year = parseYear(item.releaseInfo),
                         ids = ids,
-                        seasons = mutableListOf(
+                        seasons = listOf(
                             TraktHistorySeasonRequestDto(
                                 number = item.season,
-                                episodes = mutableListOf(
-                                    TraktHistoryEpisodeRequestDto(
-                                        number = item.episode,
-                                        watchedAt = if (item.markedAtEpochMs > 0) epochMsToIso(item.markedAtEpochMs) else null,
-                                    ),
-                                ),
+                                episodes = listOf(episodeDto),
                             ),
                         ),
                     )
@@ -300,43 +290,35 @@ object TraktWatchedSyncAdapter : WatchedSyncAdapter {
             if (mapped.season == season && mapped.episode == episode) continue
 
             val ids = resolveHistoryIds(item) ?: continue
-            val existing = remappedShows.firstOrNull { it.ids == ids }
-            if (existing != null) {
-                val seasonDto = existing.seasons?.firstOrNull { it.number == mapped.season }
-                if (seasonDto != null) {
-                    (seasonDto.episodes as? MutableList)?.add(
-                        TraktHistoryEpisodeRequestDto(
-                            number = mapped.episode,
-                            watchedAt = if (item.markedAtEpochMs > 0) epochMsToIso(item.markedAtEpochMs) else null,
-                        ),
+            val episodeDto = TraktHistoryEpisodeRequestDto(
+                number = mapped.episode,
+                watchedAt = if (item.markedAtEpochMs > 0) epochMsToIso(item.markedAtEpochMs) else null,
+            )
+            val existingIdx = remappedShows.indexOfFirst { it.ids == ids }
+            if (existingIdx >= 0) {
+                val existing = remappedShows[existingIdx]
+                val seasons = existing.seasons.orEmpty().toMutableList()
+                val seasonIdx = seasons.indexOfFirst { it.number == mapped.season }
+                if (seasonIdx >= 0) {
+                    seasons[seasonIdx] = seasons[seasonIdx].copy(
+                        episodes = seasons[seasonIdx].episodes.orEmpty() + episodeDto,
                     )
                 } else {
-                    (existing.seasons as? MutableList)?.add(
-                        TraktHistorySeasonRequestDto(
-                            number = mapped.season,
-                            episodes = mutableListOf(
-                                TraktHistoryEpisodeRequestDto(
-                                    number = mapped.episode,
-                                    watchedAt = if (item.markedAtEpochMs > 0) epochMsToIso(item.markedAtEpochMs) else null,
-                                ),
-                            ),
-                        ),
+                    seasons += TraktHistorySeasonRequestDto(
+                        number = mapped.season,
+                        episodes = listOf(episodeDto),
                     )
                 }
+                remappedShows[existingIdx] = existing.copy(seasons = seasons)
             } else {
                 remappedShows += TraktHistoryShowRequestDto(
                     title = item.name.takeIf { it.isNotBlank() },
                     year = parseYear(item.releaseInfo),
                     ids = ids,
-                    seasons = mutableListOf(
+                    seasons = listOf(
                         TraktHistorySeasonRequestDto(
                             number = mapped.season,
-                            episodes = mutableListOf(
-                                TraktHistoryEpisodeRequestDto(
-                                    number = mapped.episode,
-                                    watchedAt = if (item.markedAtEpochMs > 0) epochMsToIso(item.markedAtEpochMs) else null,
-                                ),
-                            ),
+                            episodes = listOf(episodeDto),
                         ),
                     ),
                 )

@@ -88,6 +88,7 @@ object TraktLibraryRepository {
         hasLoaded = false
         lastRefreshAtMs = 0L
         lastListTabsRefreshAtMs = 0L
+        TraktEpisodeMappingService.clearCache()
         _uiState.value = TraktLibraryUiState()
         ensureLoaded()
     }

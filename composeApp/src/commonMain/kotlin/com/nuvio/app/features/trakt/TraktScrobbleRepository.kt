@@ -214,6 +214,11 @@ internal object TraktScrobbleRepository {
                 break
             }
 
+            if (response.status == 429 && attempt < attempts) {
+                delay(serverOverloadedRetryDelayMs * attempt)
+                continue
+            }
+
             if (response.status in 500..599 && attempt < attempts) {
                 val delayMs = if (response.status in 502..504) serverOverloadedRetryDelayMs else retryDelayMs * attempt
                 delay(delayMs)
