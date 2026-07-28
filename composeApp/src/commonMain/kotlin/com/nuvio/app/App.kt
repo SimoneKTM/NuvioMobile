@@ -2126,12 +2126,20 @@ private fun MainAppContent(
                                                         DetailRoute(
                                                             type = effectiveType,
                                                             id = resolvedId ?: item.id,
-                                                            title = item.name
+                                                            title = item.name,
+                                                            isAnime = true,
                                                         )
                                                     )
                                                 }
                                             } else {
-                                                navController.navigate(DetailRoute(type = item.type, id = item.id, title = item.name))
+                                                navController.navigate(
+                                                    DetailRoute(
+                                                        type = item.type,
+                                                        id = item.id,
+                                                        title = item.name,
+                                                        isAnime = item.id.startsWith("mal:", ignoreCase = true) || item.id.startsWith("kitsu:", ignoreCase = true),
+                                                    )
+                                                )
                                             }
                                         },
                                         onLibraryPosterLongClick = { item, section ->
