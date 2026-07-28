@@ -17,6 +17,7 @@ import com.nuvio.app.features.watchprogress.WatchProgressRepository
 import com.nuvio.app.features.kitsu.KitsuSyncCoordinator
 import com.nuvio.app.features.anilist.AniListSyncCoordinator
 import com.nuvio.app.features.mal.MalSyncCoordinator
+import com.nuvio.app.features.simkl.SimklSyncCoordinator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -174,6 +175,7 @@ object WatchingActions {
         KitsuSyncCoordinator.handlePlaybackProgressUpdated(entry)
         AniListSyncCoordinator.handlePlaybackProgressUpdated(entry)
         MalSyncCoordinator.handlePlaybackProgressUpdated(entry)
+        SimklSyncCoordinator.handlePlaybackProgressUpdated(entry)
 
         if (!syncRemote || !entry.isEpisode) return
         actionScope.launch {
