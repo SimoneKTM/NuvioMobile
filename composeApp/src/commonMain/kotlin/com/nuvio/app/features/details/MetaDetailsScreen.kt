@@ -159,7 +159,7 @@ fun MetaDetailsScreen(
 ) {
     val uiState by MetaDetailsRepository.uiState.collectAsStateWithLifecycle()
     val isAnimeMetaScreen = isAnime || type.startsWith("anime", ignoreCase = true)
-    val displayedMeta = uiState.meta?.takeIf { it.type == type && it.id == id }
+    val displayedMeta = uiState.meta?.takeIf { it.type == type && it.id == id && uiState.isAnime == isAnimeMetaScreen }
         ?: MetaDetailsRepository.peek(type, id, isAnime = isAnimeMetaScreen)
     val metaScreenSettingsUiState by remember(isAnimeMetaScreen) {
         if (isAnimeMetaScreen) {

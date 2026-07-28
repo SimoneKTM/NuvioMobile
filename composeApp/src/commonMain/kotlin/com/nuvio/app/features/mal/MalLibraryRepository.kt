@@ -1,7 +1,6 @@
 package com.nuvio.app.features.mal
 
 import co.touchlab.kermit.Logger
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -12,7 +11,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -102,9 +100,6 @@ object MalLibraryRepository {
                     fetchAndPublish(token, username)
                 }
                 lastRefreshAtMs = MalPlatformClock.nowEpochMs()
-            } catch (e: CancellationException) {
-                _uiState.value = MalLibraryUiState(hasLoaded = true)
-                throw e
             } catch (e: Exception) {
                 log.w(e) { "Failed to refresh MAL library" }
                 _uiState.value = MalLibraryUiState(
@@ -124,10 +119,6 @@ object MalLibraryRepository {
         }
 
         result.exceptionOrNull()?.let { error ->
-            if (error is CancellationException) {
-                _uiState.value = MalLibraryUiState(hasLoaded = true)
-                throw error
-            }
             log.w(error) { "Failed to fetch MAL anime list" }
             _uiState.value = _uiState.value.copy(
                 isLoading = false,

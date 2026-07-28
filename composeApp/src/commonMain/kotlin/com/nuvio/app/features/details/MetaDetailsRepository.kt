@@ -63,7 +63,7 @@ object MetaDetailsRepository {
 
     fun load(type: String, id: String, isAnime: Boolean = false) {
         log.d { "load() called — type=$type id=$id isAnime=$isAnime" }
-        val requestKey = "$type:$id"
+        val requestKey = buildRequestKey(type, id, isAnime)
         parseCloudStreamRouteId(id)?.let { route ->
             loadCloudStream(requestKey = requestKey, route = route)
             return
@@ -76,14 +76,14 @@ object MetaDetailsRepository {
             cachedEntry.metaScreenMeta
                 ?.takeIf { cachedEntry.metaScreenSettingsFingerprint == metaScreenSettingsFingerprint }
                 ?.let { cachedMeta ->
-                    _uiState.value = MetaDetailsUiState(meta = cachedMeta.withUnreleasedFilter())
+                    _uiState.value = MetaDetailsUiState(meta = cachedMeta.withUnreleasedFilter(), isAnime = isAnime)
                     activeRequestKey = requestKey
                     return
                 }
 
             val cachedBaseMeta = cachedEntry.baseMeta
             if (!shouldEnrichForMetaScreen(cachedBaseMeta, id, mdbListSettings, isAnime)) {
-                _uiState.value = MetaDetailsUiState(meta = cachedBaseMeta.withUnreleasedFilter())
+                _uiState.value = MetaDetailsUiState(meta = cachedBaseMeta.withUnreleasedFilter(), isAnime = isAnime)
                 activeRequestKey = requestKey
                 return
             }
@@ -97,6 +97,7 @@ object MetaDetailsRepository {
             _uiState.value = MetaDetailsUiState(
                 isLoading = true,
                 meta = cachedBaseMeta,
+                isAnime = isAnime,
             )
 
             scope.launch {
@@ -111,14 +112,14 @@ object MetaDetailsRepository {
                         isAnime = isAnime,
                     )
                 }
-                _uiState.value = MetaDetailsUiState(meta = enrichedMeta.withUnreleasedFilter())
+                _uiState.value = MetaDetailsUiState(meta = enrichedMeta.withUnreleasedFilter(), isAnime = isAnime)
                 activeRequestKey = requestKey
             }
             return
         }
 
-        if (currentState.meta?.type == type && currentState.meta.id == id && !currentState.isLoading) {
-            log.d { "Skipping reload for cached meta — type=$type id=$id" }
+        if (currentState.meta?.type == type && currentState.meta.id == id && currentState.isAnime == isAnime && !currentState.isLoading) {
+            log.d { "Skipping reload for cached meta — type=$type id=$id isAnime=$isAnime" }
             activeRequestKey = requestKey
             return
         }
@@ -129,7 +130,7 @@ object MetaDetailsRepository {
         }
 
         activeRequestKey = requestKey
-        _uiState.value = MetaDetailsUiState(isLoading = true)
+        _uiState.value = MetaDetailsUiState(isLoading = true, isAnime = isAnime)
 
         scope.launch {
             val metaLookupId = resolveMetaLookupId(itemId = id, itemType = type)
@@ -198,9 +199,9 @@ object MetaDetailsRepository {
     }
 
     fun peek(type: String, id: String, isAnime: Boolean = false): MetaDetails? {
-        val requestKey = "$type:$id"
+        val requestKey = buildRequestKey(type, id, isAnime)
         val currentMeta = _uiState.value.meta?.takeIf { it.type == type && it.id == id }
-        if (currentMeta != null) return currentMeta
+        if (currentMeta != null && _uiState.value.isAnime == isAnime) return currentMeta
 
         val mdbListSettings = resolveMdbListSettings(isAnime)
         val metaScreenSettingsFingerprint = buildMetaScreenSettingsFingerprint(mdbListSettings)
@@ -213,11 +214,11 @@ object MetaDetailsRepository {
     fun clear() {
         activeRequestKey = null
         cachedMetaByRequestKey.clear()
-        _uiState.value = MetaDetailsUiState()
+        _uiState.value = MetaDetailsUiState(isAnime = false)
     }
 
     suspend fun fetch(type: String, id: String, isAnime: Boolean = false): MetaDetails? {
-        val requestKey = "$type:$id"
+        val requestKey = buildRequestKey(type, id, isAnime)
         cachedMetaByRequestKey[requestKey]?.let { return it.baseMeta }
 
         parseCloudStreamRouteId(id)?.let { route ->
@@ -469,7 +470,7 @@ object MetaDetailsRepository {
         cachedMetaByRequestKey[requestKey] = cachedEntry
 
         if (!shouldEnrichForMetaScreen(meta, fallbackItemId, mdbListSettings, isAnime)) {
-            _uiState.value = MetaDetailsUiState(meta = meta.withUnreleasedFilter())
+            _uiState.value = MetaDetailsUiState(meta = meta.withUnreleasedFilter(), isAnime = isAnime)
             activeRequestKey = requestKey
             return
         }
@@ -477,6 +478,7 @@ object MetaDetailsRepository {
         _uiState.value = MetaDetailsUiState(
             isLoading = true,
             meta = meta,
+            isAnime = isAnime,
         )
         val enrichedMeta = withContext(Dispatchers.Default) {
             enrichForMetaScreen(
@@ -493,7 +495,7 @@ object MetaDetailsRepository {
             metaScreenMeta = enrichedMeta,
             metaScreenSettingsFingerprint = metaScreenSettingsFingerprint,
         )
-        _uiState.value = MetaDetailsUiState(meta = enrichedMeta.withUnreleasedFilter())
+        _uiState.value = MetaDetailsUiState(meta = enrichedMeta.withUnreleasedFilter(), isAnime = isAnime)
         activeRequestKey = requestKey
     }
 
@@ -652,6 +654,9 @@ object MetaDetailsRepository {
             "series", "show", "tv", "tvshow" -> "series"
             else -> null
         }
+
+    private fun buildRequestKey(type: String, id: String, isAnime: Boolean): String =
+        "$type:$id:${if (isAnime) "anime" else "general"}"
 
     private fun MetaDetails.withUnreleasedFilter(): MetaDetails {
         if (!HomeCatalogSettingsRepository.snapshot().hideUnreleasedContent) return this

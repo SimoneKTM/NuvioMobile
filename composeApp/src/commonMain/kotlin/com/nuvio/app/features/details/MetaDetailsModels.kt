@@ -100,5 +100,6 @@ data class MetaVideo(
 data class MetaDetailsUiState(
     val isLoading: Boolean = false,
     val meta: MetaDetails? = null,
+    val isAnime: Boolean = false,
     val errorMessage: String? = null,
 )
