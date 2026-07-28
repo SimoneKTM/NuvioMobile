@@ -222,7 +222,7 @@ object AnimeHomeRepository {
             catalogId = catalogId,
             maxItems = HOME_CATALOG_PREVIEW_FETCH_LIMIT,
         )
-        val items = page.items
+        val items = page.items.map { it.copy(isAnime = true) }
         if (items.isEmpty()) {
             return HomeCatalogSection(
                 key = key,

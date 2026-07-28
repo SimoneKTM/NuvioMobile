@@ -15,6 +15,7 @@ import com.nuvio.app.features.catalog.mergeCatalogItems
 import com.nuvio.app.features.catalog.nextCatalogPaginationState
 import com.nuvio.app.features.catalog.supportsPagination
 import com.nuvio.app.features.cloudstream.CloudStreamPluginItem
+import com.nuvio.app.features.anime.AnimeAddonRepository
 import com.nuvio.app.features.cloudstream.CloudStreamRepository
 import com.nuvio.app.features.cloudstream.CloudStreamSearchRouteIndex
 import com.nuvio.app.features.cloudstream.toMetaPreview
@@ -473,10 +474,15 @@ object SearchRepository {
                     if (latest.selectedCatalogKey != selectedCatalog.key || latest.selectedGenre != current.selectedGenre) {
                         return@fold
                     }
+                    val isCatalogAnime = run {
+                        AnimeAddonRepository.initialize()
+                        AnimeAddonRepository.uiState.value.addons.any { it.manifestUrl == selectedCatalog.manifestUrl }
+                    }
+                    val discoverItems = if (isCatalogAnime) page.items.map { it.copy(isAnime = true) } else page.items
                     val mergedItems = if (reset) {
-                        page.items
+                        discoverItems
                     } else {
-                        mergeCatalogItems(latest.items, page.items)
+                        mergeCatalogItems(latest.items, discoverItems)
                     }
                     val supportsPagination = selectedCatalog.supportsPagination || page.rawItemCount >= CATALOG_PAGE_SIZE
                     val loadedNewItems = reset || mergedItems.size > latest.items.size
