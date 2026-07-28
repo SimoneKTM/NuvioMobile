@@ -851,6 +851,7 @@ object LibraryRepository {
             savedAtEpochMs = updatedAtEpochMs ?: now,
             startDate = startDate,
             nextEpisodeAtEpochMs = nextEpisodeAtEpochMs,
+            listStatus = listStatus,
         )
     }
 
@@ -871,6 +872,7 @@ object LibraryRepository {
             savedAtEpochMs = updatedAt * 1000L,
             startDate = startDate,
             nextEpisodeAtEpochMs = nextEpisodeAtEpochMs,
+            listStatus = status,
         )
     }
 
@@ -895,6 +897,7 @@ object LibraryRepository {
             savedAtEpochMs = now,
             startDate = startDate,
             nextEpisodeAtEpochMs = nextEpisodeAtEpochMs,
+            listStatus = status,
         )
     }
 

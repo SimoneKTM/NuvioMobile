@@ -2053,6 +2053,12 @@ private suspend fun buildNextUpCalendarEvents(
     events
 }
 
+private fun LibraryItem.isCurrentlyWatching(): Boolean =
+    listStatus in listOf("watching", "current", "CURRENT", "REPEATING")
+
+private fun LibraryItem.isCurrentlyWatching(): Boolean =
+    listStatus in listOf("watching", "current", "CURRENT", "REPEATING")
+
 private fun buildLibraryReleaseCalendarFallbackEvents(items: List<LibraryItem>): List<LibraryCalendarEvent> =
     items
         .asSequence()
@@ -2075,7 +2081,7 @@ private fun buildLibraryReleaseCalendarFallbackEvents(items: List<LibraryItem>):
                 ))
             }
             val nextEpMs = item.nextEpisodeAtEpochMs
-            if (nextEpMs != null && nextEpMs > 0L) {
+            if (nextEpMs != null && nextEpMs > 0L && item.isCurrentlyWatching()) {
                 val nextEpDate = epochMsToCalendarDate(nextEpMs)
                 if (nextEpDate != null) {
                     events.add(LibraryCalendarEvent(

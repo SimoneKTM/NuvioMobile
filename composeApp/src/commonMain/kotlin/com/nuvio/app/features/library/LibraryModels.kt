@@ -27,6 +27,7 @@ data class LibraryItem(
     val savedAtEpochMs: Long,
     val startDate: String? = null,
     val nextEpisodeAtEpochMs: Long? = null,
+    val listStatus: String? = null,
 )
 
 data class LibrarySection(
