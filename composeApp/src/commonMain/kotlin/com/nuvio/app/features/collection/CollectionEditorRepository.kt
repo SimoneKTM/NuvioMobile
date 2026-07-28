@@ -257,8 +257,13 @@ object CollectionEditorRepository {
     fun addCatalogSource(catalog: AvailableCatalog) {
         val folder = _uiState.value.editingFolder ?: return
         if (catalog.addonId == "livetv") {
-            if (folder.resolvedSources.any { it.isLiveTv }) return
-            val source = CollectionSource(provider = "livetv")
+            val playlistId = catalog.catalogId
+            if (folder.resolvedSources.any { it.isLiveTv && it.liveTvPlaylistId == playlistId }) return
+            val source = CollectionSource(
+                provider = "livetv",
+                liveTvPlaylistId = playlistId,
+                title = catalog.catalogName,
+            )
             _uiState.value = _uiState.value.copy(
                 editingFolder = folder.withSources(folder.resolvedSources + source),
             )
@@ -304,7 +309,7 @@ object CollectionEditorRepository {
         val folder = _uiState.value.editingFolder ?: return
         val sources = folder.resolvedSources
         val existingIndex = if (catalog.addonId == "livetv") {
-            sources.indexOfFirst { it.isLiveTv }
+            sources.indexOfFirst { it.isLiveTv && it.liveTvPlaylistId == catalog.catalogId }
         } else {
             sources.indexOfFirst {
                 !it.isTmdb &&

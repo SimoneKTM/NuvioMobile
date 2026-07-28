@@ -47,6 +47,7 @@ data class CollectionSource(
     val sortBy: String? = null,
     val sortHow: String? = null,
     val filters: TmdbCollectionFilters? = null,
+    val liveTvPlaylistId: String? = null,
 ) {
     val isTmdb: Boolean
         get() = provider.equals("tmdb", ignoreCase = true)
@@ -81,7 +82,7 @@ internal fun CollectionSource.catalogRouteKey(): String =
             "trakt_${traktListId}_${mediaType}_${TraktListSort.normalize(sortBy)}_${TraktSortHow.normalize(sortHow)}"
         }
 
-        isLiveTv -> "livetv"
+        isLiveTv -> "livetv_${liveTvPlaylistId.orEmpty()}"
 
         else -> {
             "addon_${addonId}_${type}_${catalogId}_${genre.orEmpty()}"

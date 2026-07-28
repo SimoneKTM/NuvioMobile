@@ -203,9 +203,14 @@ fun CollectionEditorScreen(
     }
 
     if (page == CollectionEditorPage.CatalogPicker) {
+        val livetvPlaylistIds = state.editingFolder?.resolvedSources
+            ?.filter { it.isLiveTv }
+            ?.mapNotNull { it.liveTvPlaylistId }
+            ?.toSet().orEmpty()
         CatalogPickerScreen(
             availableCatalogs = state.availableCatalogs,
             selectedSources = state.editingFolder?.resolvedCatalogSources.orEmpty(),
+            selectedLiveTvPlaylistIds = livetvPlaylistIds,
             onToggle = { CollectionEditorRepository.toggleCatalogSource(it) },
             onBack = {
                 closePage(CollectionEditorPage.CatalogPicker) {
@@ -895,6 +900,11 @@ private fun FolderEditorPage(
                                         },
                                         onRemove = { CollectionEditorRepository.removeCatalogSource(index) },
                                     )
+                                } else if (source.isLiveTv) {
+                                    FolderLiveTvSourceCard(
+                                        source = source,
+                                        onRemove = { CollectionEditorRepository.removeCatalogSource(index) },
+                                    )
                                 } else if (addonSource != null) {
                                     FolderCatalogSourceCard(
                                         source = addonSource,
@@ -942,6 +952,7 @@ private fun FolderEditorPage(
 private fun CatalogPickerScreen(
     availableCatalogs: List<AvailableCatalog>,
     selectedSources: List<CollectionCatalogSource>,
+    selectedLiveTvPlaylistIds: Set<String> = emptySet(),
     onToggle: (AvailableCatalog) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -979,10 +990,14 @@ private fun CatalogPickerScreen(
         grouped.forEach { (addonName, catalogs) ->
             item {
                 val selectedCount = catalogs.count { catalog ->
-                    selectedSources.any {
-                        it.addonId == catalog.addonId &&
-                            it.type == catalog.type &&
-                            it.catalogId == catalog.catalogId
+                    if (catalog.addonId == "livetv") {
+                        selectedLiveTvPlaylistIds.contains(catalog.catalogId)
+                    } else {
+                        selectedSources.any {
+                            it.addonId == catalog.addonId &&
+                                it.type == catalog.type &&
+                                it.catalogId == catalog.catalogId
+                        }
                     }
                 }
                 PickerPanel(
@@ -994,15 +1009,23 @@ private fun CatalogPickerScreen(
                     },
                 ) {
                     catalogs.forEachIndexed { index, catalog ->
-                        val isSelected = selectedSources.any {
-                            it.addonId == catalog.addonId &&
-                                it.type == catalog.type &&
-                                it.catalogId == catalog.catalogId
+                        val isSelected = if (catalog.addonId == "livetv") {
+                            selectedLiveTvPlaylistIds.contains(catalog.catalogId)
+                        } else {
+                            selectedSources.any {
+                                it.addonId == catalog.addonId &&
+                                    it.type == catalog.type &&
+                                    it.catalogId == catalog.catalogId
+                            }
                         }
                         PickerOptionRow(
                             title = catalog.catalogName,
-                            subtitle = catalog.type.replaceFirstChar {
-                                if (it.isLowerCase()) it.titlecase() else it.toString()
+                            subtitle = if (catalog.addonId == "livetv") {
+                                stringResource(Res.string.compose_nav_live_tv)
+                            } else {
+                                catalog.type.replaceFirstChar {
+                                    if (it.isLowerCase()) it.titlecase() else it.toString()
+                                }
                             },
                             selected = isSelected,
                             onClick = { onToggle(catalog) },
@@ -2184,6 +2207,45 @@ private fun FolderTmdbSourceCard(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+    }
+}
+
+@Composable
+private fun FolderLiveTvSourceCard(
+    source: CollectionSource,
+    onRemove: () -> Unit,
+) {
+    NuvioSurfaceCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = source.title?.takeIf { it.isNotBlank() } ?: "Live TV",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = stringResource(Res.string.compose_nav_live_tv),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                IconButton(
+                    onClick = onRemove,
+                    modifier = Modifier.size(36.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = stringResource(Res.string.action_remove),
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
         }
     }
 }

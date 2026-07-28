@@ -219,14 +219,14 @@ object CollectionRepository : CollectionRepositoryContract {
                 }
         })
 
-        if (LiveTvRepository.uiState.value.hasPlaylist) {
+        LiveTvRepository.uiState.value.playlists.forEach { playlist ->
             result.add(
                 AvailableCatalog(
                     addonId = "livetv",
                     addonName = "Live TV",
                     type = "live_tv",
-                    catalogId = "live_tv_channels",
-                    catalogName = "Live TV",
+                    catalogId = playlist.id,
+                    catalogName = playlist.name,
                 ),
             )
         }

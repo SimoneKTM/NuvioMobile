@@ -191,10 +191,10 @@ object FolderDetailRepository {
                 } else if (source.isLiveTv) {
                     add(
                         FolderTab(
-                            label = "Live TV",
+                            label = source.title?.takeIf { it.isNotBlank() } ?: "Live TV",
                             typeLabel = "Live TV",
                             source = source,
-                            sourceKey = "livetv",
+                            sourceKey = source.catalogRouteKey(),
                             type = "live_tv",
                             isLoading = true,
                         ),
@@ -405,7 +405,10 @@ object FolderDetailRepository {
 
     private fun loadLiveTvTab(index: Int) {
         LiveTvRepository.ensureLoaded()
+        val tab = _uiState.value.tabs.getOrNull(index) ?: return
+        val playlistId = tab.source?.liveTvPlaylistId
         val channels = LiveTvRepository.uiState.value.channels
+            .filter { playlistId == null || it.playlistId == playlistId }
         val items = channels.map { channel ->
             MetaPreview(
                 id = channel.streamUrl,
