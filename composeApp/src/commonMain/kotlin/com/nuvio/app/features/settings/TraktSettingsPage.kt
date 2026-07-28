@@ -90,6 +90,7 @@ import nuvio.composeapp.generated.resources.trakt_library_source_dialog_title
 import nuvio.composeapp.generated.resources.trakt_library_source_nuvio
 import nuvio.composeapp.generated.resources.trakt_library_source_mal
 import nuvio.composeapp.generated.resources.trakt_library_source_anilist
+import nuvio.composeapp.generated.resources.trakt_library_source_kitsu
 import nuvio.composeapp.generated.resources.trakt_library_source_anilist_selected
 import nuvio.composeapp.generated.resources.trakt_library_source_nuvio_selected
 import nuvio.composeapp.generated.resources.trakt_library_source_subtitle
@@ -370,7 +371,7 @@ private fun librarySourceModeLabel(source: LibrarySourceMode): String =
         LibrarySourceMode.TRAKT -> stringResource(Res.string.trakt_library_source_trakt)
         LibrarySourceMode.MAL -> stringResource(Res.string.trakt_library_source_mal)
         LibrarySourceMode.ANILIST -> stringResource(Res.string.trakt_library_source_anilist)
-        LibrarySourceMode.KITSU -> stringResource(Res.string.compose_settings_page_kitsu)
+        LibrarySourceMode.KITSU -> stringResource(Res.string.trakt_library_source_kitsu)
         LibrarySourceMode.LOCAL -> stringResource(Res.string.trakt_library_source_nuvio)
     }
 

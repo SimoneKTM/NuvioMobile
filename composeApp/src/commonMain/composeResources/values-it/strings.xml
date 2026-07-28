@@ -1308,6 +1308,7 @@
     <string name="trakt_library_source_nuvio">Libreria Nuvio</string>
     <string name="trakt_library_source_mal">MyAnimeList</string>
     <string name="trakt_library_source_anilist">AniList</string>
+    <string name="trakt_library_source_kitsu">Kitsu</string>
     <string name="trakt_library_source_anilist_selected">Libreria AniList selezionata</string>
     <string name="trakt_library_source_trakt_selected">Libreria Trakt selezionata</string>
     <string name="trakt_library_source_nuvio_selected">Libreria Nuvio selezionata</string>
