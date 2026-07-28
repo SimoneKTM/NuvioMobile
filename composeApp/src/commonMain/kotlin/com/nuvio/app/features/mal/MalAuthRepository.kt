@@ -435,7 +435,8 @@ object MalAuthRepository {
         val encodedRedirectUri = MalConfig.REDIRECT_URI.encodeURLParameter()
         val encodedState = state.encodeURLParameter()
         val encodedChallenge = codeChallenge.encodeURLParameter()
-        return "${AUTH_BASE_URL}/authorize?response_type=$responseType&client_id=$encodedClientId&redirect_uri=$encodedRedirectUri&state=$encodedState&code_challenge=$encodedChallenge&code_challenge_method=plain"
+        val scope = "write:users:read+write:anime:read"
+        return "${AUTH_BASE_URL}/authorize?response_type=$responseType&client_id=$encodedClientId&redirect_uri=$encodedRedirectUri&state=$encodedState&code_challenge=$encodedChallenge&code_challenge_method=plain&scope=$scope"
     }
 
     private fun generateOauthState(minLength: Int = 16): String {
