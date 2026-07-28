@@ -57,6 +57,7 @@ import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.components.HomeCatalogRowSection
 import com.nuvio.app.features.home.components.HomeEmptyStateCard
 import com.nuvio.app.features.home.components.homeSectionHorizontalPaddingForWidth
+import com.nuvio.app.features.home.components.BouncingDots
 import com.nuvio.app.features.home.components.HomeSkeletonRow
 import com.nuvio.app.features.watched.WatchedRepository
 import kotlinx.coroutines.delay
@@ -329,20 +330,28 @@ fun SearchScreen(
                 val isWaitingForSearch = normalizedQuery.isNotBlank() && lastRequestedQuery != normalizedQuery
                 when {
                     isWaitingForSearch -> {
-                        items(2) {
-                            HomeSkeletonRow(
-                                modifier = Modifier.padding(horizontal = homeSectionPadding),
-                                showHeaderAccent = !homeCatalogSettingsUiState.hideCatalogUnderline,
-                            )
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 48.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                BouncingDots()
+                            }
                         }
                     }
 
                     uiState.isLoading && uiState.sections.isEmpty() -> {
-                        items(2) {
-                            HomeSkeletonRow(
-                                modifier = Modifier.padding(horizontal = homeSectionPadding),
-                                showHeaderAccent = !homeCatalogSettingsUiState.hideCatalogUnderline,
-                            )
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 48.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                BouncingDots()
+                            }
                         }
                     }
 
@@ -405,10 +414,14 @@ fun SearchScreen(
                             }
                             if (uiState.isLoading) {
                                 item(key = "search_loading_more") {
-                                    HomeSkeletonRow(
-                                        modifier = Modifier.padding(horizontal = homeSectionPadding),
-                                        showHeaderAccent = !homeCatalogSettingsUiState.hideCatalogUnderline,
-                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 16.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        BouncingDots()
+                                    }
                                 }
                             }
                         }

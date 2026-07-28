@@ -97,6 +97,7 @@ import com.nuvio.app.features.details.MetaVideo
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
 import com.nuvio.app.features.home.components.HomeEmptyStateCard
 import com.nuvio.app.features.home.components.HomePosterCard
+import com.nuvio.app.features.home.components.BouncingDots
 import com.nuvio.app.features.home.components.HomeSkeletonRow
 import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.features.watched.WatchedRepository
@@ -335,11 +336,15 @@ fun LibraryScreen(
         } else {
             when {
                 !uiState.isLoaded || (uiState.isLoading && uiState.sections.isEmpty()) -> {
-                    items(3) {
-                        HomeSkeletonRow(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            showHeaderAccent = !homeCatalogSettingsUiState.hideCatalogUnderline,
-                        )
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 48.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            BouncingDots()
+                        }
                     }
                 }
 
