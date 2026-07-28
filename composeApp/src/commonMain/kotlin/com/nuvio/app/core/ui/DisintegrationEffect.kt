@@ -35,7 +35,7 @@ fun DisintegratingContainer(
     disintegrating: Boolean,
     onDisintegrated: () -> Unit,
     modifier: Modifier = Modifier,
-    durationMillis: Int = 1500,
+    durationMillis: Int = 600,
     content: @Composable () -> Unit,
 ) {
     val graphicsLayer = rememberGraphicsLayer()

@@ -78,7 +78,6 @@ import com.nuvio.app.core.i18n.localizedMonthName
 import com.nuvio.app.core.i18n.localizedShortMonthName
 import com.nuvio.app.core.network.NetworkCondition
 import com.nuvio.app.core.network.NetworkStatusRepository
-import com.nuvio.app.core.ui.DisintegratingContainer
 import com.nuvio.app.core.ui.NuvioDropdownChip
 import com.nuvio.app.core.ui.NuvioDropdownOption
 import com.nuvio.app.core.ui.NuvioScreen
@@ -408,7 +407,6 @@ fun LibraryScreen(
                         onPosterClick = onPosterClick,
                         onSectionViewAllClick = onSectionViewAllClick,
                         onPosterLongClick = onPosterLongClick,
-                        onDisintegrated = disintegration::onExited,
                     )
                 }
             }
@@ -1165,7 +1163,6 @@ private fun LazyListScope.librarySections(
     onPosterClick: ((LibraryItem) -> Unit)?,
     onSectionViewAllClick: ((LibrarySection) -> Unit)?,
     onPosterLongClick: ((LibraryItem, LibrarySection) -> Unit)?,
-    onDisintegrated: (String) -> Unit,
 ) {
     items(
         items = displaySections,
@@ -1187,24 +1184,19 @@ private fun LazyListScope.librarySections(
             val item = entry.item
             val posterItem = item.toMetaPreview()
             val entrySource = entry.section
-            DisintegratingContainer(
-                disintegrating = entry.exiting,
-                onDisintegrated = { onDisintegrated(entry.globalKey) },
-            ) {
-                HomePosterCard(
+            HomePosterCard(
+                item = posterItem,
+                isWatched = WatchingState.isPosterWatched(
+                    watchedKeys = watchedKeys,
                     item = posterItem,
-                    isWatched = WatchingState.isPosterWatched(
-                        watchedKeys = watchedKeys,
-                        item = posterItem,
-                    ),
-                    onClick = if (entry.exiting) null else onPosterClick?.let { { it(item) } },
-                    onLongClick = if (entry.exiting || entrySource == null) {
-                        null
-                    } else {
-                        onPosterLongClick?.let { { it(item, entrySource) } }
-                    },
-                )
-            }
+                ),
+                onClick = if (entry.exiting) null else onPosterClick?.let { { it(item) } },
+                onLongClick = if (entry.exiting || entrySource == null) {
+                    null
+                } else {
+                    onPosterLongClick?.let { { it(item, entrySource) } }
+                },
+            )
         }
     }
 }
@@ -2318,87 +2310,27 @@ private data class LibraryDisplaySection(
     val previewEntries: List<LibraryDisplayEntry>,
 )
 
-private class LibraryExitingEntry(
-    val item: LibraryItem,
-    val sectionType: String,
-    val sectionTitle: String,
-    val index: Int,
-)
-
 private fun libraryGlobalKey(sectionType: String, item: LibraryItem): String =
     "$sectionType|${item.type}|${item.id}"
 
 private class LibraryDisintegrationHolder {
-    private val exiting = LinkedHashMap<String, LibraryExitingEntry>()
-    private var previous = LinkedHashMap<String, LibraryExitingEntry>()
-    private var invalidations by mutableStateOf(0)
-
-    fun onExited(globalKey: String) {
-        if (exiting.remove(globalKey) != null) invalidations++
-    }
-
-    fun reset() {
-        exiting.clear()
-        previous = LinkedHashMap()
-    }
+    fun reset() {}
 
     fun sync(sections: List<LibrarySection>, previewLimit: Int): List<LibraryDisplaySection> {
-        @Suppress("UNUSED_EXPRESSION")
-        invalidations
-
-        val current = LinkedHashMap<String, LibraryExitingEntry>()
-        sections.forEach { section ->
-            section.items.take(previewLimit).forEachIndexed { index, item ->
-                val key = libraryGlobalKey(section.type, item)
-                current[key] = LibraryExitingEntry(item, section.type, section.displayTitle, index)
-            }
-        }
-        for ((key, info) in previous) {
-            if (key !in current && key !in exiting) {
-                exiting[key] = info
-            }
-        }
-        for (key in current.keys) {
-            exiting.remove(key)
-        }
-        previous = current
-
-        val exitingBySection = exiting.values.groupBy { it.sectionType }
-        val seenTypes = HashSet<String>(sections.size)
-        val result = ArrayList<LibraryDisplaySection>(sections.size + 1)
-
-        for (section in sections) {
-            seenTypes += section.type
-            val entries = ArrayList<LibraryDisplayEntry>(previewLimit + 1)
-            section.items.take(previewLimit).forEach { item ->
-                entries += LibraryDisplayEntry(
-                    globalKey = libraryGlobalKey(section.type, item),
-                    item = item,
-                    section = section,
-                    exiting = false,
-                )
-            }
-            exitingBySection[section.type]?.sortedBy { it.index }?.forEach { ex ->
-                val key = libraryGlobalKey(section.type, ex.item)
-                if (entries.none { it.globalKey == key }) {
-                    entries.add(
-                        ex.index.coerceIn(0, entries.size),
-                        LibraryDisplayEntry(key, ex.item, section, exiting = true),
+        return sections.map { section ->
+            LibraryDisplaySection(
+                source = section,
+                type = section.type,
+                displayTitle = section.displayTitle,
+                previewEntries = section.items.take(previewLimit).map { item ->
+                    LibraryDisplayEntry(
+                        globalKey = libraryGlobalKey(section.type, item),
+                        item = item,
+                        section = section,
+                        exiting = false,
                     )
-                }
-            }
-            result += LibraryDisplaySection(section, section.type, section.displayTitle, entries)
+                },
+            )
         }
-
-        for ((type, list) in exitingBySection) {
-            if (type in seenTypes) continue
-            val sorted = list.sortedBy { it.index }
-            val entries = sorted.map { ex ->
-                LibraryDisplayEntry(libraryGlobalKey(type, ex.item), ex.item, section = null, exiting = true)
-            }
-            result += LibraryDisplaySection(null, type, sorted.first().sectionTitle, entries)
-        }
-
-        return result
     }
 }

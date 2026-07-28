@@ -49,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.nuvio.app.core.ui.DisintegratingContainer
 import com.nuvio.app.core.ui.NuvioCardDepthSurface
 import com.nuvio.app.core.ui.NuvioProgressBar
 import com.nuvio.app.core.ui.nuvioCardDepth
@@ -312,11 +311,7 @@ private fun HomeContinueWatchingSectionContent(
         val item = entry.item
         val onClick = if (entry.exiting) null else onItemClick?.let { { it(item) } }
         val onLongClick = if (entry.exiting) null else onItemLongPress?.let { { it(item) } }
-        DisintegratingContainer(
-            disintegrating = entry.exiting,
-            onDisintegrated = { disintegration.onExited(entry.videoId) },
-        ) {
-            when (style) {
+        when (style) {
                 ContinueWatchingSectionStyle.Card -> ContinueWatchingCard(
                     item = item,
                     useEpisodeThumbnails = useEpisodeThumbnails,
@@ -341,7 +336,6 @@ private fun HomeContinueWatchingSectionContent(
                     onLongClick = onLongClick,
                 )
             }
-        }
     }
 }
 
@@ -352,43 +346,10 @@ private data class ContinueWatchingDisplayEntry(
 )
 
 private class ContinueWatchingDisintegrationHolder {
-    private val exiting = LinkedHashMap<String, Pair<ContinueWatchingItem, Int>>()
-    private var previous = LinkedHashMap<String, Pair<ContinueWatchingItem, Int>>()
-    private var invalidations by mutableStateOf(0)
-
-    fun onExited(videoId: String) {
-        if (exiting.remove(videoId) != null) invalidations++
-    }
-
     fun sync(items: List<ContinueWatchingItem>): List<ContinueWatchingDisplayEntry> {
-        @Suppress("UNUSED_EXPRESSION")
-        invalidations
-
-        val current = LinkedHashMap<String, Pair<ContinueWatchingItem, Int>>()
-        items.forEachIndexed { index, item -> current[item.videoId] = item to index }
-
-        for ((videoId, info) in previous) {
-            if (videoId !in current && videoId !in exiting) {
-                exiting[videoId] = info
-            }
+        return items.map { item ->
+            ContinueWatchingDisplayEntry(item.videoId, item, exiting = false)
         }
-        for (videoId in current.keys) {
-            exiting.remove(videoId)
-        }
-        previous = current
-
-        val entries = ArrayList<ContinueWatchingDisplayEntry>(items.size + exiting.size)
-        items.forEach { item ->
-            entries += ContinueWatchingDisplayEntry(item.videoId, item, exiting = false)
-        }
-        exiting.entries
-            .sortedBy { it.value.second }
-            .forEach { (videoId, info) ->
-                val insertAt = info.second.coerceIn(0, entries.size)
-                entries.add(insertAt, ContinueWatchingDisplayEntry(videoId, info.first, exiting = true))
-            }
-
-        return entries
     }
 }
 

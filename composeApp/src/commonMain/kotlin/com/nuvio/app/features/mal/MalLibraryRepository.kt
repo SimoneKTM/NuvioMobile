@@ -83,8 +83,17 @@ object MalLibraryRepository {
             if (username == null) {
                 username = "@me"
             }
-            MalAuthRepository.refreshTokenIfNeeded(force = false)
-            val token = MalAuthRepository.currentAccessToken() ?: return
+            if (!MalAuthRepository.refreshTokenIfNeeded(force = false)) {
+                MalAuthRepository.refreshTokenIfNeeded(force = true)
+            }
+            val token = MalAuthRepository.currentAccessToken()
+            if (token == null) {
+                _uiState.value = MalLibraryUiState(
+                    hasLoaded = true,
+                    errorMessage = "Impossibile ottenere il token di accesso MAL",
+                )
+                return
+            }
 
             fetchAndPublish(token, username)
             lastRefreshAtMs = MalPlatformClock.nowEpochMs()

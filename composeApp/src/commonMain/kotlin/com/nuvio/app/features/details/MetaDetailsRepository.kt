@@ -133,7 +133,7 @@ object MetaDetailsRepository {
 
         scope.launch {
             val metaLookupId = resolveMetaLookupId(itemId = id, itemType = type)
-            val manifests = findReadyMetaManifests(type = type, id = metaLookupId)
+            val manifests = findReadyMetaManifests(type = type, id = metaLookupId, isAnime = isAnime)
 
             if (manifests.isEmpty()) {
                 val tmdbMeta = tryFetchTmdbFallbackMeta(type = type, id = id, isAnime = isAnime)
@@ -230,7 +230,7 @@ object MetaDetailsRepository {
         }
 
         val metaLookupId = resolveMetaLookupId(itemId = id, itemType = type)
-        val manifests = findReadyMetaManifests(type = type, id = metaLookupId)
+        val manifests = findReadyMetaManifests(type = type, id = metaLookupId, isAnime = isAnime)
 
         for (manifest in manifests) {
             val result = withTimeoutOrNull(FETCH_TIMEOUT_MS) {
@@ -374,41 +374,44 @@ object MetaDetailsRepository {
         }
     }
 
-    private suspend fun findReadyMetaManifests(type: String, id: String): List<AddonManifest> {
+    private suspend fun findReadyMetaManifests(type: String, id: String, isAnime: Boolean = false): List<AddonManifest> {
         AddonRepository.initialize()
         AnimeAddonRepository.initialize()
 
+        if (isAnime) {
+            return findAnimeMetaManifests(type, id)
+        }
+
         findMetaManifests(AddonRepository.uiState.value, type, id).takeIf { it.isNotEmpty() }?.let { return it }
-        findMetaManifests(AnimeAddonRepository.uiState.value, type, id).takeIf { it.isNotEmpty() }?.let { return it }
 
         val mainPending = AddonRepository.uiState.value.hasPendingEnabledAddonManifests()
+
+        if (!mainPending) return emptyList()
+
+        val readyState = withTimeoutOrNull(METADATA_PROVIDER_READY_TIMEOUT_MS) {
+            AddonRepository.uiState.first { state ->
+                findMetaManifests(state, type, id).isNotEmpty() ||
+                    !state.hasPendingEnabledAddonManifests()
+            }
+        } ?: AddonRepository.uiState.value
+
+        return findMetaManifests(readyState, type, id)
+    }
+
+    private suspend fun findAnimeMetaManifests(type: String, id: String): List<AddonManifest> {
+        findMetaManifests(AnimeAddonRepository.uiState.value, type, id).takeIf { it.isNotEmpty() }?.let { return it }
+
         val animePending = AnimeAddonRepository.uiState.value.hasPendingEnabledAddonManifests()
+        if (!animePending) return emptyList()
 
-        if (!mainPending && !animePending) return emptyList()
+        val animeReadyState = withTimeoutOrNull(METADATA_PROVIDER_READY_TIMEOUT_MS) {
+            AnimeAddonRepository.uiState.first { state ->
+                findMetaManifests(state, type, id).isNotEmpty() ||
+                    !state.hasPendingEnabledAddonManifests()
+            }
+        } ?: AnimeAddonRepository.uiState.value
 
-        if (mainPending) {
-            val readyState = withTimeoutOrNull(METADATA_PROVIDER_READY_TIMEOUT_MS) {
-                AddonRepository.uiState.first { state ->
-                    findMetaManifests(state, type, id).isNotEmpty() ||
-                        !state.hasPendingEnabledAddonManifests()
-                }
-            } ?: AddonRepository.uiState.value
-
-            findMetaManifests(readyState, type, id).takeIf { it.isNotEmpty() }?.let { return it }
-        }
-
-        if (animePending) {
-            val animeReadyState = withTimeoutOrNull(METADATA_PROVIDER_READY_TIMEOUT_MS) {
-                AnimeAddonRepository.uiState.first { state ->
-                    findMetaManifests(state, type, id).isNotEmpty() ||
-                        !state.hasPendingEnabledAddonManifests()
-                }
-            } ?: AnimeAddonRepository.uiState.value
-
-            return findMetaManifests(animeReadyState, type, id)
-        }
-
-        return emptyList()
+        return findMetaManifests(animeReadyState, type, id)
     }
 
     private fun findMetaManifests(state: com.nuvio.app.features.addons.AddonsUiState, type: String, id: String): List<AddonManifest> =

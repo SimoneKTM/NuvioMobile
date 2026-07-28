@@ -361,17 +361,7 @@ fun NuvioPosterZoomActionOverlay(
                     shadowElevation = NuvioTokens.Space.s24.toPx() * clamped * shadowFade.value
                 },
         ) {
-            DisintegratingContainer(
-                disintegrating = phase == PosterZoomPhase.Disintegrating,
-                onDisintegrated = {
-                    scope.launch {
-                        scrim.animateTo(0f, tween(durationMillis = 300, easing = NuvioTokens.Motion.standard))
-                        onDismissed()
-                    }
-                },
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                Box(
+            Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
@@ -423,7 +413,6 @@ fun NuvioPosterZoomActionOverlay(
                         },
                     )
                 }
-            }
         }
     }
 }
