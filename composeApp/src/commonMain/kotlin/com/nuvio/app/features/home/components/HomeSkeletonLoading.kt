@@ -30,8 +30,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-private val dotColor: Color
-    get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+@Composable
+private fun dotColor(): Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
 
 @Composable
 fun BouncingDots(
@@ -75,21 +75,21 @@ fun BouncingDots(
                 .size(dotSize)
                 .scale(1f + dot1 * 0.03f)
                 .clip(CircleShape)
-                .background(dotColor),
+                .background(dotColor()),
         )
         Box(
             modifier = Modifier
                 .size(dotSize)
                 .scale(1f + dot2 * 0.03f)
                 .clip(CircleShape)
-                .background(dotColor),
+                .background(dotColor()),
         )
         Box(
             modifier = Modifier
                 .size(dotSize)
                 .scale(1f + dot3 * 0.03f)
                 .clip(CircleShape)
-                .background(dotColor),
+                .background(dotColor()),
         )
     }
 }
