@@ -147,7 +147,7 @@ object TvdbMetadataService {
                                         video.released
                                     },
                                     runtime = if (settings.useEpisodes) {
-                                        episodeData.runtimeMinutes?.toString() ?: video.runtime
+                                        episodeData.runtimeMinutes ?: video.runtime
                                     } else {
                                         video.runtime
                                     },

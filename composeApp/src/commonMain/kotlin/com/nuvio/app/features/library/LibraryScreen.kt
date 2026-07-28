@@ -2056,9 +2056,6 @@ private suspend fun buildNextUpCalendarEvents(
 private fun LibraryItem.isCurrentlyWatching(): Boolean =
     listStatus in listOf("watching", "current", "CURRENT", "REPEATING")
 
-private fun LibraryItem.isCurrentlyWatching(): Boolean =
-    listStatus in listOf("watching", "current", "CURRENT", "REPEATING")
-
 private fun buildLibraryReleaseCalendarFallbackEvents(items: List<LibraryItem>): List<LibraryCalendarEvent> =
     items
         .asSequence()
