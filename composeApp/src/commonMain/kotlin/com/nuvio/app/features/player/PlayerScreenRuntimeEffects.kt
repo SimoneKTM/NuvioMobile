@@ -301,12 +301,13 @@ private fun PlayerScreenRuntime.BindPlayerUiVisibilityEffects() {
         playbackSnapshot.isLoading,
         showParentalGuide,
         errorMessage,
+        activeProviderAddonId,
     ) {
+        val isLiveContent = activeProviderAddonId == "live-tv"
         if (
             !controlsVisible ||
             isScrubbingTimeline ||
-            !playbackSnapshot.isPlaying ||
-            playbackSnapshot.isLoading ||
+            (!isLiveContent && (!playbackSnapshot.isPlaying || playbackSnapshot.isLoading)) ||
             showParentalGuide ||
             errorMessage != null
         ) {

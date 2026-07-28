@@ -283,6 +283,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             skipSegments = skipIntervals,
             isLocked = playerControlsLocked,
             showPlaybackControls = controlsVisible,
+            isLiveContent = activeProviderAddonId == "live-tv",
             onLockToggle = {
                 if (playerControlsLocked) unlockPlayerControls() else lockPlayerControls()
             },

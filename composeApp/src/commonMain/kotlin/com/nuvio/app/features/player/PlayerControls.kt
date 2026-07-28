@@ -91,6 +91,7 @@ internal fun PlayerControlsShell(
     skipSegments: List<SkipInterval> = emptyList(),
     isLocked: Boolean,
     showPlaybackControls: Boolean = true,
+    isLiveContent: Boolean = false,
     onLockToggle: () -> Unit,
     onBack: () -> Unit,
     onTogglePlayback: () -> Unit,
@@ -185,7 +186,7 @@ internal fun PlayerControlsShell(
                     ),
             )
 
-            if (showPlaybackControls) {
+            if (showPlaybackControls && !isLiveContent) {
                 CenterControls(
                     snapshot = playbackSnapshot,
                     metrics = metrics,
@@ -199,7 +200,7 @@ internal fun PlayerControlsShell(
                 )
             }
 
-            if (showPlaybackControls) {
+            if (showPlaybackControls && !isLiveContent) {
                 ProgressControls(
                     playbackSnapshot = playbackSnapshot,
                     displayedPositionMs = displayedPositionMs,
