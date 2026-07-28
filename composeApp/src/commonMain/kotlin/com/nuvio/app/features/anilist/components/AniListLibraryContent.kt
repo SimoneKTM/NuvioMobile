@@ -22,7 +22,7 @@ import com.nuvio.app.core.ui.NuvioShelfSection
 import com.nuvio.app.features.anilist.AniListLibraryUiState
 import com.nuvio.app.features.anilist.AniListLibraryItem
 import com.nuvio.app.features.anilist.AniListSortBy
-import com.nuvio.app.features.home.components.HomeSkeletonRow
+import com.nuvio.app.features.home.components.BouncingDots
 import com.nuvio.app.features.home.components.HomeEmptyStateCard
 
 fun LazyListScope.aniListLibraryContent(
@@ -38,11 +38,15 @@ fun LazyListScope.aniListLibraryContent(
 ) {
     when {
         uiState.isLoading && !uiState.isLoaded -> {
-            items(3) {
-                HomeSkeletonRow(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    showHeaderAccent = true
-                )
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 48.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    BouncingDots()
+                }
             }
         }
 

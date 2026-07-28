@@ -1,6 +1,8 @@
 package com.nuvio.app.features.home
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -11,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,7 +46,7 @@ import com.nuvio.app.features.home.components.HomeEmptyStateCard
 import com.nuvio.app.features.home.components.HomeHeroReservedSpace
 import com.nuvio.app.features.home.components.HomeHeroSection
 import com.nuvio.app.features.home.components.HomeSkeletonHero
-import com.nuvio.app.features.home.components.HomeSkeletonRow
+import com.nuvio.app.features.home.components.BouncingDots
 import com.nuvio.app.features.home.components.HomeTop10Section
 import com.nuvio.app.features.trakt.TraktAuthRepository
 import com.nuvio.app.features.home.components.HomeContinueWatchingSectionBottomPadding
@@ -930,11 +933,15 @@ fun HomeScreen(
                             )
                         }
                     }
-                    items(3) {
-                        HomeSkeletonRow(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            showHeaderAccent = !homeSettingsUiState.hideCatalogUnderline,
-                        )
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 48.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            BouncingDots()
+                        }
                     }
                 }
 

@@ -1,5 +1,6 @@
 package com.nuvio.app.features.animeprofile
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -31,7 +33,7 @@ import com.nuvio.app.features.home.components.HomeEmptyStateCard
 import com.nuvio.app.features.home.components.HomeHeroSection
 import com.nuvio.app.features.home.components.HomeHeroReservedSpace
 import com.nuvio.app.features.home.components.HomeSkeletonHero
-import com.nuvio.app.features.home.components.HomeSkeletonRow
+import com.nuvio.app.features.home.components.BouncingDots
 import com.nuvio.app.features.home.components.homeSectionHorizontalPaddingForWidth
 import com.nuvio.app.features.home.components.HomePosterCard
 import com.nuvio.app.features.home.components.rememberContinueWatchingLayout
@@ -173,11 +175,15 @@ fun AnimeHomeScreen(
                 }
 
                 homeUiState.isLoading && homeUiState.sections.isEmpty() -> {
-                    items(3) {
-                        HomeSkeletonRow(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            showHeaderAccent = !homeSettingsUiState.hideCatalogUnderline,
-                        )
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 48.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            BouncingDots()
+                        }
                     }
                 }
 

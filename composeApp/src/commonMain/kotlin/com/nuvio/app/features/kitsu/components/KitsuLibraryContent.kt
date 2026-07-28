@@ -1,13 +1,16 @@
 package com.nuvio.app.features.kitsu.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.ui.NuvioShelfSection
 import com.nuvio.app.features.home.components.HomeEmptyStateCard
-import com.nuvio.app.features.home.components.HomeSkeletonRow
+import com.nuvio.app.features.home.components.BouncingDots
 import com.nuvio.app.features.kitsu.KitsuLibraryItem
 import com.nuvio.app.features.kitsu.KitsuLibraryUiState
 import com.nuvio.app.features.kitsu.KitsuSectionSettings
@@ -30,11 +33,15 @@ fun LazyListScope.kitsuLibraryContent(
 ) {
     when {
         uiState.isLoading && !uiState.isLoaded -> {
-            items(3) {
-                HomeSkeletonRow(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    showHeaderAccent = true
-                )
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 48.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    BouncingDots()
+                }
             }
         }
 
