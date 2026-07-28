@@ -12,6 +12,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -96,7 +98,9 @@ object MalLibraryRepository {
                     return@withLock
                 }
 
-                fetchAndPublish(token, username)
+                withTimeout(30_000L) {
+                    fetchAndPublish(token, username)
+                }
                 lastRefreshAtMs = MalPlatformClock.nowEpochMs()
             } catch (e: CancellationException) {
                 _uiState.value = MalLibraryUiState(hasLoaded = true)
