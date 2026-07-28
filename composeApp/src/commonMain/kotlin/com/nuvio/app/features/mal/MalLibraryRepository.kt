@@ -108,7 +108,10 @@ object MalLibraryRepository {
         }
 
         result.exceptionOrNull()?.let { error ->
-            if (error is CancellationException) throw error
+            if (error is CancellationException) {
+                _uiState.value = MalLibraryUiState(hasLoaded = true)
+                throw error
+            }
             log.w(error) { "Failed to fetch MAL anime list" }
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
