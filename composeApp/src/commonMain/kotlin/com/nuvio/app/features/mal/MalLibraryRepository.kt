@@ -63,40 +63,52 @@ object MalLibraryRepository {
     private suspend fun refresh(force: Boolean) {
         ensureLoaded()
         refreshMutex.withLock {
-            val now = MalPlatformClock.nowEpochMs()
-            val current = _uiState.value
-            if (current.hasLoaded && current.errorMessage == null && now - lastRefreshAtMs <= REFRESH_DEDUP_MS && !force) {
-                return
-            }
+            try {
+                val now = MalPlatformClock.nowEpochMs()
+                val current = _uiState.value
+                if (current.hasLoaded && current.errorMessage == null && now - lastRefreshAtMs <= REFRESH_DEDUP_MS && !force) {
+                    return@withLock
+                }
 
-            MalAuthRepository.ensureLoaded()
-            if (!MalAuthRepository.isAuthenticated.value) {
+                MalAuthRepository.ensureLoaded()
+                if (!MalAuthRepository.isAuthenticated.value) {
+                    _uiState.value = MalLibraryUiState(hasLoaded = true)
+                    lastRefreshAtMs = 0L
+                    return@withLock
+                }
+
+                var username = MalAuthRepository.snapshot().username?.takeIf { it.isNotBlank() }
+                if (username == null) {
+                    username = MalAuthRepository.fetchUserProfile()
+                }
+                if (username == null) {
+                    username = "@me"
+                }
+                if (!MalAuthRepository.refreshTokenIfNeeded(force = false)) {
+                    MalAuthRepository.refreshTokenIfNeeded(force = true)
+                }
+                val token = MalAuthRepository.currentAccessToken()
+                if (token == null) {
+                    _uiState.value = MalLibraryUiState(
+                        hasLoaded = true,
+                        errorMessage = "Impossibile ottenere il token di accesso MAL",
+                    )
+                    return@withLock
+                }
+
+                fetchAndPublish(token, username)
+                lastRefreshAtMs = MalPlatformClock.nowEpochMs()
+            } catch (e: CancellationException) {
                 _uiState.value = MalLibraryUiState(hasLoaded = true)
-                lastRefreshAtMs = 0L
-                return
-            }
-
-            var username = MalAuthRepository.snapshot().username?.takeIf { it.isNotBlank() }
-            if (username == null) {
-                username = MalAuthRepository.fetchUserProfile()
-            }
-            if (username == null) {
-                username = "@me"
-            }
-            if (!MalAuthRepository.refreshTokenIfNeeded(force = false)) {
-                MalAuthRepository.refreshTokenIfNeeded(force = true)
-            }
-            val token = MalAuthRepository.currentAccessToken()
-            if (token == null) {
+                throw e
+            } catch (e: Exception) {
+                log.w(e) { "Failed to refresh MAL library" }
                 _uiState.value = MalLibraryUiState(
                     hasLoaded = true,
-                    errorMessage = "Impossibile ottenere il token di accesso MAL",
+                    isLoading = false,
+                    errorMessage = e.message?.takeIf { it.isNotBlank() } ?: "Failed to load MAL library",
                 )
-                return
             }
-
-            fetchAndPublish(token, username)
-            lastRefreshAtMs = MalPlatformClock.nowEpochMs()
         }
     }
 
