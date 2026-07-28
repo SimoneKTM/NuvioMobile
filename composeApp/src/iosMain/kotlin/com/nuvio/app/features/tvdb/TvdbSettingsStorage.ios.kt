@@ -19,6 +19,7 @@ actual object TvdbSettingsStorage {
     private const val useCreditsKey = "tvdb_use_credits"
     private const val useEpisodesKey = "tvdb_use_episodes"
     private const val useSeasonPostersKey = "tvdb_use_season_posters"
+    private const val languageKey = "tvdb_language"
     private val syncKeys = listOf(enabledKey, apiKeyKey)
 
     actual fun loadEnabled(): Boolean? = loadBoolean(enabledKey)
@@ -46,6 +47,11 @@ actual object TvdbSettingsStorage {
     actual fun saveUseEpisodes(enabled: Boolean) { saveBoolean(useEpisodesKey, enabled) }
     actual fun loadUseSeasonPosters(): Boolean? = loadBoolean(useSeasonPostersKey)
     actual fun saveUseSeasonPosters(enabled: Boolean) { saveBoolean(useSeasonPostersKey, enabled) }
+    actual fun loadLanguage(): String? =
+        NSUserDefaults.standardUserDefaults.stringForKey(ProfileScopedKey.of(languageKey))
+    actual fun saveLanguage(language: String) {
+        NSUserDefaults.standardUserDefaults.setObject(language, forKey = ProfileScopedKey.of(languageKey))
+    }
 
     private fun loadBoolean(key: String): Boolean? {
         val defaults = NSUserDefaults.standardUserDefaults

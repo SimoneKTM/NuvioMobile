@@ -12,6 +12,7 @@ object TvdbSettingsRepository {
 
     private var enabled = false
     private var apiKey = ""
+    private var language = "en"
     private var useTrailers = true
     private var useArtwork = true
     private var useBasicInfo = true
@@ -53,6 +54,15 @@ object TvdbSettingsRepository {
         }
         publish()
         TvdbSettingsStorage.saveApiKey(normalized)
+    }
+
+    fun setLanguage(value: String) {
+        ensureLoaded()
+        val normalized = normalizeTvdbLanguage(value)
+        if (language == normalized) return
+        language = normalized
+        publish()
+        TvdbSettingsStorage.saveLanguage(normalized)
     }
 
     fun setUseTrailers(value: Boolean) = setBoolean(
@@ -114,6 +124,8 @@ object TvdbSettingsRepository {
         hasLoaded = true
         apiKey = TvdbSettingsStorage.loadApiKey()?.trim().orEmpty()
         enabled = (TvdbSettingsStorage.loadEnabled() ?: false) && apiKey.isNotBlank()
+        val storedLanguage = TvdbSettingsStorage.loadLanguage()
+        language = if (storedLanguage == null) "en" else normalizeTvdbLanguage(storedLanguage)
         useTrailers = TvdbSettingsStorage.loadUseTrailers() ?: true
         useArtwork = TvdbSettingsStorage.loadUseArtwork() ?: true
         useBasicInfo = TvdbSettingsStorage.loadUseBasicInfo() ?: true
@@ -127,6 +139,7 @@ object TvdbSettingsRepository {
         _uiState.value = TvdbSettings(
             enabled = enabled,
             apiKey = apiKey,
+            language = language,
             useTrailers = useTrailers,
             useArtwork = useArtwork,
             useBasicInfo = useBasicInfo,
@@ -135,4 +148,9 @@ object TvdbSettingsRepository {
             useSeasonPosters = useSeasonPosters,
         )
     }
+}
+
+internal fun normalizeTvdbLanguage(value: String?): String {
+    val trimmed = value?.trim()?.replace('_', '-') ?: return "en"
+    return trimmed.takeIf { it.isNotBlank() } ?: "en"
 }

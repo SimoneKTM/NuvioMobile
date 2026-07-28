@@ -7,6 +7,8 @@ internal expect object TvdbSettingsStorage {
     fun saveEnabled(enabled: Boolean)
     fun loadApiKey(): String?
     fun saveApiKey(apiKey: String)
+    fun loadLanguage(): String?
+    fun saveLanguage(language: String)
     fun loadUseTrailers(): Boolean?
     fun saveUseTrailers(enabled: Boolean)
     fun loadUseArtwork(): Boolean?

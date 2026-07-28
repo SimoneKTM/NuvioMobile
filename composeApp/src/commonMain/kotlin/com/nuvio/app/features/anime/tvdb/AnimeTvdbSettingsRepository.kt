@@ -12,6 +12,7 @@ object AnimeTvdbSettingsRepository {
 
     private var enabled = false
     private var apiKey = ""
+    private var language = "en"
     private var useTrailers = true
     private var useArtwork = true
     private var useBasicInfo = true
@@ -53,6 +54,15 @@ object AnimeTvdbSettingsRepository {
         }
         publish()
         AnimeTvdbSettingsStorage.saveApiKey(normalized)
+    }
+
+    fun setLanguage(value: String) {
+        ensureLoaded()
+        val normalized = com.nuvio.app.features.tvdb.normalizeTvdbLanguage(value)
+        if (language == normalized) return
+        language = normalized
+        publish()
+        AnimeTvdbSettingsStorage.saveLanguage(normalized)
     }
 
     fun setUseTrailers(value: Boolean) = setBoolean(
@@ -114,6 +124,8 @@ object AnimeTvdbSettingsRepository {
         hasLoaded = true
         apiKey = AnimeTvdbSettingsStorage.loadApiKey()?.trim().orEmpty()
         enabled = (AnimeTvdbSettingsStorage.loadEnabled() ?: false) && apiKey.isNotBlank()
+        val storedLanguage = AnimeTvdbSettingsStorage.loadLanguage()
+        language = if (storedLanguage == null) "en" else com.nuvio.app.features.tvdb.normalizeTvdbLanguage(storedLanguage)
         useTrailers = AnimeTvdbSettingsStorage.loadUseTrailers() ?: true
         useArtwork = AnimeTvdbSettingsStorage.loadUseArtwork() ?: true
         useBasicInfo = AnimeTvdbSettingsStorage.loadUseBasicInfo() ?: true
@@ -127,6 +139,7 @@ object AnimeTvdbSettingsRepository {
         _uiState.value = AnimeTvdbSettings(
             enabled = enabled,
             apiKey = apiKey,
+            language = language,
             useTrailers = useTrailers,
             useArtwork = useArtwork,
             useBasicInfo = useBasicInfo,

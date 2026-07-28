@@ -67,12 +67,13 @@ object TvdbApi {
         }.getOrNull().orEmpty()
     }
 
-    suspend fun getSeriesExtended(id: String): TvdbSeriesExtended? {
+    suspend fun getSeriesExtended(id: String, language: String? = null): TvdbSeriesExtended? {
         val token = ensureAuthenticated() ?: return null
         val numericId = id.removePrefix("series-").removePrefix("movie-")
         return runCatching {
             val url = "$BASE_URL/series/$numericId/extended"
-            val responseText = httpGetTextWithHeaders(url, headers = authHeaders(token))
+            val headers = buildHeaders(token, language)
+            val responseText = httpGetTextWithHeaders(url, headers = headers)
             val response = json.decodeFromString<TvdbSeriesExtendedResponse>(responseText)
             response.data
         }.onFailure { e ->
@@ -80,11 +81,12 @@ object TvdbApi {
         }.getOrNull()
     }
 
-    suspend fun getSeriesEpisodes(id: Int, page: Int = 0): TvdbEpisodesResponse? {
+    suspend fun getSeriesEpisodes(id: Int, page: Int = 0, language: String? = null): TvdbEpisodesResponse? {
         val token = ensureAuthenticated() ?: return null
         return runCatching {
             val url = "$BASE_URL/series/$id/episodes${if (page > 0) "?page=$page" else ""}"
-            val responseText = httpGetTextWithHeaders(url, headers = authHeaders(token))
+            val headers = buildHeaders(token, language)
+            val responseText = httpGetTextWithHeaders(url, headers = headers)
             json.decodeFromString<TvdbEpisodesResponse>(responseText)
         }.onFailure { e ->
             log.w { "TVDB episodes for $id failed: ${e.message}" }
@@ -103,7 +105,15 @@ object TvdbApi {
     }
 
     private fun authHeaders(token: String): Map<String, String> =
-        mapOf("Authorization" to "Bearer $token")
+        buildHeaders(token, language = null)
+
+    private fun buildHeaders(token: String, language: String?): Map<String, String> {
+        val headers = mutableMapOf("Authorization" to "Bearer $token")
+        if (!language.isNullOrBlank() && language != "en") {
+            headers["Accept-Language"] = language
+        }
+        return headers
+    }
 
     private fun encodeQuery(query: String): String =
         query.replace(" ", "%20")

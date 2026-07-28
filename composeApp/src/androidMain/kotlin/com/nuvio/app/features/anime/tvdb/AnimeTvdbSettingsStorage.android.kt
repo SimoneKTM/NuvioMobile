@@ -21,6 +21,7 @@ actual object AnimeTvdbSettingsStorage {
     private const val useCreditsKey = "anime_tvdb_use_credits"
     private const val useEpisodesKey = "anime_tvdb_use_episodes"
     private const val useSeasonPostersKey = "anime_tvdb_use_season_posters"
+    private const val languageKey = "anime_tvdb_language"
     private val syncKeys = listOf(enabledKey, apiKeyKey)
 
     private var preferences: SharedPreferences? = null
@@ -57,6 +58,14 @@ actual object AnimeTvdbSettingsStorage {
     actual fun saveUseEpisodes(enabled: Boolean) { saveBoolean(useEpisodesKey, enabled) }
     actual fun loadUseSeasonPosters(): Boolean? = loadBoolean(useSeasonPostersKey)
     actual fun saveUseSeasonPosters(enabled: Boolean) { saveBoolean(useSeasonPostersKey, enabled) }
+    actual fun loadLanguage(): String? =
+        preferences?.getString(ProfileScopedKey.of(languageKey), null)
+    actual fun saveLanguage(language: String) {
+        preferences
+            ?.edit()
+            ?.putString(ProfileScopedKey.of(languageKey), language)
+            ?.apply()
+    }
 
     private fun loadBoolean(key: String): Boolean? =
         preferences?.let { sharedPreferences ->

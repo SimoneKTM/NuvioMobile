@@ -12,12 +12,22 @@ import kotlinx.coroutines.withContext
 internal fun TvdbSettings.toAnimeTvdbSettings(): AnimeTvdbSettings = AnimeTvdbSettings(
     enabled = enabled,
     apiKey = apiKey,
+    language = language,
     useTrailers = useTrailers,
     useArtwork = useArtwork,
     useBasicInfo = useBasicInfo,
     useCredits = useCredits,
     useEpisodes = useEpisodes,
     useSeasonPosters = useSeasonPosters,
+)
+
+private data class TvdbEpisodeEnrichment(
+    val title: String? = null,
+    val overview: String? = null,
+    val thumbnail: String? = null,
+    val seasonPoster: String? = null,
+    val airDate: String? = null,
+    val runtimeMinutes: Int? = null,
 )
 
 object TvdbMetadataService {
@@ -34,17 +44,33 @@ object TvdbMetadataService {
             try {
                 if (TvdbApi.ensureAuthenticated(settings.apiKey) == null) return@withContext meta
                 val seriesId = findSeriesId(meta, fallbackItemId) ?: return@withContext meta
-                val extended = TvdbApi.getSeriesExtended(seriesId) ?: return@withContext meta
+                val apiLanguage = settings.language.takeIf { it.isNotBlank() }?.trim()
+
+                val extended = TvdbApi.getSeriesExtended(seriesId, language = apiLanguage) ?: return@withContext meta
+
+                val needsEpisodes = settings.useEpisodes || settings.useSeasonPosters
+                val episodeMap = if (needsEpisodes && extended.id > 0) {
+                    val seasonPosterMap = if (settings.useSeasonPosters) {
+                        extended.seasons
+                            .filter { it.image != null }
+                            .associate { it.number to it.image }
+                    } else {
+                        emptyMap()
+                    }
+                    fetchEpisodeEnrichment(extended.id, seasonPosterMap, language = apiLanguage)
+                } else {
+                    emptyMap()
+                }
 
                 var enriched = meta
 
-                if (extended.overview != null && extended.overview.isNotBlank()) {
+                if (settings.useBasicInfo && extended.overview != null && extended.overview.isNotBlank()) {
                     if (enriched.description.isNullOrBlank()) {
                         enriched = enriched.copy(description = extended.overview)
                     }
                 }
 
-                if (extended.image != null && extended.image.isNotBlank()) {
+                if (settings.useArtwork && extended.image != null && extended.image.isNotBlank()) {
                     enriched = enriched.copy(background = extended.image.takeIf { enriched.background.isNullOrBlank() } ?: enriched.background)
                 }
 
@@ -62,7 +88,7 @@ object TvdbMetadataService {
                     enriched = enriched.copy(externalRatings = existingRatings)
                 }
 
-                if (extended.trailers.isNotEmpty() && enriched.trailers.isEmpty()) {
+                if (settings.useTrailers && extended.trailers.isNotEmpty() && enriched.trailers.isEmpty()) {
                     val trailers = extended.trailers.mapIndexedNotNull { index, trailer ->
                         trailer.url?.let { url ->
                             MetaTrailer(
@@ -89,6 +115,53 @@ object TvdbMetadataService {
                     enriched = enriched.copy(cast = people)
                 }
 
+                if (episodeMap.isNotEmpty()) {
+                    enriched = enriched.copy(
+                        videos = meta.videos.map { video ->
+                            val key = video.season?.let { season ->
+                                video.episode?.let { episode -> season to episode }
+                            }
+                            val episodeData = key?.let(episodeMap::get)
+                            if (episodeData == null) {
+                                video
+                            } else {
+                                video.copy(
+                                    title = if (settings.useEpisodes) {
+                                        episodeData.title ?: video.title
+                                    } else {
+                                        video.title
+                                    },
+                                    overview = if (settings.useEpisodes) {
+                                        episodeData.overview ?: video.overview
+                                    } else {
+                                        video.overview
+                                    },
+                                    thumbnail = if (settings.useEpisodes) {
+                                        episodeData.thumbnail ?: video.thumbnail
+                                    } else {
+                                        video.thumbnail
+                                    },
+                                    released = if (settings.useEpisodes) {
+                                        episodeData.airDate ?: video.released
+                                    } else {
+                                        video.released
+                                    },
+                                    runtime = if (settings.useEpisodes) {
+                                        episodeData.runtimeMinutes?.toString() ?: video.runtime
+                                    } else {
+                                        video.runtime
+                                    },
+                                    seasonPoster = if (settings.useSeasonPosters) {
+                                        episodeData.seasonPoster ?: video.seasonPoster
+                                    } else {
+                                        video.seasonPoster
+                                    },
+                                )
+                            }
+                        },
+                    )
+                }
+
                 log.d { "TVDB enriched ${meta.name}: seriesId=$seriesId" }
                 enriched
             } catch (e: Exception) {
@@ -96,6 +169,34 @@ object TvdbMetadataService {
                 meta
             }
         }
+    }
+
+    private suspend fun fetchEpisodeEnrichment(
+        seriesId: Int,
+        seasonPosterMap: Map<Int, String?>,
+        language: String? = null,
+    ): Map<Pair<Int, Int>, TvdbEpisodeEnrichment> {
+        val result = mutableMapOf<Pair<Int, Int>, TvdbEpisodeEnrichment>()
+        var page = 0
+        while (true) {
+            val response = TvdbApi.getSeriesEpisodes(seriesId, page, language = language) ?: break
+            for (episode in response.data) {
+                val key = episode.seasonNumber to episode.number
+                if (key !in result) {
+                    result[key] = TvdbEpisodeEnrichment(
+                        title = episode.name?.trim()?.takeIf(String::isNotBlank),
+                        overview = episode.overview?.trim()?.takeIf(String::isNotBlank),
+                        thumbnail = episode.image?.takeIf(String::isNotBlank),
+                        seasonPoster = seasonPosterMap[episode.seasonNumber],
+                        airDate = episode.airDate?.trim()?.takeIf(String::isNotBlank),
+                        runtimeMinutes = episode.runtime,
+                    )
+                }
+            }
+            val next = response.links?.next ?: break
+            page = next
+        }
+        return result
     }
 
     private suspend fun findSeriesId(meta: MetaDetails, fallbackItemId: String): String? {

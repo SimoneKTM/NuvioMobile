@@ -33,6 +33,8 @@ internal actual object AnimeTvdbSettingsStorage {
     actual fun saveUseEpisodes(enabled: Boolean) { store.putBoolean("anime_tvdb_use_episodes", enabled) }
     actual fun loadUseSeasonPosters(): Boolean? = bool("anime_tvdb_use_season_posters")
     actual fun saveUseSeasonPosters(enabled: Boolean) { store.putBoolean("anime_tvdb_use_season_posters", enabled) }
+    actual fun loadLanguage(): String? = store.getString("anime_tvdb_language")
+    actual fun saveLanguage(language: String) { store.putString("anime_tvdb_language", language) }
 
     private fun extractBoolean(element: JsonElement?): Boolean? =
         (element as? JsonPrimitive)?.content?.toBooleanStrictOrNull()

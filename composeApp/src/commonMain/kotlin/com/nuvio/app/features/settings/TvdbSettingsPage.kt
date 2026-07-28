@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,6 +23,7 @@ import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettings
 import com.nuvio.app.features.anime.tvdb.AnimeTvdbSettingsRepository
 import com.nuvio.app.features.tvdb.TvdbSettings
 import com.nuvio.app.features.tvdb.TvdbSettingsRepository
+import com.nuvio.app.features.tvdb.normalizeTvdbLanguage
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_save
 import nuvio.composeapp.generated.resources.settings_tvdb_add_api_key_first
@@ -30,6 +33,7 @@ import nuvio.composeapp.generated.resources.settings_tvdb_api_key_title
 import nuvio.composeapp.generated.resources.settings_tvdb_enable
 import nuvio.composeapp.generated.resources.settings_tvdb_enable_description
 import nuvio.composeapp.generated.resources.settings_tvdb_section_api_key
+import nuvio.composeapp.generated.resources.settings_tvdb_section_localization
 import nuvio.composeapp.generated.resources.settings_tvdb_section_modules
 import nuvio.composeapp.generated.resources.settings_tvdb_section_title
 import nuvio.composeapp.generated.resources.settings_tvdb_module_artwork
@@ -44,6 +48,9 @@ import nuvio.composeapp.generated.resources.settings_tvdb_module_season_posters
 import nuvio.composeapp.generated.resources.settings_tvdb_module_season_posters_description
 import nuvio.composeapp.generated.resources.settings_tvdb_module_trailers
 import nuvio.composeapp.generated.resources.settings_tvdb_module_trailers_description
+import nuvio.composeapp.generated.resources.settings_tvdb_preferred_language
+import nuvio.composeapp.generated.resources.settings_tmdb_preferred_language_description
+import nuvio.composeapp.generated.resources.settings_tmdb_language_code_label
 import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.tvdbSettingsContent(
@@ -87,6 +94,22 @@ internal fun LazyListScope.tvdbSettingsContent(
                     isTablet = isTablet,
                     value = settings.apiKey,
                     onApiKeyCommitted = TvdbSettingsRepository::setApiKey,
+                )
+            }
+        }
+    }
+
+    item {
+        SettingsSection(
+            title = stringResource(Res.string.settings_tvdb_section_localization),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                TvdbLanguageRow(
+                    isTablet = isTablet,
+                    value = settings.language,
+                    enabled = settings.hasApiKey,
+                    onLanguageCommitted = TvdbSettingsRepository::setLanguage,
                 )
             }
         }
@@ -204,6 +227,22 @@ internal fun LazyListScope.animeTvdbSettingsContent(
 
     item {
         SettingsSection(
+            title = stringResource(Res.string.settings_tvdb_section_localization),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                TvdbLanguageRow(
+                    isTablet = isTablet,
+                    value = settings.language,
+                    enabled = settings.hasApiKey,
+                    onLanguageCommitted = AnimeTvdbSettingsRepository::setLanguage,
+                )
+            }
+        }
+    }
+
+    item {
+        SettingsSection(
             title = stringResource(Res.string.settings_tvdb_section_modules),
             isTablet = isTablet,
         ) {
@@ -313,6 +352,70 @@ private fun TvdbApiKeyRow(
                     onApiKeyCommitted(normalizedDraft)
                 },
                 enabled = normalizedDraft != value,
+            ) {
+                Text(stringResource(Res.string.action_save))
+            }
+        }
+    }
+}
+
+@Composable
+private fun TvdbLanguageRow(
+    isTablet: Boolean,
+    value: String,
+    enabled: Boolean,
+    onLanguageCommitted: (String) -> Unit,
+) {
+    val horizontalPadding = if (isTablet) 20.dp else 16.dp
+    val verticalPadding = if (isTablet) 16.dp else 14.dp
+    var draft by rememberSaveable(value) { mutableStateOf(value) }
+    val normalizedDraft = normalizeTvdbLanguage(draft)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = stringResource(Res.string.settings_tvdb_preferred_language),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                text = stringResource(Res.string.settings_tmdb_preferred_language_description),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        OutlinedTextField(
+            value = draft,
+            onValueChange = {
+                draft = it
+            },
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            label = { Text(stringResource(Res.string.settings_tmdb_language_code_label)) },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f),
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                disabledContainerColor = MaterialTheme.colorScheme.surface,
+            ),
+        )
+
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = {
+                    draft = normalizedDraft
+                    onLanguageCommitted(normalizedDraft)
+                },
+                enabled = enabled && normalizedDraft != value,
             ) {
                 Text(stringResource(Res.string.action_save))
             }
