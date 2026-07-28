@@ -60,7 +60,7 @@ object SearchRepository {
     private var discoverSources: List<DiscoverCatalogOption> = emptyList()
     private var lastDiscoverHideUnreleasedContent: Boolean? = null
 
-    fun search(query: String, addons: List<ManagedAddon>) {
+    fun search(query: String, addons: List<ManagedAddon>, animeAddonUrls: Set<String> = emptySet()) {
         CloudStreamRepository.initialize()
         val normalizedQuery = query.trim()
         if (normalizedQuery.isBlank()) {
@@ -86,6 +86,7 @@ object SearchRepository {
         val requests = buildSearchRequests(
             addons = activeAddons,
             query = normalizedQuery,
+            animeAddonUrls = animeAddonUrls,
         )
         if (requests.isEmpty() && cloudPlugins.isEmpty()) {
             activeJob?.cancel()
@@ -354,6 +355,7 @@ object SearchRepository {
     private fun buildSearchRequests(
         addons: List<ManagedAddon>,
         query: String,
+        animeAddonUrls: Set<String> = emptySet(),
     ): List<SearchCatalogRequest> =
         addons.mapNotNull { addon ->
             val manifest = addon.manifest ?: return@mapNotNull null
@@ -369,6 +371,7 @@ object SearchRepository {
                         type = catalog.type,
                         query = query,
                         supportsPagination = catalog.supportsPagination(),
+                        isAnime = addon.manifestUrl in animeAddonUrls,
                     )
                 }
         }
@@ -404,7 +407,7 @@ object SearchRepository {
             catalogId = catalogId,
             search = query,
         ).withUnreleasedFilter()
-        val items = page.items
+        val items = if (isAnime) page.items.map { it.copy(isAnime = true) } else page.items
         require(items.isNotEmpty()) {
             getString(Res.string.search_error_no_results_for_catalog, catalogName)
         }
@@ -552,6 +555,7 @@ private data class SearchCatalogRequest(
     val type: String,
     val query: String,
     val supportsPagination: Boolean,
+    val isAnime: Boolean = false,
 )
 
 private fun AddonCatalog.supportsSearch(): Boolean =

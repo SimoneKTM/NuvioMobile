@@ -111,6 +111,9 @@ fun SearchScreen(
     val allAddons = remember(addonsUiState.addons, animeAddonsUiState.addons) {
         addonsUiState.addons + animeAddonsUiState.addons
     }
+    val animeAddonUrls = remember(animeAddonsUiState.addons) {
+        animeAddonsUiState.addons.map { it.manifestUrl }.toSet()
+    }
     val uiState by SearchRepository.uiState.collectAsStateWithLifecycle()
     val discoverUiState by SearchRepository.discoverUiState.collectAsStateWithLifecycle()
     val homeCatalogSettingsUiState by remember {
@@ -175,6 +178,7 @@ fun SearchScreen(
             SearchRepository.search(
                 query = normalizedQuery,
                 addons = allAddons,
+                animeAddonUrls = animeAddonUrls,
             )
         }
     }
@@ -221,6 +225,7 @@ fun SearchScreen(
                     SearchRepository.search(
                         query = normalizedQuery,
                         addons = allAddons,
+                        animeAddonUrls = animeAddonUrls,
                     )
                 }
             }
@@ -353,6 +358,7 @@ fun SearchScreen(
                                         SearchRepository.search(
                                             query = normalizedQuery,
                                             addons = allAddons,
+                                            animeAddonUrls = animeAddonUrls,
                                         )
                                     }
                                 },
@@ -378,6 +384,7 @@ fun SearchScreen(
                                             SearchRepository.search(
                                                 query = normalizedQuery,
                                                 addons = allAddons,
+                                                animeAddonUrls = animeAddonUrls,
                                             )
                                         }
                                     },

@@ -101,7 +101,8 @@ private suspend fun enrichTitlesFromMeta(
 ): List<MetaPreview> = coroutineScope {
     items.map { item ->
         async {
-            val isAnime = item.type.equals("anime", ignoreCase = true) ||
+            val isAnime = item.isAnime ||
+                item.type.equals("anime", ignoreCase = true) ||
                 item.id.startsWith("anilist:", ignoreCase = true) ||
                 item.id.startsWith("kitsu:", ignoreCase = true) ||
                 item.id.startsWith("mal:", ignoreCase = true)
@@ -109,8 +110,8 @@ private suspend fun enrichTitlesFromMeta(
                 MetaDetailsRepository.fetch(type = type, id = item.id, isAnime = isAnime)
             }
             val metaName = details?.name?.trim()?.takeIf(String::isNotBlank)
-            if (metaName != null && metaName != item.name) {
-                item.copy(name = metaName)
+            if (metaName != null && metaName != item.name || item.isAnime != isAnime) {
+                item.copy(name = metaName ?: item.name, isAnime = isAnime)
             } else {
                 item
             }

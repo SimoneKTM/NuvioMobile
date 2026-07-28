@@ -2108,7 +2108,7 @@ private fun MainAppContent(
                                                     )
                                                 }
                                             } else {
-                                                navController.navigate(DetailRoute(type = meta.type, id = meta.id, title = meta.name))
+                                                navController.navigate(DetailRoute(type = meta.type, id = meta.id, title = meta.name, isAnime = meta.isAnime))
                                             }
                                         },
                                         onPosterLongClick = { meta ->
@@ -3213,7 +3213,7 @@ private fun MainAppContent(
                         target = target,
                         onBack = onBack,
                         onPosterClick = { meta ->
-                            navController.navigate(DetailRoute(type = meta.type, id = meta.id, title = meta.name))
+                            navController.navigate(DetailRoute(type = meta.type, id = meta.id, title = meta.name, isAnime = meta.isAnime))
                         },
                         onPosterLongClick = { meta ->
                             openPosterActions(
@@ -3527,7 +3527,7 @@ private fun MainAppContent(
                         onBack = onBack,
                         onCatalogClick = onCatalogClick,
                         onPosterClick = { meta ->
-                            navController.navigate(DetailRoute(type = meta.type, id = meta.id, title = meta.name))
+                            navController.navigate(DetailRoute(type = meta.type, id = meta.id, title = meta.name, isAnime = meta.isAnime))
                         },
                     )
                 }
