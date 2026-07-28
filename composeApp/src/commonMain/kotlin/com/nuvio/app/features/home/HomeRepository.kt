@@ -3,7 +3,6 @@ package com.nuvio.app.features.home
 import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.enabledAddons
-import com.nuvio.app.features.anime.AnimeAddonRepository
 import com.nuvio.app.features.anilist.AniListAuthRepository
 import com.nuvio.app.features.anilist.AniListLibraryItem
 import com.nuvio.app.features.anilist.AniListLibraryRepository
@@ -323,11 +322,7 @@ object HomeRepository {
             catalogId = catalogId,
             maxItems = HOME_CATALOG_PREVIEW_FETCH_LIMIT,
         )
-        val isCatalogAnime = run {
-            AnimeAddonRepository.initialize()
-            AnimeAddonRepository.uiState.value.addons.any { it.manifestUrl == manifestUrl }
-        }
-        val items = if (isCatalogAnime) page.items.map { it.copy(isAnime = true) } else page.items
+        val items = page.items
         if (items.isEmpty()) {
             return HomeCatalogSection(
                 key = key,
