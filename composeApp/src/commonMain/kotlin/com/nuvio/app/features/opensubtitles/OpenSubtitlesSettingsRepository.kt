@@ -12,6 +12,9 @@ object OpenSubtitlesSettingsRepository {
 
     private var enabled = false
     private var apiKey = ""
+    private var username = ""
+    private var password = ""
+    private var userToken = ""
     private var languages = emptySet<String>()
 
     fun ensureLoaded() {
@@ -50,6 +53,33 @@ object OpenSubtitlesSettingsRepository {
         OpenSubtitlesSettingsStorage.saveApiKey(normalized)
     }
 
+    fun setUsername(value: String) {
+        ensureLoaded()
+        val normalized = value.trim()
+        if (username == normalized) return
+        username = normalized
+        publish()
+        OpenSubtitlesSettingsStorage.saveUsername(normalized)
+    }
+
+    fun setPassword(value: String) {
+        ensureLoaded()
+        val normalized = value.trim()
+        if (password == normalized) return
+        password = normalized
+        publish()
+        OpenSubtitlesSettingsStorage.savePassword(normalized)
+    }
+
+    fun setUserToken(value: String) {
+        ensureLoaded()
+        val normalized = value.trim()
+        if (userToken == normalized) return
+        userToken = normalized
+        publish()
+        OpenSubtitlesSettingsStorage.saveUserToken(normalized)
+    }
+
     fun setLanguages(value: Set<String>) {
         ensureLoaded()
         if (languages == value) return
@@ -62,6 +92,9 @@ object OpenSubtitlesSettingsRepository {
         hasLoaded = true
         enabled = OpenSubtitlesSettingsStorage.loadEnabled() ?: false
         apiKey = OpenSubtitlesSettingsStorage.loadApiKey()?.trim().orEmpty()
+        username = OpenSubtitlesSettingsStorage.loadUsername()?.trim().orEmpty()
+        password = OpenSubtitlesSettingsStorage.loadPassword()?.trim().orEmpty()
+        userToken = OpenSubtitlesSettingsStorage.loadUserToken()?.trim().orEmpty()
         languages = OpenSubtitlesSettingsStorage.loadLanguages() ?: emptySet()
         if (apiKey.isBlank()) enabled = false
         publish()
@@ -71,6 +104,9 @@ object OpenSubtitlesSettingsRepository {
         _uiState.value = OpenSubtitlesSettings(
             enabled = enabled,
             apiKey = apiKey,
+            username = username,
+            password = password,
+            userToken = userToken,
             languages = languages,
         )
     }

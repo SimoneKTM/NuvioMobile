@@ -13,6 +13,8 @@ import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -39,10 +41,16 @@ import nuvio.composeapp.generated.resources.settings_opensubtitles_enable_descri
 import nuvio.composeapp.generated.resources.settings_opensubtitles_get_free_key
 import nuvio.composeapp.generated.resources.settings_opensubtitles_languages
 import nuvio.composeapp.generated.resources.settings_opensubtitles_languages_description
+import nuvio.composeapp.generated.resources.settings_opensubtitles_login_description
+import nuvio.composeapp.generated.resources.settings_opensubtitles_password_label
 import nuvio.composeapp.generated.resources.settings_opensubtitles_personal_api_key
 import nuvio.composeapp.generated.resources.settings_opensubtitles_section_credentials
+import nuvio.composeapp.generated.resources.settings_opensubtitles_section_login
 import nuvio.composeapp.generated.resources.settings_opensubtitles_section_languages
+import nuvio.composeapp.generated.resources.settings_opensubtitles_username_label
 import org.jetbrains.compose.resources.stringResource
+
+private val TokenPlaceholder = "••••••••"
 
 private val SubtitleLanguages = listOf(
     "en" to "English",
@@ -130,6 +138,25 @@ internal fun LazyListScope.openSubtitlesSettingsContent(
 
     item {
         SettingsSection(
+            title = stringResource(Res.string.settings_opensubtitles_section_login),
+            isTablet = isTablet,
+        ) {
+            SettingsGroup(isTablet = isTablet) {
+                OpenSubtitlesLoginRow(
+                    isTablet = isTablet,
+                    username = settings.username,
+                    password = settings.password,
+                    hasToken = settings.userToken.isNotBlank(),
+                    enabled = settings.hasApiKey,
+                    onUsernameChanged = OpenSubtitlesSettingsRepository::setUsername,
+                    onPasswordChanged = OpenSubtitlesSettingsRepository::setPassword,
+                )
+            }
+        }
+    }
+
+    item {
+        SettingsSection(
             title = stringResource(Res.string.settings_opensubtitles_section_languages),
             isTablet = isTablet,
         ) {
@@ -207,6 +234,72 @@ private fun OpenSubtitlesApiKeyRow(
                 )
                 Text(stringResource(Res.string.settings_opensubtitles_get_free_key))
             }
+        }
+    }
+}
+
+@Composable
+private fun OpenSubtitlesLoginRow(
+    isTablet: Boolean,
+    username: String,
+    password: String,
+    hasToken: Boolean,
+    enabled: Boolean,
+    onUsernameChanged: (String) -> Unit,
+    onPasswordChanged: (String) -> Unit,
+) {
+    val horizontalPadding = if (isTablet) 20.dp else 16.dp
+    val verticalPadding = if (isTablet) 16.dp else 14.dp
+    var usernameDraft by rememberSaveable(username) { mutableStateOf(username) }
+    var passwordDraft by rememberSaveable(password) { mutableStateOf(password) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = stringResource(Res.string.settings_opensubtitles_login_description),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        OutlinedTextField(
+            value = usernameDraft,
+            onValueChange = { usernameDraft = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(Res.string.settings_opensubtitles_username_label)) },
+            singleLine = true,
+            enabled = enabled,
+            colors = OutlinedTextFieldDefaults.colors(),
+        )
+
+        SettingsSecretTextField(
+            value = passwordDraft,
+            onValueChange = { passwordDraft = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = stringResource(Res.string.settings_opensubtitles_password_label),
+        )
+
+        Button(
+            onClick = {
+                onUsernameChanged(usernameDraft.trim())
+                onPasswordChanged(passwordDraft.trim())
+            },
+            enabled = enabled && (usernameDraft.trim() != username || passwordDraft.trim() != password),
+        ) {
+            Text(stringResource(Res.string.action_save))
+        }
+
+        if (hasToken) {
+            Text(
+                text = "Token: $TokenPlaceholder",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

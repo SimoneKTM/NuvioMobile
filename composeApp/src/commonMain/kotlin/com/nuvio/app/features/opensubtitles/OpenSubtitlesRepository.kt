@@ -13,6 +13,39 @@ object OpenSubtitlesRepository {
         return settings.enabled && settings.hasApiKey
     }
 
+    fun isDownloadReady(): Boolean {
+        settingsRepository.ensureLoaded()
+        val settings = settingsRepository.snapshot()
+        return settings.enabled && settings.hasApiKey && settings.userToken.isNotBlank()
+    }
+
+    suspend fun ensureLoggedIn(): Boolean {
+        val settings = settingsRepository.snapshot()
+        if (settings.userToken.isNotBlank()) return true
+        if (!settings.hasUserCredentials) {
+            println("[OpenSubtitles] ensureLoggedIn: no username/password configured")
+            InAppLogger.warn("OpenSubtitles", "ensureLoggedIn: no username/password configured")
+            return false
+        }
+        return try {
+            val response = apiClient.login(settings.apiKey, settings.username, settings.password)
+            if (response.token != null) {
+                settingsRepository.setUserToken(response.token)
+                println("[OpenSubtitles] ensureLoggedIn: login successful, token=${response.token.take(20)}...")
+                InAppLogger.info("OpenSubtitles", "ensureLoggedIn: login successful")
+                true
+            } else {
+                println("[OpenSubtitles] ensureLoggedIn: login returned no token, status=${response.status} message=${response.message}")
+                InAppLogger.warn("OpenSubtitles", "ensureLoggedIn: login returned no token: ${response.message}")
+                false
+            }
+        } catch (e: Exception) {
+            println("[OpenSubtitles] ensureLoggedIn: error: ${e.message}")
+            InAppLogger.error("OpenSubtitles", "ensureLoggedIn error: ${e.message}")
+            false
+        }
+    }
+
     suspend fun searchAndPrepareSubtitles(
         imdbId: String?,
         type: String?,
@@ -46,7 +79,7 @@ object OpenSubtitlesRepository {
             languages = preferredLanguages,
         )
 
-        val results = processSearchResponse(response, settings.apiKey, preferredLanguages)
+        val results = processSearchResponse(response, settings.apiKey, settings.userToken, preferredLanguages)
         println("[OpenSubtitles] searchAndPrepareSubtitles: returning ${results.size} subtitles")
         InAppLogger.info("OpenSubtitles", "searchAndPrepareSubtitles: returning ${results.size} subtitles")
         return results
@@ -74,17 +107,24 @@ object OpenSubtitlesRepository {
             languages = preferredLanguages,
         )
 
-        return processSearchResponse(response, settings.apiKey, preferredLanguages)
+        return processSearchResponse(response, settings.apiKey, settings.userToken, preferredLanguages)
     }
 
     private suspend fun processSearchResponse(
         response: OpenSubtitlesSearchResponse,
         apiKey: String,
+        userToken: String,
         preferredLanguages: List<String>,
     ): List<StreamSubtitle> {
         if (response.data.isEmpty()) {
             println("[OpenSubtitles] processSearchResponse: no data in response")
             InAppLogger.debug("OpenSubtitles", "processSearchResponse: no data in response")
+            return emptyList()
+        }
+
+        if (userToken.isBlank()) {
+            println("[OpenSubtitles] processSearchResponse: no user token, cannot download")
+            InAppLogger.warn("OpenSubtitles", "processSearchResponse: no user token, cannot download")
             return emptyList()
         }
 
@@ -119,7 +159,7 @@ object OpenSubtitlesRepository {
             val fileId = file.fileId ?: continue
 
             try {
-                val downloadResponse = apiClient.downloadSubtitle(apiKey, fileId)
+                val downloadResponse = apiClient.downloadSubtitle(apiKey, userToken, fileId)
                 val downloadUrl = downloadResponse.link
                 if (downloadUrl == null) {
                     println("[OpenSubtitles] processSearchResponse: download returned no link for lang=$langCode fileId=$fileId")
@@ -221,10 +261,21 @@ object OpenSubtitlesRepository {
             InAppLogger.warn("OpenSubtitles", "downloadItem: no API key")
             return null
         }
+        val token = settings.userToken
+        if (token.isBlank()) {
+            println("[OpenSubtitles] downloadItem: no user token, trying login...")
+            InAppLogger.warn("OpenSubtitles", "downloadItem: no user token, trying login...")
+            if (!ensureLoggedIn()) {
+                println("[OpenSubtitles] downloadItem: login failed, cannot download")
+                InAppLogger.error("OpenSubtitles", "downloadItem: login failed, cannot download")
+                return null
+            }
+        }
+        val currentToken = settingsRepository.snapshot().userToken
         println("[OpenSubtitles] downloadItem: fileId=${item.fileId} language=${item.language}")
         InAppLogger.info("OpenSubtitles", "downloadItem: fileId=${item.fileId} language=${item.language}")
         return try {
-            val response = apiClient.downloadSubtitle(settings.apiKey, item.fileId)
+            val response = apiClient.downloadSubtitle(settings.apiKey, currentToken, item.fileId)
             val link = response.link
             if (link != null) {
                 println("[OpenSubtitles] downloadItem: success, link=${link.take(60)}...")

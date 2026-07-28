@@ -15,8 +15,11 @@ import platform.Foundation.NSUserDefaults
 actual object OpenSubtitlesSettingsStorage {
     private const val enabledKey = "opensubtitles_enabled"
     private const val apiKeyKey = "opensubtitles_api_key"
+    private const val usernameKey = "opensubtitles_username"
+    private const val passwordKey = "opensubtitles_password"
+    private const val userTokenKey = "opensubtitles_user_token"
     private const val languagesKey = "opensubtitles_languages"
-    private val syncKeys = listOf(enabledKey, apiKeyKey, languagesKey)
+    private val syncKeys = listOf(enabledKey, apiKeyKey, usernameKey, passwordKey, userTokenKey, languagesKey)
 
     actual fun loadEnabled(): Boolean? {
         val defaults = NSUserDefaults.standardUserDefaults
@@ -35,6 +38,27 @@ actual object OpenSubtitlesSettingsStorage {
         NSUserDefaults.standardUserDefaults.setObject(apiKey, forKey = ProfileScopedKey.of(apiKeyKey))
     }
 
+    actual fun loadUsername(): String? =
+        NSUserDefaults.standardUserDefaults.stringForKey(ProfileScopedKey.of(usernameKey))
+
+    actual fun saveUsername(username: String) {
+        NSUserDefaults.standardUserDefaults.setObject(username, forKey = ProfileScopedKey.of(usernameKey))
+    }
+
+    actual fun loadPassword(): String? =
+        NSUserDefaults.standardUserDefaults.stringForKey(ProfileScopedKey.of(passwordKey))
+
+    actual fun savePassword(password: String) {
+        NSUserDefaults.standardUserDefaults.setObject(password, forKey = ProfileScopedKey.of(passwordKey))
+    }
+
+    actual fun loadUserToken(): String? =
+        NSUserDefaults.standardUserDefaults.stringForKey(ProfileScopedKey.of(userTokenKey))
+
+    actual fun saveUserToken(token: String) {
+        NSUserDefaults.standardUserDefaults.setObject(token, forKey = ProfileScopedKey.of(userTokenKey))
+    }
+
     actual fun loadLanguages(): Set<String>? {
         val raw = NSUserDefaults.standardUserDefaults.stringForKey(ProfileScopedKey.of(languagesKey)) ?: return null
         if (raw.isBlank()) return emptySet()
@@ -49,6 +73,9 @@ actual object OpenSubtitlesSettingsStorage {
     actual fun exportToSyncPayload(): JsonObject = buildJsonObject {
         loadEnabled()?.let { put(enabledKey, encodeSyncBoolean(it)) }
         loadApiKey()?.let { put(apiKeyKey, encodeSyncString(it)) }
+        loadUsername()?.let { put(usernameKey, encodeSyncString(it)) }
+        loadPassword()?.let { put(passwordKey, encodeSyncString(it)) }
+        loadUserToken()?.let { put(userTokenKey, encodeSyncString(it)) }
         loadLanguages()?.let { put(languagesKey, encodeSyncStringSet(it)) }
     }
 
@@ -58,6 +85,9 @@ actual object OpenSubtitlesSettingsStorage {
 
         payload.decodeSyncBoolean(enabledKey)?.let(::saveEnabled)
         payload.decodeSyncString(apiKeyKey)?.let(::saveApiKey)
+        payload.decodeSyncString(usernameKey)?.let(::saveUsername)
+        payload.decodeSyncString(passwordKey)?.let(::savePassword)
+        payload.decodeSyncString(userTokenKey)?.let(::saveUserToken)
         payload.decodeSyncStringSet(languagesKey)?.let(::saveLanguages)
     }
 }

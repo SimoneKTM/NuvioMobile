@@ -100,6 +100,13 @@ data class OpenSubtitlesDownloadResponse(
     val remaining: Int? = null,
 )
 
+@Serializable
+data class OpenSubtitlesLoginResponse(
+    val token: String? = null,
+    val status: Int? = null,
+    val message: String? = null,
+)
+
 data class OpenSubtitlesSubtitleItem(
     val fileId: Int,
     val language: String,

@@ -587,6 +587,10 @@
     <string name="settings_opensubtitles_get_free_key">Ottieni chiave gratuita</string>
     <string name="settings_opensubtitles_languages">Lingue preferite</string>
     <string name="settings_opensubtitles_languages_description">Seleziona le lingue per la ricerca automatica dei sottotitoli</string>
+    <string name="settings_opensubtitles_section_login">Accesso</string>
+    <string name="settings_opensubtitles_login_description">Inserisci il tuo username e password di OpenSubtitles.com per abilitare il download dei sottotitoli (la ricerca funziona solo con la chiave API)</string>
+    <string name="settings_opensubtitles_username_label">Username</string>
+    <string name="settings_opensubtitles_password_label">Password</string>
     <string name="settings_subdl_attribution_title">SubDL</string>
     <string name="settings_subdl_attribution_body">Nuvio può utilizzare SubDL per la scoperta e la gestione dei sottotitoli. SubDL è un servizio di SubDL.com. Nuvio non è affiliato o approvato da SubDL.</string>
     <string name="compose_trakt_list_picker_loading">Caricamento delle tue liste Trakt…</string>

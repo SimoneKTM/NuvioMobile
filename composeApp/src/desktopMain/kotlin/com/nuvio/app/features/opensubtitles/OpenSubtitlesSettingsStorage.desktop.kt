@@ -15,8 +15,11 @@ actual object OpenSubtitlesSettingsStorage {
     private val store = DesktopStorage.store("nuvio_opensubtitles_settings")
     private const val enabledKey = "opensubtitles_enabled"
     private const val apiKeyKey = "opensubtitles_api_key"
+    private const val usernameKey = "opensubtitles_username"
+    private const val passwordKey = "opensubtitles_password"
+    private const val userTokenKey = "opensubtitles_user_token"
     private const val languagesKey = "opensubtitles_languages"
-    private val syncKeys = listOf(enabledKey, apiKeyKey, languagesKey)
+    private val syncKeys = listOf(enabledKey, apiKeyKey, usernameKey, passwordKey, userTokenKey, languagesKey)
 
     actual fun loadEnabled(): Boolean? =
         if (store.contains(enabledKey)) store.getBoolean(enabledKey) else null
@@ -26,6 +29,18 @@ actual object OpenSubtitlesSettingsStorage {
     actual fun loadApiKey(): String? = store.getString(apiKeyKey)
 
     actual fun saveApiKey(apiKey: String) { store.putString(apiKeyKey, apiKey) }
+
+    actual fun loadUsername(): String? = store.getString(usernameKey)
+
+    actual fun saveUsername(username: String) { store.putString(usernameKey, username) }
+
+    actual fun loadPassword(): String? = store.getString(passwordKey)
+
+    actual fun savePassword(password: String) { store.putString(passwordKey, password) }
+
+    actual fun loadUserToken(): String? = store.getString(userTokenKey)
+
+    actual fun saveUserToken(token: String) { store.putString(userTokenKey, token) }
 
     actual fun loadLanguages(): Set<String>? {
         val raw = store.getString(languagesKey) ?: return null
@@ -41,6 +56,9 @@ actual object OpenSubtitlesSettingsStorage {
     actual fun exportToSyncPayload(): JsonObject = buildJsonObject {
         loadEnabled()?.let { put(enabledKey, encodeSyncBoolean(it)) }
         loadApiKey()?.let { put(apiKeyKey, encodeSyncString(it)) }
+        loadUsername()?.let { put(usernameKey, encodeSyncString(it)) }
+        loadPassword()?.let { put(passwordKey, encodeSyncString(it)) }
+        loadUserToken()?.let { put(userTokenKey, encodeSyncString(it)) }
         loadLanguages()?.let { put(languagesKey, encodeSyncStringSet(it)) }
     }
 
@@ -49,6 +67,9 @@ actual object OpenSubtitlesSettingsStorage {
 
         payload.decodeSyncBoolean(enabledKey)?.let(::saveEnabled)
         payload.decodeSyncString(apiKeyKey)?.let(::saveApiKey)
+        payload.decodeSyncString(usernameKey)?.let(::saveUsername)
+        payload.decodeSyncString(passwordKey)?.let(::savePassword)
+        payload.decodeSyncString(userTokenKey)?.let(::saveUserToken)
         payload.decodeSyncStringSet(languagesKey)?.let(::saveLanguages)
     }
 }

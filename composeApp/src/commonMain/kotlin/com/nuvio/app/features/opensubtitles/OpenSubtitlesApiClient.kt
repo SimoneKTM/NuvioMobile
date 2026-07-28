@@ -9,11 +9,31 @@ object OpenSubtitlesApiClient {
     private const val BASE_URL = "https://api.opensubtitles.com/api/v1"
     private val json = Json { ignoreUnknownKeys = true }
 
-    private fun authHeaders(apiKey: String): Map<String, String> = mapOf(
-        "Api-Key" to apiKey,
-        "User-Agent" to "Nuvio v1.0",
-        "Accept" to "application/json",
-    )
+    private fun authHeaders(apiKey: String, userToken: String? = null): Map<String, String> {
+        val headers = mutableMapOf(
+            "Api-Key" to apiKey,
+            "User-Agent" to "Nuvio v1.0",
+            "Accept" to "application/json",
+        )
+        if (!userToken.isNullOrBlank()) {
+            headers["Authorization"] = "Bearer $userToken"
+        }
+        return headers
+    }
+
+    suspend fun login(
+        apiKey: String,
+        username: String,
+        password: String,
+    ): OpenSubtitlesLoginResponse {
+        val url = "$BASE_URL/login"
+        val body = """{"username":"$username","password":"$password"}"""
+        val responseBody = httpPostJsonWithHeaders(url, body, authHeaders(apiKey))
+        val result = json.decodeFromString<OpenSubtitlesLoginResponse>(responseBody)
+        println("[OpenSubtitles] login: token=${result.token != null} status=${result.status}")
+        InAppLogger.info("OpenSubtitles", "login: token=${result.token != null} status=${result.status}")
+        return result
+    }
 
     suspend fun searchSubtitles(
         apiKey: String,
@@ -72,11 +92,12 @@ object OpenSubtitlesApiClient {
 
     suspend fun downloadSubtitle(
         apiKey: String,
+        userToken: String,
         fileId: Int,
     ): OpenSubtitlesDownloadResponse {
         val url = "$BASE_URL/download"
         val body = """{"file_id":$fileId}"""
-        val responseBody = httpPostJsonWithHeaders(url, body, authHeaders(apiKey))
+        val responseBody = httpPostJsonWithHeaders(url, body, authHeaders(apiKey, userToken))
         val result = json.decodeFromString<OpenSubtitlesDownloadResponse>(responseBody)
         println("[OpenSubtitles] downloadSubtitle: fileId=$fileId → link=${result.link != null} remaining=${result.remaining}")
         InAppLogger.info("OpenSubtitles", "downloadSubtitle: fileId=$fileId → link=${result.link != null} remaining=${result.remaining}")
