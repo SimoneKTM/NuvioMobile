@@ -361,11 +361,16 @@ object FolderDetailRepository {
                     )
                 }.withUnreleasedFilter()
             }.onSuccess { page ->
+                val animeManifestUrls = AnimeAddonRepository.uiState.value.addons
+                    .filter { it.enabled }
+                    .mapTo(mutableSetOf()) { it.manifestUrl }
+                val isAnimeCatalog = currentTab.manifestUrl in animeManifestUrls
+                val items = if (isAnimeCatalog) page.items.map { it.copy(isAnime = true) } else page.items
                 updateTab(index) { tab ->
                     val mergedItems = if (reset) {
-                        page.items
+                        items
                     } else {
-                        mergeCatalogItems(tab.items, page.items)
+                        mergeCatalogItems(tab.items, items)
                     }
                     val supportsPagination = tab.supportsPagination || page.rawItemCount >= CATALOG_PAGE_SIZE
                     val loadedNewItems = reset || mergedItems.size > tab.items.size

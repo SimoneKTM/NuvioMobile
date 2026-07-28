@@ -3,6 +3,7 @@ package com.nuvio.app.features.home
 import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.enabledAddons
+import com.nuvio.app.features.anime.AnimeAddonRepository
 import com.nuvio.app.features.anilist.AniListAuthRepository
 import com.nuvio.app.features.anilist.AniListLibraryItem
 import com.nuvio.app.features.anilist.AniListLibraryRepository
@@ -468,22 +469,39 @@ object HomeRepository {
             .take(HOME_COLLECTION_HERO_SOURCE_LIMIT)
 
     private suspend fun CollectionSource.resolveCollectionHeroItems(addons: List<ManagedAddon>): List<MetaPreview> {
+        val manifestUrl: String?
+        val type: String
+        val catalogId: String
+        val genre: String?
         val page = when {
-            isTmdb -> TmdbCollectionSourceResolver.resolve(source = this, page = 1)
-            isTrakt -> TraktPublicListSourceResolver.resolve(source = this, page = 1)
+            isTmdb -> {
+                manifestUrl = null; type = ""; catalogId = ""; genre = null
+                TmdbCollectionSourceResolver.resolve(source = this, page = 1)
+            }
+            isTrakt -> {
+                manifestUrl = null; type = ""; catalogId = ""; genre = null
+                TraktPublicListSourceResolver.resolve(source = this, page = 1)
+            }
             else -> {
                 val catalogSource = addonCatalogSource() ?: return emptyList()
                 val resolvedCatalog = addons.findCollectionCatalog(catalogSource) ?: return emptyList()
+                manifestUrl = resolvedCatalog.addon.manifestUrl
+                type = catalogSource.type
+                catalogId = catalogSource.catalogId
+                genre = catalogSource.genre
                 fetchCatalogPage(
-                    manifestUrl = resolvedCatalog.addon.manifestUrl,
-                    type = catalogSource.type,
-                    catalogId = catalogSource.catalogId,
-                    genre = catalogSource.genre,
+                    manifestUrl = manifestUrl,
+                    type = type,
+                    catalogId = catalogId,
+                    genre = genre,
                     maxItems = HOME_COLLECTION_HERO_SOURCE_ITEM_LIMIT,
                 )
             }
         }
-        val items = page.items
+        val animeManifestUrls = AnimeAddonRepository.uiState.value.addons
+            .filter { it.enabled }
+            .mapTo(mutableSetOf()) { it.manifestUrl }
+        val items = if (manifestUrl in animeManifestUrls) page.items.map { it.copy(isAnime = true) } else page.items
         return if (HomeCatalogSettingsRepository.snapshot().hideUnreleasedContent) {
             items.filterReleasedItems(CurrentDateProvider.todayIsoDate())
         } else {
