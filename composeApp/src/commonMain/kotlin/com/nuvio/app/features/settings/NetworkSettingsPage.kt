@@ -1,5 +1,6 @@
 package com.nuvio.app.features.settings
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -52,10 +53,8 @@ internal fun LazyListScope.networkSettingsContent(
         val overrideForBoth by repository.overrideForBoth.collectAsState()
         val proxyEnabled by repository.proxyEnabled.collectAsState()
         val proxyUrl by repository.proxyUrl.collectAsState()
-        val proxyEmail by repository.proxyEmail.collectAsState()
         val proxyPassword by repository.proxyPassword.collectAsState()
         var proxyUrlDraft by remember(proxyUrl) { mutableStateOf(proxyUrl) }
-        var proxyEmailDraft by remember(proxyEmail) { mutableStateOf(proxyEmail) }
         var proxyPasswordDraft by remember(proxyPassword) { mutableStateOf(proxyPassword) }
         var userAgentDraft by remember(currentUserAgent) { mutableStateOf(currentUserAgent) }
 
@@ -226,79 +225,23 @@ internal fun LazyListScope.networkSettingsContent(
                             ),
                         )
 
-                        Row(
+                        OutlinedTextField(
+                            value = proxyUrlDraft,
+                            onValueChange = { proxyUrlDraft = it },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(
-                                    horizontal = if (isTablet) 20.dp else 16.dp,
-                                    vertical = 4.dp,
-                                ),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            OutlinedTextField(
-                                value = proxyUrlDraft,
-                                onValueChange = { proxyUrlDraft = it },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true,
-                                placeholder = {
-                                    Text("https://tuo-server.hf.space")
-                                },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = tokens.colors.borderFocus.copy(alpha = tokens.opacity.strong),
-                                    unfocusedBorderColor = tokens.colors.borderDefault.copy(alpha = tokens.opacity.medium),
-                                    focusedContainerColor = tokens.colors.surface,
-                                    unfocusedContainerColor = tokens.colors.surface,
-                                ),
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            NuvioActionLabel(
-                                text = "Salva",
-                                onClick = { repository.setProxyUrl(proxyUrlDraft) },
-                            )
-                        }
-
-                        SettingsGroupDivider(isTablet = isTablet)
-
-                        Text(
-                            text = "Email",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = tokens.colors.textMuted,
-                            modifier = Modifier.padding(
-                                horizontal = if (isTablet) 20.dp else 16.dp,
-                                vertical = 8.dp,
+                                .padding(horizontal = if (isTablet) 20.dp else 16.dp),
+                            singleLine = true,
+                            placeholder = {
+                                Text("https://tuo-server.hf.space")
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = tokens.colors.borderFocus.copy(alpha = tokens.opacity.strong),
+                                unfocusedBorderColor = tokens.colors.borderDefault.copy(alpha = tokens.opacity.medium),
+                                focusedContainerColor = tokens.colors.surface,
+                                unfocusedContainerColor = tokens.colors.surface,
                             ),
                         )
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    horizontal = if (isTablet) 20.dp else 16.dp,
-                                    vertical = 4.dp,
-                                ),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            OutlinedTextField(
-                                value = proxyEmailDraft,
-                                onValueChange = { proxyEmailDraft = it },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true,
-                                placeholder = {
-                                    Text("email@esempio.com")
-                                },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = tokens.colors.borderFocus.copy(alpha = tokens.opacity.strong),
-                                    unfocusedBorderColor = tokens.colors.borderDefault.copy(alpha = tokens.opacity.medium),
-                                    focusedContainerColor = tokens.colors.surface,
-                                    unfocusedContainerColor = tokens.colors.surface,
-                                ),
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            NuvioActionLabel(
-                                text = "Salva",
-                                onClick = { repository.setProxyEmail(proxyEmailDraft) },
-                            )
-                        }
 
                         SettingsGroupDivider(isTablet = isTablet)
 
@@ -312,34 +255,38 @@ internal fun LazyListScope.networkSettingsContent(
                             ),
                         )
 
+                        OutlinedTextField(
+                            value = proxyPasswordDraft,
+                            onValueChange = { proxyPasswordDraft = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = if (isTablet) 20.dp else 16.dp),
+                            singleLine = true,
+                            placeholder = {
+                                Text("la-tua-password")
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = tokens.colors.borderFocus.copy(alpha = tokens.opacity.strong),
+                                unfocusedBorderColor = tokens.colors.borderDefault.copy(alpha = tokens.opacity.medium),
+                                focusedContainerColor = tokens.colors.surface,
+                                unfocusedContainerColor = tokens.colors.surface,
+                            ),
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(
-                                    horizontal = if (isTablet) 20.dp else 16.dp,
-                                    vertical = 4.dp,
-                                ),
-                            verticalAlignment = Alignment.CenterVertically,
+                                .padding(horizontal = if (isTablet) 20.dp else 16.dp),
+                            horizontalArrangement = Arrangement.End,
                         ) {
-                            OutlinedTextField(
-                                value = proxyPasswordDraft,
-                                onValueChange = { proxyPasswordDraft = it },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true,
-                                placeholder = {
-                                    Text("la-tua-password")
-                                },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = tokens.colors.borderFocus.copy(alpha = tokens.opacity.strong),
-                                    unfocusedBorderColor = tokens.colors.borderDefault.copy(alpha = tokens.opacity.medium),
-                                    focusedContainerColor = tokens.colors.surface,
-                                    unfocusedContainerColor = tokens.colors.surface,
-                                ),
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
                             NuvioActionLabel(
                                 text = "Salva",
-                                onClick = { repository.setProxyPassword(proxyPasswordDraft) },
+                                onClick = {
+                                    repository.setProxyUrl(proxyUrlDraft)
+                                    repository.setProxyPassword(proxyPasswordDraft)
+                                },
                             )
                         }
                     }

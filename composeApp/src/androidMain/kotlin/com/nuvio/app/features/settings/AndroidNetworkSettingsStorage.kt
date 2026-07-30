@@ -12,7 +12,6 @@ class AndroidNetworkSettingsStorage(context: Context) : NetworkSettingsStorage {
     private val OVERRIDE_FOR_BOTH_KEY = "override_for_both"
     private val PROXY_ENABLED_KEY = "proxy_enabled"
     private val PROXY_URL_KEY = "proxy_url"
-    private val PROXY_EMAIL_KEY = "proxy_email"
     private val PROXY_PASSWORD_KEY = "proxy_password"
 
     override fun getDnsProvider(): String? =
@@ -62,13 +61,6 @@ class AndroidNetworkSettingsStorage(context: Context) : NetworkSettingsStorage {
 
     override fun setProxyUrl(url: String) {
         prefs.edit().putString(PROXY_URL_KEY, url).apply()
-    }
-
-    override fun getProxyEmail(): String? =
-        prefs.getString(PROXY_EMAIL_KEY, null)
-
-    override fun setProxyEmail(email: String) {
-        prefs.edit().putString(PROXY_EMAIL_KEY, email).apply()
     }
 
     override fun getProxyPassword(): String? =

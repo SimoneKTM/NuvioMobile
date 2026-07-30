@@ -30,8 +30,6 @@ interface NetworkSettingsStorage {
     fun setProxyEnabled(enabled: Boolean)
     fun getProxyUrl(): String?
     fun setProxyUrl(url: String)
-    fun getProxyEmail(): String?
-    fun setProxyEmail(email: String)
     fun getProxyPassword(): String?
     fun setProxyPassword(password: String)
 }
@@ -64,9 +62,6 @@ class NetworkSettingsRepository(
 
     private val _proxyUrl = MutableStateFlow(storage.getProxyUrl() ?: "")
     val proxyUrl: StateFlow<String> = _proxyUrl.asStateFlow()
-
-    private val _proxyEmail = MutableStateFlow(storage.getProxyEmail() ?: "")
-    val proxyEmail: StateFlow<String> = _proxyEmail.asStateFlow()
 
     private val _proxyPassword = MutableStateFlow(storage.getProxyPassword() ?: "")
     val proxyPassword: StateFlow<String> = _proxyPassword.asStateFlow()
@@ -122,11 +117,6 @@ class NetworkSettingsRepository(
     fun setProxyUrl(url: String) {
         storage.setProxyUrl(url)
         _proxyUrl.value = url
-    }
-
-    fun setProxyEmail(email: String) {
-        storage.setProxyEmail(email)
-        _proxyEmail.value = email
     }
 
     fun setProxyPassword(password: String) {

@@ -129,11 +129,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                 commitHorizontalSeekState = gestureCallbacks.commitHorizontalSeek,
             ),
     ) {
-        val netRepo = com.nuvio.app.features.settings.globalNetworkSettingsRepository
-        val proxyUrl = if (netRepo != null && netRepo.proxyEnabled.value && activeSourceUrl != null) {
-            netRepo.buildProxyUrl(activeSourceUrl!!)
-        } else null
-        val playerSurfaceSourceUrl = if (isP2pPlaybackActive) p2pResolvedSourceUrl else proxyUrl ?: activeSourceUrl
+        val playerSurfaceSourceUrl = if (isP2pPlaybackActive) p2pResolvedSourceUrl else activeSourceUrl
         if (playerSurfaceSourceUrl != null) {
             val episodeText = if (activeSeasonNumber != null && activeEpisodeNumber != null) {
                 "S${activeSeasonNumber} E${activeEpisodeNumber}"
