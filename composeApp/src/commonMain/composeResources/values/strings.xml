@@ -464,9 +464,7 @@
     <string name="compose_settings_page_anime_addons">Anime Addons</string>
     <string name="compose_settings_page_anime_plugins">Anime Plugins</string>
     <string name="compose_settings_page_anime_layout">Anime Layout</string>
-    <string name="compose_settings_page_anime_web_scraper">Anime Web Scraper</string>
     <string name="compose_settings_page_anime_advanced">Anime Advanced</string>
-    <string name="compose_settings_page_veezie_channels">Veezie Channels</string>
     <string name="compose_settings_page_local_artwork">Local Artwork</string>
     <string name="compose_settings_root_about_section">ABOUT</string>
     <string name="compose_settings_root_account_description">Account and sync status</string>
@@ -794,7 +792,6 @@
     <string name="settings_content_discovery_meta_screen_description">Settings for the detail and episode screens.</string>
     <string name="settings_content_discovery_collections_description">Create custom catalog groupings with folders shown on Home.</string>
     <string name="settings_content_discovery_anime_profile_description">Configure anime profile settings.</string>
-    <string name="settings_content_discovery_veezie_channels_description">Manage Veezie.st channel sources.</string>
     <string name="settings_integrations_section_title">Integrations</string>
     <string name="settings_integrations_tmdb_description">Metadata enrichment controls</string>
     <string name="settings_integrations_mdblist_description">External ratings providers</string>

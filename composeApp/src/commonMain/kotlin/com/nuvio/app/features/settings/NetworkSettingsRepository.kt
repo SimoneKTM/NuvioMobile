@@ -26,12 +26,6 @@ interface NetworkSettingsStorage {
     fun setOverrideForPlugins(enabled: Boolean)
     fun getOverrideForBoth(): Boolean
     fun setOverrideForBoth(enabled: Boolean)
-    fun getProxyEnabled(): Boolean
-    fun setProxyEnabled(enabled: Boolean)
-    fun getProxyUrl(): String?
-    fun setProxyUrl(url: String)
-    fun getProxyPassword(): String?
-    fun setProxyPassword(password: String)
 }
 
 class NetworkSettingsRepository(
@@ -56,15 +50,6 @@ class NetworkSettingsRepository(
 
     private val _overrideForBoth = MutableStateFlow(storage.getOverrideForBoth())
     val overrideForBoth: StateFlow<Boolean> = _overrideForBoth.asStateFlow()
-
-    private val _proxyEnabled = MutableStateFlow(storage.getProxyEnabled())
-    val proxyEnabled: StateFlow<Boolean> = _proxyEnabled.asStateFlow()
-
-    private val _proxyUrl = MutableStateFlow(storage.getProxyUrl() ?: "")
-    val proxyUrl: StateFlow<String> = _proxyUrl.asStateFlow()
-
-    private val _proxyPassword = MutableStateFlow(storage.getProxyPassword() ?: "")
-    val proxyPassword: StateFlow<String> = _proxyPassword.asStateFlow()
 
     fun setDnsProvider(provider: DnsProvider) {
         storage.setDnsProvider(provider.name)
@@ -107,68 +92,6 @@ class NetworkSettingsRepository(
         }
         storage.setOverrideForBoth(enabled)
         _overrideForBoth.value = enabled
-    }
-
-    fun setProxyEnabled(enabled: Boolean) {
-        storage.setProxyEnabled(enabled)
-        _proxyEnabled.value = enabled
-    }
-
-    fun setProxyUrl(url: String) {
-        storage.setProxyUrl(url)
-        _proxyUrl.value = url
-    }
-
-    fun setProxyPassword(password: String) {
-        storage.setProxyPassword(password)
-        _proxyPassword.value = password
-    }
-
-    fun buildProxyUrl(target: String): String {
-        val base = _proxyUrl.value.trimEnd('/')
-        val encoded = encodeUrlComponent(target)
-        val password = _proxyPassword.value
-        return if (password.isBlank()) {
-            "$base/proxy/manifest.m3u8?url=$encoded"
-        } else {
-            "$base/proxy/manifest.m3u8?url=$encoded&api_password=$password"
-        }
-    }
-
-    private fun encodeUrlComponent(s: String): String {
-        val sb = StringBuilder()
-        for (ch in s) {
-            when (ch) {
-                in 'a'..'z', in 'A'..'Z', in '0'..'9', '-', '_', '.', '~' -> sb.append(ch)
-                ' ' -> sb.append("%20")
-                '/' -> sb.append("%2F")
-                ':' -> sb.append("%3A")
-                '?' -> sb.append("%3F")
-                '&' -> sb.append("%26")
-                '=' -> sb.append("%3D")
-                '#' -> sb.append("%23")
-                '@' -> sb.append("%40")
-                '%' -> sb.append("%25")
-                '+' -> sb.append("%2B")
-                ',' -> sb.append("%2C")
-                ';' -> sb.append("%3B")
-                '\'' -> sb.append("%27")
-                '"' -> sb.append("%22")
-                '<' -> sb.append("%3C")
-                '>' -> sb.append("%3E")
-                '{' -> sb.append("%7B")
-                '}' -> sb.append("%7D")
-                '|' -> sb.append("%7C")
-                '\\' -> sb.append("%5C")
-                '^' -> sb.append("%5E")
-                '`' -> sb.append("%60")
-                else -> {
-                    val bytes = ch.toString().encodeToByteArray()
-                    for (b in bytes) sb.append("%${b.toUByte().toString(16).uppercase().padStart(2, '0')}")
-                }
-            }
-        }
-        return sb.toString()
     }
 }
 

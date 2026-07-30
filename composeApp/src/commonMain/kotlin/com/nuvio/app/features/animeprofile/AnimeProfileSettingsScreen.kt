@@ -101,12 +101,6 @@ fun AnimeProfileSettingsPageContent(
                         "Attiva i provider dedicati per iniziare a visualizzare i contenuti.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Spacer(Modifier.height(24.dp))
-                    Button(onClick = { /* Configura EasyProxy */ }) {
-                        Icon(Icons.Rounded.VpnKey, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Imposta EasyProxy")
-                    }
                 }
             } else {
                 AnimePluginsListContent(

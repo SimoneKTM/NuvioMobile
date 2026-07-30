@@ -247,11 +247,6 @@ internal enum class SettingsPage(
         category = SettingsCategory.Anime,
         parentPage = AnimeRoot,
     ),
-    AnimeWebScraper(
-        titleRes = Res.string.compose_settings_page_anime_profile,
-        category = SettingsCategory.Anime,
-        parentPage = AnimeRoot,
-    ),
     AnimeContentDiscovery(
         titleRes = Res.string.compose_settings_page_content_discovery,
         category = SettingsCategory.Anime,

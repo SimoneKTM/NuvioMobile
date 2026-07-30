@@ -155,7 +155,6 @@ fun SettingsScreen(
     onCollectionsClick: () -> Unit = {},
     onAnimeProfileClick: () -> Unit = {},
     onAnimeRootClick: () -> Unit = {},
-    onAnimeWebScraperClick: () -> Unit = {},
     onAnimeAdvancedClick: () -> Unit = {},
     onAnimeCollectionsClick: () -> Unit = {},
     onTop10CatalogClick: () -> Unit = {},
@@ -1068,7 +1067,6 @@ private fun MobileSettingsScreen(
                 )
                 SettingsPage.AnimeAddons -> animeAddonsSettingsContent()
                 SettingsPage.AnimePlugins -> if (AppFeaturePolicy.pluginsEnabled) pluginsSettingsContent() else addonsSettingsContent()
-                SettingsPage.AnimeWebScraper -> animeWebScraperSettingsContent(isTablet = false)
                 SettingsPage.AnimeAdvanced -> animeAdvancedSettingsContent(isTablet = false)
                 SettingsPage.AnimeHomescreen -> animeHomescreenSettingsContent(
                     isTablet = false,
@@ -1682,7 +1680,6 @@ private fun TabletSettingsScreen(
                 )
                 SettingsPage.AnimeAddons -> animeAddonsSettingsContent()
                     SettingsPage.AnimePlugins -> if (AppFeaturePolicy.pluginsEnabled) pluginsSettingsContent() else addonsSettingsContent()
-                    SettingsPage.AnimeWebScraper -> animeWebScraperSettingsContent(isTablet = true)
                     SettingsPage.AnimeAdvanced -> animeAdvancedSettingsContent(isTablet = true)
                     SettingsPage.AnimeHomescreen -> animeHomescreenSettingsContent(
                         isTablet = true,

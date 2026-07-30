@@ -1,6 +1,5 @@
 package com.nuvio.app.features.settings
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,11 +50,6 @@ internal fun LazyListScope.networkSettingsContent(
         val overrideForAddons by repository.overrideForAddons.collectAsState()
         val overrideForPlugins by repository.overrideForPlugins.collectAsState()
         val overrideForBoth by repository.overrideForBoth.collectAsState()
-        val proxyEnabled by repository.proxyEnabled.collectAsState()
-        val proxyUrl by repository.proxyUrl.collectAsState()
-        val proxyPassword by repository.proxyPassword.collectAsState()
-        var proxyUrlDraft by remember(proxyUrl) { mutableStateOf(proxyUrl) }
-        var proxyPasswordDraft by remember(proxyPassword) { mutableStateOf(proxyPassword) }
         var userAgentDraft by remember(currentUserAgent) { mutableStateOf(currentUserAgent) }
 
         val tokens = MaterialTheme.nuvio
@@ -187,111 +181,6 @@ internal fun LazyListScope.networkSettingsContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(NuvioTokens.Space.s24))
-
-            SettingsSection(
-                title = "Proxy",
-                isTablet = isTablet
-            ) {
-                Text(
-                    text = "Instrada tutto il traffico streaming attraverso un proxy EasyProxy per nascondere il tuo IP.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = tokens.colors.textMuted,
-                    modifier = Modifier.padding(
-                        horizontal = if (isTablet) 20.dp else 16.dp,
-                        vertical = 12.dp
-                    ),
-                )
-
-                SettingsGroup(isTablet = isTablet) {
-                    SettingsSwitchRow(
-                        title = "Proxy abilitato",
-                        description = "Se attivo, tutti i flussi video vengono proxati",
-                        checked = proxyEnabled,
-                        isTablet = isTablet,
-                        onCheckedChange = { repository.setProxyEnabled(it) },
-                    )
-
-                    if (proxyEnabled) {
-                        SettingsGroupDivider(isTablet = isTablet)
-
-                        Text(
-                            text = "URL server EasyProxy",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = tokens.colors.textMuted,
-                            modifier = Modifier.padding(
-                                horizontal = if (isTablet) 20.dp else 16.dp,
-                                vertical = 8.dp,
-                            ),
-                        )
-
-                        OutlinedTextField(
-                            value = proxyUrlDraft,
-                            onValueChange = { proxyUrlDraft = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = if (isTablet) 20.dp else 16.dp),
-                            singleLine = true,
-                            placeholder = {
-                                Text("https://tuo-server.hf.space")
-                            },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = tokens.colors.borderFocus.copy(alpha = tokens.opacity.strong),
-                                unfocusedBorderColor = tokens.colors.borderDefault.copy(alpha = tokens.opacity.medium),
-                                focusedContainerColor = tokens.colors.surface,
-                                unfocusedContainerColor = tokens.colors.surface,
-                            ),
-                        )
-
-                        SettingsGroupDivider(isTablet = isTablet)
-
-                        Text(
-                            text = "Password",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = tokens.colors.textMuted,
-                            modifier = Modifier.padding(
-                                horizontal = if (isTablet) 20.dp else 16.dp,
-                                vertical = 8.dp,
-                            ),
-                        )
-
-                        OutlinedTextField(
-                            value = proxyPasswordDraft,
-                            onValueChange = { proxyPasswordDraft = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = if (isTablet) 20.dp else 16.dp),
-                            singleLine = true,
-                            placeholder = {
-                                Text("la-tua-password")
-                            },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = tokens.colors.borderFocus.copy(alpha = tokens.opacity.strong),
-                                unfocusedBorderColor = tokens.colors.borderDefault.copy(alpha = tokens.opacity.medium),
-                                focusedContainerColor = tokens.colors.surface,
-                                unfocusedContainerColor = tokens.colors.surface,
-                            ),
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = if (isTablet) 20.dp else 16.dp),
-                            horizontalArrangement = Arrangement.End,
-                        ) {
-                            NuvioActionLabel(
-                                text = "Salva",
-                                onClick = {
-                                    repository.setProxyUrl(proxyUrlDraft)
-                                    repository.setProxyPassword(proxyPasswordDraft)
-                                },
-                            )
-                        }
-                    }
-                }
-            }
         }
     }
 }
