@@ -91,7 +91,6 @@ internal fun PlayerControlsShell(
     skipSegments: List<SkipInterval> = emptyList(),
     isLocked: Boolean,
     showPlaybackControls: Boolean = true,
-    isLiveContent: Boolean = false,
     onLockToggle: () -> Unit,
     onBack: () -> Unit,
     onTogglePlayback: () -> Unit,
@@ -119,22 +118,6 @@ internal fun PlayerControlsShell(
     modifier: Modifier = Modifier,
     skipSeekIntervalSeconds: Int = 10,
 ) {
-    if (isLiveContent) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            NuvioBackButton(
-                onClick = onBack,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
-                    .padding(top = 20.dp, end = 20.dp),
-                containerColor = Color.Black.copy(alpha = 0.35f),
-                contentColor = Color.White,
-                contentDescription = stringResource(Res.string.compose_player_close),
-            )
-        }
-        return
-    }
-
     Box(modifier = modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
@@ -202,7 +185,7 @@ internal fun PlayerControlsShell(
                     ),
             )
 
-            if (showPlaybackControls && !isLiveContent) {
+            if (showPlaybackControls) {
                 CenterControls(
                     snapshot = playbackSnapshot,
                     metrics = metrics,
@@ -216,7 +199,7 @@ internal fun PlayerControlsShell(
                 )
             }
 
-            if (showPlaybackControls && !isLiveContent) {
+            if (showPlaybackControls) {
                 ProgressControls(
                     playbackSnapshot = playbackSnapshot,
                     displayedPositionMs = displayedPositionMs,
