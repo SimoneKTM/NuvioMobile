@@ -11,8 +11,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-internal object AutoScraper : WebScraper {
-    override val name = "AutoScraper"
+internal object AutoScraper {
     private val log = Logger.withTag("AutoScraper")
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
@@ -24,9 +23,7 @@ internal object AutoScraper : WebScraper {
 
     private val fetcher = PageFetcher
 
-    override fun supports(url: String): Boolean = true
-
-    override suspend fun searchLinks(
+    suspend fun searchLinks(
         siteUrl: String,
         title: String,
         season: Int?,
