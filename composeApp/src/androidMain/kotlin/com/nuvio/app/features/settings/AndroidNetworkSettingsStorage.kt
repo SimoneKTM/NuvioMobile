@@ -10,6 +10,10 @@ class AndroidNetworkSettingsStorage(context: Context) : NetworkSettingsStorage {
     private val OVERRIDE_FOR_ADDONS_KEY = "override_for_addons"
     private val OVERRIDE_FOR_PLUGINS_KEY = "override_for_plugins"
     private val OVERRIDE_FOR_BOTH_KEY = "override_for_both"
+    private val PROXY_ENABLED_KEY = "proxy_enabled"
+    private val PROXY_URL_KEY = "proxy_url"
+    private val PROXY_EMAIL_KEY = "proxy_email"
+    private val PROXY_PASSWORD_KEY = "proxy_password"
 
     override fun getDnsProvider(): String? =
         prefs.getString(DNS_PROVIDER_KEY, null)
@@ -44,5 +48,33 @@ class AndroidNetworkSettingsStorage(context: Context) : NetworkSettingsStorage {
 
     override fun setOverrideForBoth(enabled: Boolean) {
         prefs.edit().putBoolean(OVERRIDE_FOR_BOTH_KEY, enabled).apply()
+    }
+
+    override fun getProxyEnabled(): Boolean =
+        prefs.getBoolean(PROXY_ENABLED_KEY, false)
+
+    override fun setProxyEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(PROXY_ENABLED_KEY, enabled).apply()
+    }
+
+    override fun getProxyUrl(): String? =
+        prefs.getString(PROXY_URL_KEY, null)
+
+    override fun setProxyUrl(url: String) {
+        prefs.edit().putString(PROXY_URL_KEY, url).apply()
+    }
+
+    override fun getProxyEmail(): String? =
+        prefs.getString(PROXY_EMAIL_KEY, null)
+
+    override fun setProxyEmail(email: String) {
+        prefs.edit().putString(PROXY_EMAIL_KEY, email).apply()
+    }
+
+    override fun getProxyPassword(): String? =
+        prefs.getString(PROXY_PASSWORD_KEY, null)
+
+    override fun setProxyPassword(password: String) {
+        prefs.edit().putString(PROXY_PASSWORD_KEY, password).apply()
     }
 }
