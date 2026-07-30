@@ -64,6 +64,17 @@ object TvdbMetadataService {
 
                 var enriched = meta
 
+                if (settings.useBasicInfo && apiLanguage != null && apiLanguage != "en" && extended.name.isNotBlank()) {
+                    enriched = enriched.copy(name = extended.name)
+                }
+
+                if (extended.aliases.isNotEmpty()) {
+                    val aliasNames = extended.aliases.map { it.name }.filter { it.isNotBlank() }
+                    if (aliasNames.isNotEmpty()) {
+                        enriched = enriched.copy(aliases = (enriched.aliases + aliasNames).distinct())
+                    }
+                }
+
                 if (settings.useBasicInfo && extended.overview != null && extended.overview.isNotBlank()) {
                     if (enriched.description.isNullOrBlank()) {
                         enriched = enriched.copy(description = extended.overview)

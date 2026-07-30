@@ -172,6 +172,12 @@ object TvdbApi {
     )
 
     @Serializable
+    data class TvdbAlias(
+        val name: String = "",
+        val language: String = "",
+    )
+
+    @Serializable
     data class TvdbSeriesExtended(
         val id: Int = 0,
         val name: String = "",
@@ -191,6 +197,7 @@ object TvdbApi {
         val characters: List<TvdbCharacter> = emptyList(),
         val lists: List<TvdbList> = emptyList(),
         @SerialName("season_types") val seasonTypes: List<TvdbSeasonType> = emptyList(),
+        val aliases: List<TvdbAlias> = emptyList(),
     )
 
     @Serializable
