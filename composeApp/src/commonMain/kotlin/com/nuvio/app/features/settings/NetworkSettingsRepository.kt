@@ -1,5 +1,7 @@
 package com.nuvio.app.features.settings
 
+import com.nuvio.app.features.addons.AddonStorage
+import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.features.vezie.EasyProxyAddonBridge
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -63,7 +65,12 @@ class NetworkSettingsRepository(
             current.add(url.trimEnd('/'))
             storage.setScraperUrls(current)
             _scraperUrls.value = current
-            EasyProxyAddonBridge.addOrUpdateScraper(url.trimEnd('/'))
+            val manifestUrl = EasyProxyAddonBridge.addOrUpdateScraper(url.trimEnd('/'))
+            val profileId = ProfileRepository.activeProfileId
+            val existing = AddonStorage.loadInstalledAddonUrls(profileId)
+            if (manifestUrl !in existing) {
+                AddonStorage.saveInstalledAddonUrls(profileId, existing + manifestUrl)
+            }
         }
     }
 
@@ -72,6 +79,10 @@ class NetworkSettingsRepository(
         current.remove(url)
         storage.setScraperUrls(current)
         _scraperUrls.value = current
+        val manifestUrl = EasyProxyAddonBridge.getManifestUrlFor(url)
+        val profileId = ProfileRepository.activeProfileId
+        val existing = AddonStorage.loadInstalledAddonUrls(profileId)
+        AddonStorage.saveInstalledAddonUrls(profileId, existing.filter { it != manifestUrl })
     }
 
     fun setDnsProvider(provider: DnsProvider) {

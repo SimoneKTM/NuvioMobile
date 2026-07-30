@@ -4,6 +4,7 @@ import co.touchlab.kermit.Logger
 import com.nuvio.app.core.network.SupabaseProvider
 import com.nuvio.app.core.sync.putSyncOriginClientId
 import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.features.vezie.EasyProxyAddonBridge
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.rpc
@@ -57,6 +58,7 @@ object AddonRepository {
     private val activeRefreshJobs = mutableMapOf<String, Job>()
 
     fun initialize() {
+        EasyProxyAddonBridge.register()
         val effectiveProfileId = resolveEffectiveProfileId(ProfileRepository.activeProfileId)
         if (initialized) return
         initialized = true
@@ -64,6 +66,7 @@ object AddonRepository {
         log.d { "initialize() — loading local addons for profile $currentProfileId" }
 
         val storedUrls = dedupeManifestUrls(AddonStorage.loadInstalledAddonUrls(currentProfileId))
+        EasyProxyAddonBridge.reloadFromManifestUrls(storedUrls)
         val enabledByUrl = loadLocalEnabledStates()
         log.d { "initialize() — local addon count: ${storedUrls.size}" }
 

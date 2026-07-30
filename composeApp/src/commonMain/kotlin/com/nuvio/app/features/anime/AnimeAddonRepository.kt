@@ -8,6 +8,7 @@ import com.nuvio.app.features.addons.AddonsUiState
 import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.addons.httpGetText
 import com.nuvio.app.features.addons.registerUrlInterceptor
+import com.nuvio.app.features.vezie.EasyProxyAddonBridge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,11 +29,13 @@ object AnimeAddonRepository {
     private val activeRefreshJobs = mutableMapOf<String, Job>()
 
     fun initialize() {
+        EasyProxyAddonBridge.register()
         if (initialized) return
         initialized = true
         log.d { "initialize() — loading local anime addons" }
 
         val storedUrls = dedupeManifestUrls(AnimeAddonStorage.loadInstalledAddonUrls())
+        EasyProxyAddonBridge.reloadFromManifestUrls(storedUrls)
         val enabledByUrl = loadLocalEnabledStates()
         log.d { "initialize() — local anime addon count: ${storedUrls.size}" }
 

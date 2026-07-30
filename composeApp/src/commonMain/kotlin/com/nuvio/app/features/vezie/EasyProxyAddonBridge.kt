@@ -30,10 +30,25 @@ object EasyProxyAddonBridge {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
     private var registered = false
 
+    private const val DEFAULT_EASY_PROXY_URL = "https://kittemuort-easytwelve.hf.space"
+    private const val DEFAULT_API_PASSWORD = "Simonekittemuort001"
+
     fun register() {
         if (registered) return
         registered = true
         registerUrlInterceptor(::interceptHttpGetText)
+        initializeDefaults()
+    }
+
+    private fun initializeDefaults() {
+        val config = VeezieEasyProxy.getConfig()
+        if (config == null) {
+            VeezieEasyProxy.configure(
+                proxyUrl = DEFAULT_EASY_PROXY_URL,
+                email = "",
+                apiPassword = DEFAULT_API_PASSWORD,
+            )
+        }
     }
 
     fun reloadFromManifestUrls(urls: List<String>) {
