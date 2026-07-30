@@ -398,7 +398,7 @@ private fun BoxScope.RenderPlaybackOverlays(
         metrics = metrics,
         horizontalSafePadding = horizontalSafePadding,
         onUnlock = { unlockPlayerControls() },
-        showOpeningOverlay = playerSettingsUiState.showLoadingOverlay && !initialLoadCompleted && errorMessage == null,
+        showOpeningOverlay = activeProviderAddonId != "live-tv" && playerSettingsUiState.showLoadingOverlay && !initialLoadCompleted && errorMessage == null,
         backdropArtwork = background ?: poster,
         logo = logo,
         title = title,
