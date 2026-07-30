@@ -35,6 +35,9 @@ internal object AutoScraper {
         if (config.usesApi) {
             return searchViaApi(baseUrl, config, title, season, episode)
         }
+        if (config.usesInertia) {
+            return searchViaInertia(baseUrl, config, title, season, episode)
+        }
         return searchViaHtml(baseUrl, config, title, season, episode)
     }
 
@@ -342,6 +345,227 @@ internal object AutoScraper {
             }
             else -> """{"title":"$title"}"""
         }
+    }
+
+    private suspend fun searchViaInertia(
+        baseUrl: String,
+        config: SiteConfig,
+        title: String,
+        season: Int?,
+        episode: Int?,
+    ): List<String> {
+        val version = config.inertiaVersion ?: return emptyList()
+        val locale = config.locale
+        val localePrefix = if (locale.isNotBlank()) "/$locale" else ""
+
+        val searchQuery = title.lowercase().trim()
+        val foundId = findTitleIdInArchive(baseUrl, localePrefix, version, searchQuery) ?: return emptyList()
+        val titleId = foundId.first
+        val titleSlug = foundId.second
+
+        val episodeUrl = findEpisodeUrlInertia(baseUrl, localePrefix, version, titleId, titleSlug, season, episode) ?: return emptyList()
+
+        val resolved = VeezieEasyProxy.extractHostUrl("vixcloud", episodeUrl)
+            ?: VixcloudExtractor.extractPlaylistUrl(episodeUrl)
+            ?: episodeUrl
+        return listOf(resolved)
+    }
+
+    private suspend fun findTitleIdInArchive(
+        baseUrl: String,
+        localePrefix: String,
+        version: String,
+        searchQuery: String,
+    ): Pair<Int, String>? {
+        val lowerQuery = searchQuery.lowercase().trim()
+        for (page in 1..100) {
+            val path = "$localePrefix/archive?page=$page"
+            val jsonStr = fetcher.fetchInertiaHtml(baseUrl, path, version) ?: break
+            val titlesJson = extractJsonArray(jsonStr, "titles") ?: break
+            val ids = mutableListOf<Int>()
+            val slugs = mutableListOf<String>()
+            val names = mutableListOf<String>()
+
+            val nameRx = Regex(""""name":"(?:[^"\\]|\\.)*"""")
+            val idRx = Regex(""""id":(\d+)""")
+            val slugRx = Regex(""""slug":"(?:[^"\\]|\\.)*"""")
+            val nameMatches = nameRx.findAll(titlesJson).toList()
+            val idMatches = idRx.findAll(titlesJson).toList()
+            val slugMatches = slugRx.findAll(titlesJson).toList()
+
+            if (nameMatches.isEmpty()) {
+                if (page > 1) break else continue
+            }
+
+            for (i in nameMatches.indices) {
+                val name = nameMatches[i].value
+                    .removePrefix(""""name":"""").removeSuffix("\"")
+                    .replace("\\u0026", "&").replace("\\/", "/")
+                    .lowercase().trim()
+                val idNum = idMatches.getOrNull(i)?.groupValues?.getOrNull(1)?.toIntOrNull() ?: continue
+                val slug = slugMatches.getOrNull(i)?.value
+                    ?.removePrefix(""""slug":"""").removeSuffix("\"")
+                    ?: ""
+
+                if (name.contains(lowerQuery) || lowerQuery.contains(name)) {
+                    return idNum to slug
+                }
+            }
+
+            if (nameMatches.size < 60) break
+        }
+        return null
+    }
+
+    private suspend fun findEpisodeUrlInertia(
+        baseUrl: String,
+        localePrefix: String,
+        version: String,
+        titleId: Int,
+        titleSlug: String,
+        season: Int?,
+        episode: Int?,
+    ): String? {
+        val slug = titleSlug.ifBlank { titleId.toString() }
+        val titlePath = "$localePrefix/titles/$titleId-$slug"
+
+        val titleJson = fetcher.fetchInertiaHtml(baseUrl, titlePath, version) ?: return null
+
+        val iframeUrl = findIframeUrlInTitleJson(titleJson, season, episode)
+
+        if (iframeUrl != null) return iframeUrl
+
+        val watchPath = "$localePrefix/watch/$titleId"
+        val watchJson = fetcher.fetchInertiaHtml(baseUrl, watchPath, version)
+        if (watchJson != null) {
+            val embedUrl = extractEmbedUrlFromJson(watchJson)
+            if (embedUrl != null) return embedUrl
+        }
+
+        val iframePath = "$localePrefix/iframe/$titleId"
+        val iframeHtml = fetcher.fetch("$baseUrl$iframePath")
+        if (iframeHtml != null) {
+            val src = Regex("""<iframe[^>]*src\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE).find(iframeHtml)
+            if (src != null) return normalizeUrl(src.groupValues[1], baseUrl)
+        }
+
+        if (season != null) {
+            val seasonPath = "$localePrefix/titles/$titleId-$slug/season-$season"
+            val seasonJson = fetcher.fetchInertiaHtml(baseUrl, seasonPath, version)
+            if (seasonJson != null) {
+                val epUrl = findEpisodeInSeasonJson(seasonJson, episode)
+                if (epUrl != null) return epUrl
+            }
+        }
+
+        return null
+    }
+
+    private fun findIframeUrlInTitleJson(json: String, season: Int?, episode: Int?): String? {
+        val props = extractJsonObject(json, "props") ?: return null
+        val titleObj = extractJsonObject(props, "title") ?: return null
+
+        val embedUrl = extractJsonString(titleObj, "embed_url") ?: extractJsonString(titleObj, "iframe_url")
+        if (embedUrl != null && embedUrl.startsWith("http")) return embedUrl
+
+        val seasonsArr = extractJsonArray(props, "seasons") ?: extractJsonArray(props, "season")
+        if (seasonsArr != null && season != null && episode != null) {
+            val seasonPattern = Regex(""""number":\s*$season""")
+            val seasonMatch = seasonPattern.find(seasonsArr)
+            if (seasonMatch != null) {
+                val afterSeason = seasonsArr.substring(seasonMatch.range.last)
+                val episodePattern = Regex(""""number":\s*$episode""")
+                val epMatch = episodePattern.find(afterSeason)
+                if (epMatch != null) {
+                    val beforeEp = afterSeason.substring(0, epMatch.range.start)
+                    val idMatch = Regex(""""id":(\d+)""").find(beforeEp)
+                    if (idMatch != null) {
+                        val videoId = idMatch.groupValues[1]
+                        val iframeJson = fetcher.fetchInertiaHtml(
+                            "",
+                            "iframe/$videoId",
+                            SiteProber.getConfig("").inertiaVersion ?: return null
+                        )
+                        if (iframeJson != null) {
+                            val src = extractJsonString(iframeJson, "src") ?: extractJsonString(iframeJson, "url")
+                            if (src != null) return src
+                        }
+                    }
+                }
+            }
+        }
+
+        return null
+    }
+
+    private fun findEpisodeInSeasonJson(seasonJson: String, episode: Int?): String? {
+        val props = extractJsonObject(seasonJson, "props") ?: return null
+        val episodesArr = extractJsonArray(props, "episodes") ?: extractJsonArray(props, "videos") ?: return null
+        if (episode != null) {
+            val epPattern = Regex(""""number":\s*$episode""")
+            val epMatch = epPattern.find(episodesArr)
+            if (epMatch != null) {
+                val beforeEp = episodesArr.substring(0, epMatch.range.start)
+                val idMatch = Regex(""""id":(\d+)""").find(beforeEp)
+                if (idMatch != null) {
+                    val videoId = idMatch.groupValues[1]
+                    val embedMatch = Regex(""""embed_url"\s*:\s*"([^"]+)""").find(beforeEp)
+                    if (embedMatch != null) return embedMatch.groupValues[1]
+                    return "$videoId"
+                }
+            }
+        }
+        val firstEmbed = Regex(""""embed_url"\s*:\s*"([^"]+)""").find(episodesArr)
+        return firstEmbed?.groupValues?.getOrNull(1)
+    }
+
+    private fun extractEmbedUrlFromJson(json: String): String? {
+        val embedRx = Regex(""""embed_url"\s*:\s*"([^"]+)""")
+        val match = embedRx.find(json)
+        return match?.groupValues?.getOrNull(1)?.takeIf { it.startsWith("http") }
+    }
+
+    private fun extractJsonObject(json: String, key: String): String? {
+        val rx = Regex(""""$key"\s*:\s*\{""")
+        val match = rx.find(json) ?: return null
+        var depth = 0
+        var start = match.range.last + 1
+        for (i in start until json.length) {
+            when (json[i]) {
+                '{' -> depth++
+                '}' -> { depth--; if (depth == 0) return json.substring(start - 1, i + 1) }
+                '"' -> {
+                    var j = i + 1
+                    while (j < json.length && (json[j] != '"' || json[j-1] == '\\')) j++
+                    i = j
+                }
+            }
+        }
+        return null
+    }
+
+    private fun extractJsonArray(json: String, key: String): String? {
+        val rx = Regex(""""$key"\s*:\s*\[""")
+        val match = rx.find(json) ?: return null
+        var depth = 0
+        var start = match.range.last + 1
+        for (i in start until json.length) {
+            when (json[i]) {
+                '[' -> depth++
+                ']' -> { depth--; if (depth == 0) return json.substring(match.range.start + match.value.length - 1, i + 1) }
+                '"' -> {
+                    var j = i + 1
+                    while (j < json.length && (json[j] != '"' || json[j-1] == '\\')) j++
+                    i = j
+                }
+            }
+        }
+        return null
+    }
+
+    private fun extractJsonString(json: String, key: String): String? {
+        val rx = Regex(""""$key"\s*:\s*"((?:[^"\\]|\\.)*)"""")
+        return rx.find(json)?.groupValues?.getOrNull(1)
     }
 
     private fun normalizeUrl(href: String, baseUrl: String): String {

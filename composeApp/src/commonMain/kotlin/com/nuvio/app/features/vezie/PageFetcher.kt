@@ -3,14 +3,53 @@ package com.nuvio.app.features.vezie
 import com.nuvio.app.core.network.CloudflareSolver
 import com.nuvio.app.core.network.PageScrapeResult
 import com.nuvio.app.features.addons.httpGetTextWithHeaders
+import com.nuvio.app.features.addons.httpGetText
 import com.nuvio.app.features.addons.httpRequestRaw
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 
 internal object PageFetcher {
+    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
     private val browserHeaders = mapOf(
         "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Accept-Language" to "it-IT,it;q=0.9",
         "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     )
+
+    suspend fun fetchInertiaJson(
+        baseUrl: String,
+        path: String,
+        version: String,
+    ): Map<String, Any?>? {
+        val headers = mapOf(
+            "X-Inertia" to "true",
+            "X-Inertia-Version" to version,
+            "User-Agent" to browserHeaders["User-Agent"]!!,
+            "Accept" to "application/json",
+        )
+        return try {
+            val response = httpGetTextWithHeaders("$baseUrl$path", headers)
+            val obj = json.parseToJsonElement(response).jsonObject
+            val props = obj["props"]?.jsonObject ?: return null
+            obj.toMap()
+        } catch (_: Exception) { null }
+    }
+
+    suspend fun fetchInertiaHtml(
+        baseUrl: String,
+        path: String,
+        version: String,
+    ): String? {
+        val headers = mapOf(
+            "X-Inertia" to "true",
+            "X-Inertia-Version" to version,
+            "User-Agent" to browserHeaders["User-Agent"]!!,
+            "Accept" to "application/json",
+        )
+        return try {
+            httpGetTextWithHeaders("$baseUrl$path", headers)
+        } catch (_: Exception) { null }
+    }
 
     suspend fun fetch(url: String): String? {
         val httpResult = tryHttp(url)

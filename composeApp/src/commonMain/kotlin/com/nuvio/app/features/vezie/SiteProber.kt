@@ -6,6 +6,7 @@ import com.nuvio.app.features.addons.httpPostJson
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 data class SiteConfig(
     val domain: String = "",
@@ -19,6 +20,9 @@ data class SiteConfig(
     val episodeNavType: EpisodeNavType = EpisodeNavType.FLAT,
     val searchUrlCandidates: List<String> = emptyList(),
     val contentLinkPatterns: List<String> = emptyList(),
+    val usesInertia: Boolean = false,
+    val inertiaVersion: String? = null,
+    val locale: String = "",
 ) {
     enum class EpisodeNavType { FLAT, TABBED, DATA_ATTRS }
 }
@@ -57,8 +61,13 @@ internal object SiteProber {
         }
 
         val inertiaResult = checkInertiaJs(homepageHtml)
+        var inertiaVersion: String? = null
+        var locale = ""
         if (inertiaResult) {
             log.d { "$domain uses Inertia.js" }
+            val extracted = extractInertiaInfo(homepageHtml)
+            inertiaVersion = extracted.first
+            locale = extracted.second
         }
 
         val searchUrlCandidates = detectSearchUrl(baseUrl, homepageHtml)
@@ -76,7 +85,10 @@ internal object SiteProber {
             usesCsrf = csrf != null,
             csrfPattern = csrf,
             episodeNavType = episodeType,
-        ).also { log.d { "Probed $domain: search=$searchUrlCandidates, patterns=${contentPatterns.size}" } }
+            usesInertia = inertiaResult,
+            inertiaVersion = inertiaVersion,
+            locale = locale,
+        ).also { log.d { "Probed $domain: inertia=$inertiaResult v=$inertiaVersion locale=$locale" } }
     }
 
     private suspend fun checkAnimeUnityApi(baseUrl: String, domain: String): SiteConfig? {
@@ -117,6 +129,26 @@ internal object SiteProber {
         return html.contains("x-inertia", ignoreCase = true) ||
                html.contains("inertia", ignoreCase = true) ||
                html.contains("__inertia", ignoreCase = true)
+    }
+
+    private fun extractInertiaInfo(html: String): Pair<String?, String> {
+        val dpMatch = Regex("""data-page="([^"]+)"""", RegexOption.IGNORE_CASE).find(html)
+        if (dpMatch == null) return null to ""
+        val raw = dpMatch.groupValues[1]
+            .replace("&quot;", "\"")
+            .replace("&amp;", "&")
+            .replace("&#039;", "'")
+        val version = extractJsonString(raw, "version")
+        val vMatch = Regex("""\"version\":\s*\"([^\"]+)\"""").find(raw)
+        val ver = vMatch?.groupValues?.getOrNull(1)
+        val localeMatch = Regex("""\"locale\":\s*\"([^\"]+)\"""").find(raw)
+        val loc = localeMatch?.groupValues?.getOrNull(1) ?: ""
+        return ver to loc
+    }
+
+    private fun extractJsonString(json: String, key: String): String? {
+        val match = Regex(""""$key":\s*"([^"]+)"""").find(json)
+        return match?.groupValues?.getOrNull(1)
     }
 
     private suspend fun detectSearchUrl(baseUrl: String, html: String): List<String> {
