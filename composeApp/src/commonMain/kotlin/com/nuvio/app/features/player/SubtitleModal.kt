@@ -64,7 +64,6 @@ private data class UnifiedSubtitleItem(
 @Composable
 fun SubtitleModal(
     visible: Boolean,
-    subtitleTracks: List<SubtitleTrack>,
     selectedSubtitleIndex: Int,
     addonSubtitles: List<AddonSubtitle>,
     selectedAddonSubtitleId: String?,
@@ -181,7 +180,6 @@ fun SubtitleModal(
                             )
                         } else {
                             UnifiedSubtitleList(
-                                subtitleTracks = subtitleTracks,
                                 selectedSubtitleIndex = selectedSubtitleIndex,
                                 onBuiltInTrackSelected = onBuiltInTrackSelected,
                                 addonSubtitles = addonSubtitles,
@@ -206,7 +204,6 @@ fun SubtitleModal(
 
 @Composable
 private fun UnifiedSubtitleList(
-    subtitleTracks: List<SubtitleTrack>,
     selectedSubtitleIndex: Int,
     onBuiltInTrackSelected: (Int) -> Unit,
     addonSubtitles: List<AddonSubtitle>,
@@ -234,17 +231,6 @@ private fun UnifiedSubtitleList(
                 onSelect = { onBuiltInTrackSelected(-1) },
             )
         )
-        subtitleTracks.forEach { track ->
-            val isSelected = track.index == selectedSubtitleIndex && selectedAddonSubtitleId == null && openSubtitlesSelected == null
-            add(
-                UnifiedSubtitleItem(
-                    id = "builtin:${track.index}",
-                    label = localizedTrackDisplayName(track.label, track.language, track.index),
-                    isSelected = isSelected,
-                    onSelect = { onBuiltInTrackSelected(track.index) },
-                )
-            )
-        }
         openSubtitlesItems.forEach { item ->
             val isSelected = item.fileId == openSubtitlesSelected
             val label = languageLabelForCode(item.languageCode)
