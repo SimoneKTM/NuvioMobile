@@ -148,6 +148,8 @@ fun PluginsSettingsPageContent(
     ) {
         EasyProxySection()
         Spacer(modifier = Modifier.height(12.dp))
+        FlareSolverrSection()
+        Spacer(modifier = Modifier.height(12.dp))
         ScraperSitesSection()
         Spacer(modifier = Modifier.height(12.dp))
         CloudStreamSettingsSection()
@@ -635,6 +637,53 @@ private fun EasyProxySection() {
                             )
                             saved = true
                         }
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FlareSolverrSection() {
+    var flareUrl by rememberSaveable { mutableStateOf(
+        FlareSolverr.getUrl() ?: ""
+    ) }
+    var saved by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = "FlareSolverr",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = "Proxy Cloudflare per siti con challenge JS (es. https://Krishna8287-My-flaresolverr.hf.space). Se configurato, viene usato come fallback dopo HTTP diretto.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        NuvioSurfaceCard {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = flareUrl,
+                    onValueChange = { flareUrl = it; saved = false },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    placeholder = { Text("https://Krishna8287-My-flaresolverr.hf.space") },
+                    label = { Text("URL FlareSolverr") },
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                NuvioActionLabel(
+                    text = if (saved) "Salvato" else "Salva",
+                    onClick = {
+                        FlareSolverr.configure(flareUrl.trim())
+                        saved = true
                     },
                 )
             }

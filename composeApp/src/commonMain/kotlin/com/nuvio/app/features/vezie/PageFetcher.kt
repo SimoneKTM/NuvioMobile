@@ -16,6 +16,9 @@ internal object PageFetcher {
         val httpResult = tryHttp(url)
         if (httpResult != null) return httpResult
 
+        val flareResult = tryFlareSolverr(url)
+        if (flareResult != null) return flareResult
+
         return try {
             CloudflareSolver.scrapePage(url)?.html
         } catch (_: Exception) { null }
@@ -29,8 +32,21 @@ internal object PageFetcher {
             return PageScrapeResult(url, httpResult, iframes, videoUrls)
         }
 
+        val flareHtml = tryFlareSolverr(url)
+        if (flareHtml != null) {
+            val iframes = extractIframes(flareHtml)
+            val videoUrls = extractVideoUrls(flareHtml)
+            return PageScrapeResult(url, flareHtml, iframes, videoUrls)
+        }
+
         return try {
             CloudflareSolver.scrapePageWithIframeFollow(url)
+        } catch (_: Exception) { null }
+    }
+
+    private suspend fun tryFlareSolverr(url: String): String? {
+        return try {
+            FlareSolverr.scrapePage(url)
         } catch (_: Exception) { null }
     }
 
