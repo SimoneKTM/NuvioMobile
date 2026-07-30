@@ -316,7 +316,6 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             },
             onSourcesClick = if (activeVideoId != null) { { openSourcesPanel() } } else null,
             onEpisodesClick = if (isSeries) { { openEpisodesPanel() } } else null,
-            isLiveContent = contentType == "live",
             onLiveChannelsClick = if (activeProviderAddonId == "live-tv") { { showLiveTvChannelsPanel = true } } else null,
             onOpenInExternalPlayer = args.onOpenInExternalPlayer?.let { openExternal ->
                 {

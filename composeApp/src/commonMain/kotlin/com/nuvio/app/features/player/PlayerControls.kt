@@ -118,19 +118,20 @@ internal fun PlayerControlsShell(
     horizontalSafePadding: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
     skipSeekIntervalSeconds: Int = 10,
-    isLiveContent: Boolean = false,
 ) {
     if (isLiveContent) {
-        NuvioBackButton(
-            onClick = onBack,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
-                .padding(top = 20.dp, end = 20.dp),
-            containerColor = Color.Black.copy(alpha = 0.35f),
-            contentColor = Color.White,
-            contentDescription = stringResource(Res.string.compose_player_close),
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            NuvioBackButton(
+                onClick = onBack,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
+                    .padding(top = 20.dp, end = 20.dp),
+                containerColor = Color.Black.copy(alpha = 0.35f),
+                contentColor = Color.White,
+                contentDescription = stringResource(Res.string.compose_player_close),
+            )
+        }
         return
     }
 

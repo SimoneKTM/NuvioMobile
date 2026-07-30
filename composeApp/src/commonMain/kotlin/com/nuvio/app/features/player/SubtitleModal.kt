@@ -221,61 +221,60 @@ private fun UnifiedSubtitleList(
     onOpenSubtitlesSearch: () -> Unit,
     onOpenSubtitlesItemSelected: (OpenSubtitlesSubtitleItem) -> Unit,
 ) {
-    val items = remember(subtitleTracks, selectedSubtitleIndex, addonSubtitles, selectedAddonSubtitleId, openSubtitlesItems, selectedOpenSubtitlesFileId) {
-        buildList {
+    val noneLabel = stringResource(Res.string.compose_player_none)
+    val openSubtitlesSelected = selectedOpenSubtitlesFileId
+
+    val items = buildList {
+        add(
+            UnifiedSubtitleItem(
+                id = "none",
+                label = noneLabel,
+                isSelected = selectedSubtitleIndex == -1 && selectedAddonSubtitleId == null && openSubtitlesSelected == null,
+                isNone = true,
+                onSelect = { onBuiltInTrackSelected(-1) },
+            )
+        )
+        subtitleTracks.forEach { track ->
+            val isSelected = track.index == selectedSubtitleIndex && selectedAddonSubtitleId == null && openSubtitlesSelected == null
             add(
                 UnifiedSubtitleItem(
-                    id = "none",
-                    label = stringResource(Res.string.compose_player_none),
-                    isSelected = selectedSubtitleIndex == -1 && selectedAddonSubtitleId == null && selectedOpenSubtitlesFileId == null,
-                    isNone = true,
-                    onSelect = {
-                        onBuiltInTrackSelected(-1)
-                    },
+                    id = "builtin:${track.index}",
+                    label = localizedTrackDisplayName(track.label, track.language, track.index),
+                    isSelected = isSelected,
+                    onSelect = { onBuiltInTrackSelected(track.index) },
                 )
             )
-            subtitleTracks.forEach { track ->
-                val isSelected = track.index == selectedSubtitleIndex && selectedAddonSubtitleId == null && selectedOpenSubtitlesFileId == null
-                add(
-                    UnifiedSubtitleItem(
-                        id = "builtin:${track.index}",
-                        label = localizedTrackDisplayName(track.label, track.language, track.index),
-                        isSelected = isSelected,
-                        onSelect = { onBuiltInTrackSelected(track.index) },
-                    )
-                )
+        }
+        openSubtitlesItems.forEach { item ->
+            val isSelected = item.fileId == openSubtitlesSelected
+            val label = languageLabelForCode(item.languageCode)
+                .takeIf { it.isNotBlank() && it != item.languageCode }
+                ?: item.language.ifBlank { item.languageCode.ifBlank { "?" } }
+            val suffix = buildString {
+                if (item.hearingImpaired) append(" [HI]")
+                if (item.fromTrusted) append(" \u2605")
             }
-            openSubtitlesItems.forEach { item ->
-                val isSelected = item.fileId == selectedOpenSubtitlesFileId
-                val label = languageLabelForCode(item.languageCode)
-                    .takeIf { it.isNotBlank() && it != item.languageCode }
-                    ?: item.language.ifBlank { item.languageCode.ifBlank { "?" } }
-                val suffix = buildString {
-                    if (item.hearingImpaired) append(" [HI]")
-                    if (item.fromTrusted) append(" \u2605")
-                }
-                add(
-                    UnifiedSubtitleItem(
-                        id = "opensubtitles:${item.fileId}",
-                        label = label,
-                        secondaryLabel = suffix.ifBlank { null },
-                        isSelected = isSelected,
-                        onSelect = { onOpenSubtitlesItemSelected(item) },
-                    )
+            add(
+                UnifiedSubtitleItem(
+                    id = "opensubtitles:${item.fileId}",
+                    label = label,
+                    secondaryLabel = suffix.ifBlank { null },
+                    isSelected = isSelected,
+                    onSelect = { onOpenSubtitlesItemSelected(item) },
                 )
-            }
-            addonSubtitles.forEach { sub ->
-                val isSelected = sub.id == selectedAddonSubtitleId
-                add(
-                    UnifiedSubtitleItem(
-                        id = "addon:${sub.id}",
-                        label = sub.display,
-                        secondaryLabel = languageLabelForCode(sub.language).takeIf { it.isNotBlank() },
-                        isSelected = isSelected && selectedOpenSubtitlesFileId == null,
-                        onSelect = { onAddonSubtitleSelected(sub) },
-                    )
+            )
+        }
+        addonSubtitles.forEach { sub ->
+            val isSelected = sub.id == selectedAddonSubtitleId
+            add(
+                UnifiedSubtitleItem(
+                    id = "addon:${sub.id}",
+                    label = sub.display,
+                    secondaryLabel = languageLabelForCode(sub.language).takeIf { it.isNotBlank() },
+                    isSelected = isSelected && openSubtitlesSelected == null,
+                    onSelect = { onAddonSubtitleSelected(sub) },
                 )
-            }
+            )
         }
     }
 
