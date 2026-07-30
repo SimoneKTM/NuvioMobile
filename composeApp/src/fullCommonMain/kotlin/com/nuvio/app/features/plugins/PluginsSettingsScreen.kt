@@ -21,6 +21,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,6 +54,7 @@ import com.nuvio.app.features.profiles.ProfileRepository
 import com.nuvio.app.features.settings.globalNetworkSettingsRepository
 import com.nuvio.app.features.tmdb.TmdbSettingsRepository
 import com.nuvio.app.features.vezie.EasyProxyAddonBridge
+import com.nuvio.app.features.vezie.FlareSolverr
 import com.nuvio.app.features.vezie.VeezieEasyProxy
 import com.nuvio.app.features.plugins.runtime.PluginRuntime
 import kotlinx.coroutines.launch
@@ -728,8 +730,7 @@ private fun ScraperSitesSection() {
                 Spacer(modifier = Modifier.width(8.dp))
                 NuvioActionLabel(
                     text = "Aggiungi",
-                    enabled = newUrl.isNotBlank(),
-                    onClick = {
+                    onClick = if (newUrl.isNotBlank()) ({
                         val url = if (newUrl.startsWith("http")) newUrl else "https://$newUrl"
                         val manifestUrl = EasyProxyAddonBridge.addOrUpdateScraper(url.trimEnd('/'))
                         val profileId = ProfileRepository.activeProfileId
@@ -739,7 +740,7 @@ private fun ScraperSitesSection() {
                         }
                         scraperUrls = EasyProxyAddonBridge.getScrapers().map { it.websiteUrl }
                         newUrl = ""
-                    },
+                    }) else null,
                 )
             }
         }

@@ -403,9 +403,8 @@ internal object AutoScraper {
                     .replace("\\u0026", "&").replace("\\/", "/")
                     .lowercase().trim()
                 val idNum = idMatches.getOrNull(i)?.groupValues?.getOrNull(1)?.toIntOrNull() ?: continue
-                val slug = slugMatches.getOrNull(i)?.value
-                    ?.removePrefix(""""slug":"""").removeSuffix("\"")
-                    ?: ""
+                val slugVal = slugMatches.getOrNull(i)?.value
+                val slug = slugVal?.removePrefix(""""slug":"""")?.removeSuffix("\"") ?: ""
 
                 if (name.contains(lowerQuery) || lowerQuery.contains(name)) {
                     return idNum to slug
@@ -461,7 +460,7 @@ internal object AutoScraper {
         return null
     }
 
-    private fun findIframeUrlInTitleJson(json: String, season: Int?, episode: Int?): String? {
+    private suspend fun findIframeUrlInTitleJson(json: String, season: Int?, episode: Int?): String? {
         val props = extractJsonObject(json, "props") ?: return null
         val titleObj = extractJsonObject(props, "title") ?: return null
 
@@ -481,10 +480,12 @@ internal object AutoScraper {
                     val idMatch = Regex(""""id":(\d+)""").find(beforeEp)
                     if (idMatch != null) {
                         val videoId = idMatch.groupValues[1]
+                        val config = SiteProber.getConfig("")
+                        val ver = config.inertiaVersion ?: return null
                         val iframeJson = fetcher.fetchInertiaHtml(
                             "",
                             "iframe/$videoId",
-                            SiteProber.getConfig("").inertiaVersion ?: return null
+                            ver
                         )
                         if (iframeJson != null) {
                             val src = extractJsonString(iframeJson, "src") ?: extractJsonString(iframeJson, "url")
@@ -529,17 +530,17 @@ internal object AutoScraper {
         val rx = Regex(""""$key"\s*:\s*\{""")
         val match = rx.find(json) ?: return null
         var depth = 0
-        var start = match.range.last + 1
-        for (i in start until json.length) {
-            when (json[i]) {
+        var idx = match.range.last + 1
+        while (idx < json.length) {
+            when (json[idx]) {
                 '{' -> depth++
-                '}' -> { depth--; if (depth == 0) return json.substring(start - 1, i + 1) }
+                '}' -> { depth--; if (depth == 0) return json.substring(match.range.last, idx + 1) }
                 '"' -> {
-                    var j = i + 1
-                    while (j < json.length && (json[j] != '"' || json[j-1] == '\\')) j++
-                    i = j
+                    idx++
+                    while (idx < json.length && (json[idx] != '"' || json[idx-1] == '\\')) idx++
                 }
             }
+            idx++
         }
         return null
     }
@@ -548,17 +549,17 @@ internal object AutoScraper {
         val rx = Regex(""""$key"\s*:\s*\[""")
         val match = rx.find(json) ?: return null
         var depth = 0
-        var start = match.range.last + 1
-        for (i in start until json.length) {
-            when (json[i]) {
+        var idx = match.range.last + 1
+        while (idx < json.length) {
+            when (json[idx]) {
                 '[' -> depth++
-                ']' -> { depth--; if (depth == 0) return json.substring(match.range.start + match.value.length - 1, i + 1) }
+                ']' -> { depth--; if (depth == 0) return json.substring(match.range.start + match.value.length - 1, idx + 1) }
                 '"' -> {
-                    var j = i + 1
-                    while (j < json.length && (json[j] != '"' || json[j-1] == '\\')) j++
-                    i = j
+                    idx++
+                    while (idx < json.length && (json[idx] != '"' || json[idx-1] == '\\')) idx++
                 }
             }
+            idx++
         }
         return null
     }
