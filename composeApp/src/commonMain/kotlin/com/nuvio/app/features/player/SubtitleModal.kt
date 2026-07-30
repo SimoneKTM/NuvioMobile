@@ -240,6 +240,7 @@ private fun UnifiedSubtitleList(
             .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
+        item(key = "header-none") { SectionHeader(label = noneLabel) }
         item(key = "none") {
             UnifiedSubtitleItem(
                 label = noneLabel,
@@ -249,9 +250,7 @@ private fun UnifiedSubtitleList(
             )
         }
 
-        if (subtitleTracks.isNotEmpty()) {
-            item(key = "header-builtin") { SectionHeader(label = builtInLabel) }
-        }
+        item(key = "header-builtin") { SectionHeader(label = builtInLabel) }
         subtitleTracks.forEach { track ->
             val isSelected = track.index == selectedSubtitleIndex && selectedAddonSubtitleId == null && openSubtitlesSelected == null
             item(key = "builtin:${track.index}") {
@@ -263,9 +262,7 @@ private fun UnifiedSubtitleList(
             }
         }
 
-        if (openSubtitlesItems.isNotEmpty()) {
-            item(key = "header-opensubtitles") { SectionHeader(label = stringResource(Res.string.compose_player_opensubtitles_section)) }
-        }
+        item(key = "header-opensubtitles") { SectionHeader(label = stringResource(Res.string.compose_player_opensubtitles_section)) }
         openSubtitlesItems.forEach { item ->
             val isSelected = item.fileId == openSubtitlesSelected
             val label = languageLabelForCode(item.languageCode)
@@ -285,9 +282,7 @@ private fun UnifiedSubtitleList(
             }
         }
 
-        if (addonSubtitles.isNotEmpty()) {
-            item(key = "header-addon") { SectionHeader(label = stringResource(Res.string.addon_title)) }
-        }
+        item(key = "header-addon") { SectionHeader(label = stringResource(Res.string.addon_title)) }
         addonSubtitles.forEach { sub ->
             val isSelected = sub.id == selectedAddonSubtitleId
             item(key = "addon:${sub.id}") {
