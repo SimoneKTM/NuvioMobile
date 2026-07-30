@@ -25,6 +25,7 @@ internal data class PlayerSurfaceGestureCallbacks(
     val isHoldToSpeedGestureActive: State<Boolean>,
     val touchGesturesEnabled: State<Boolean>,
     val playerControlsLocked: State<Boolean>,
+    val isLiveContent: State<Boolean>,
     val currentPositionMs: State<Long>,
     val currentDurationMs: State<Long>,
     val commitHorizontalSeek: State<(Long) -> Unit>,
@@ -164,6 +165,7 @@ internal fun PlayerScreenRuntime.togglePlayback() {
 }
 
 internal fun PlayerScreenRuntime.seekBy(offsetMs: Long) {
+    if (activeProviderAddonId == "live-tv") return
     playerController?.seekBy(offsetMs)
     scheduleProgressSyncAfterSeek()
     controlsVisible = true
@@ -174,6 +176,7 @@ internal fun PlayerScreenRuntime.seekBy(offsetMs: Long) {
 }
 
 internal fun PlayerScreenRuntime.handleDoubleTapSeek(direction: PlayerSeekDirection) {
+    if (activeProviderAddonId == "live-tv") return
     val stepMs = (playerSettingsUiState.skipSeekIntervalSeconds * 1000L).coerceAtLeast(1000L)
     val currentPositionMs = playbackSnapshot.positionMs.coerceAtLeast(0L)
     val currentSeekState = accumulatedSeekState
@@ -294,6 +297,7 @@ internal fun PlayerScreenRuntime.rememberSurfaceGestureCallbacks(): PlayerSurfac
             else -> controlsVisible = !controlsVisible
         }
     }
+    val isLiveContent = activeProviderAddonId == "live-tv"
     return PlayerSurfaceGestureCallbacks(
         onSurfaceTap = onSurfaceTap,
         onSurfaceDoubleTap = onSurfaceDoubleTap,
@@ -307,9 +311,11 @@ internal fun PlayerScreenRuntime.rememberSurfaceGestureCallbacks(): PlayerSurfac
         isHoldToSpeedGestureActive = rememberUpdatedState(isHoldToSpeedGestureActive),
         touchGesturesEnabled = rememberUpdatedState(playerSettingsUiState.touchGesturesEnabled),
         playerControlsLocked = rememberUpdatedState(playerControlsLocked),
+        isLiveContent = rememberUpdatedState(isLiveContent),
         currentPositionMs = rememberUpdatedState(playbackSnapshot.positionMs.coerceAtLeast(0L)),
         currentDurationMs = rememberUpdatedState(playbackSnapshot.durationMs),
         commitHorizontalSeek = rememberUpdatedState { targetPositionMs: Long ->
+            if (activeProviderAddonId == "live-tv") return@rememberUpdatedState
             playerController?.seekTo(targetPositionMs)
             scheduleProgressSyncAfterSeek()
         },

@@ -33,6 +33,7 @@ internal fun BoxScope.PlayerPlaybackOverlays(
     metrics: PlayerLayoutMetrics,
     horizontalSafePadding: Dp,
     onUnlock: () -> Unit,
+    isLiveContent: Boolean = false,
     showOpeningOverlay: Boolean,
     backdropArtwork: String?,
     logo: String?,
@@ -65,12 +66,13 @@ internal fun BoxScope.PlayerPlaybackOverlays(
     errorMessage: String?,
     onDismissError: () -> Unit,
 ) {
-    AnimatedVisibility(
-        visible = playerControlsLocked && lockedOverlayVisible,
-        enter = fadeIn(),
-        exit = fadeOut(),
-    ) {
-        LockedPlayerOverlay(
+    if (!isLiveContent) {
+        AnimatedVisibility(
+            visible = playerControlsLocked && lockedOverlayVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            LockedPlayerOverlay(
             playbackSnapshot = playbackSnapshot,
             displayedPositionMs = displayedPositionMs,
             metrics = metrics,
@@ -78,6 +80,7 @@ internal fun BoxScope.PlayerPlaybackOverlays(
             onUnlock = onUnlock,
             modifier = Modifier.fillMaxSize(),
         )
+        }
     }
 
     AnimatedVisibility(
