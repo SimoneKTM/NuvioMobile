@@ -971,6 +971,8 @@
     <string name="settings_tvdb_module_season_posters_description">Usa i poster delle stagioni di TheTVDB nel selettore stagioni della schermata metadati.</string>
     <string name="settings_tvdb_section_localization">Localizzazione</string>
     <string name="settings_tvdb_preferred_language">Lingua</string>
+    <string name="settings_tvdb_preferred_language_description">Codice lingua TVDB per titoli e riassunti localizzati, es. `it`, `de`, `fr`, `ja`</string>
+    <string name="settings_tvdb_language_code_label">Codice lingua</string>
     <string name="settings_mdb_add_api_key_first">Aggiungi la tua chiave API MDBList qui sotto prima di attivare le valutazioni.</string>
     <string name="settings_mdb_api_key_description">Necessaria per recuperare le valutazioni da MDBList</string>
     <string name="settings_mdb_api_key_label">Chiave API</string>

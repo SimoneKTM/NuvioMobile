@@ -945,6 +945,8 @@
     <string name="settings_tvdb_module_season_posters_description">Use TheTVDB season posters in the metadata screen season selector.</string>
     <string name="settings_tvdb_section_localization">Localization</string>
     <string name="settings_tvdb_preferred_language">Language</string>
+    <string name="settings_tvdb_preferred_language_description">TVDB language code for localized titles and overviews, e.g. `it`, `de`, `fr`, `ja`</string>
+    <string name="settings_tvdb_language_code_label">Language code</string>
     <string name="settings_mdb_add_api_key_first">Add your MDBList API key below before turning ratings on.</string>
     <string name="settings_mdb_api_key_description">Required to fetch ratings from MDBList</string>
     <string name="settings_mdb_api_key_label">API Key</string>

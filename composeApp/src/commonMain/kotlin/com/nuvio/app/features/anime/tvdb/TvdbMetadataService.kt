@@ -64,8 +64,14 @@ object TvdbMetadataService {
 
                 var enriched = meta
 
-                if (settings.useBasicInfo && apiLanguage != null && apiLanguage != "en" && extended.name.isNotBlank()) {
-                    enriched = enriched.copy(name = extended.name)
+                if (settings.useBasicInfo && apiLanguage != null && apiLanguage != "en") {
+                    val localizedName = extended.aliases
+                        .firstOrNull { it.language == apiLanguage && it.name.isNotBlank() }
+                        ?.name
+                        ?: extended.name.takeIf { it.isNotBlank() }
+                    if (localizedName != null) {
+                        enriched = enriched.copy(name = localizedName)
+                    }
                 }
 
                 if (extended.aliases.isNotEmpty()) {

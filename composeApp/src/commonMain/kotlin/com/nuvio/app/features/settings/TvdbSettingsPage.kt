@@ -49,8 +49,8 @@ import nuvio.composeapp.generated.resources.settings_tvdb_module_season_posters_
 import nuvio.composeapp.generated.resources.settings_tvdb_module_trailers
 import nuvio.composeapp.generated.resources.settings_tvdb_module_trailers_description
 import nuvio.composeapp.generated.resources.settings_tvdb_preferred_language
-import nuvio.composeapp.generated.resources.settings_tmdb_preferred_language_description
-import nuvio.composeapp.generated.resources.settings_tmdb_language_code_label
+import nuvio.composeapp.generated.resources.settings_tvdb_preferred_language_description
+import nuvio.composeapp.generated.resources.settings_tvdb_language_code_label
 import org.jetbrains.compose.resources.stringResource
 
 internal fun LazyListScope.tvdbSettingsContent(
@@ -385,7 +385,7 @@ private fun TvdbLanguageRow(
                 fontWeight = FontWeight.Medium,
             )
             Text(
-                text = stringResource(Res.string.settings_tmdb_preferred_language_description),
+                text = stringResource(Res.string.settings_tvdb_preferred_language_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -399,7 +399,7 @@ private fun TvdbLanguageRow(
             enabled = enabled,
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            label = { Text(stringResource(Res.string.settings_tmdb_language_code_label)) },
+            label = { Text(stringResource(Res.string.settings_tvdb_language_code_label)) },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f),
