@@ -48,6 +48,7 @@ internal fun PlayerScreenModalHosts(
     onAudioTrackSelected: (Int) -> Unit,
     onAudioModalDismissed: () -> Unit,
     showSubtitleModal: Boolean,
+    subtitleTracks: List<SubtitleTrack>,
     selectedSubtitleIndex: Int,
     addonSubtitles: List<AddonSubtitle>,
     selectedAddonSubtitleId: String?,
@@ -173,6 +174,7 @@ internal fun PlayerScreenModalHosts(
 
     SubtitleModal(
         visible = showSubtitleModal,
+        subtitleTracks = subtitleTracks,
         selectedSubtitleIndex = selectedSubtitleIndex,
         addonSubtitles = addonSubtitles,
         selectedAddonSubtitleId = selectedAddonSubtitleId,

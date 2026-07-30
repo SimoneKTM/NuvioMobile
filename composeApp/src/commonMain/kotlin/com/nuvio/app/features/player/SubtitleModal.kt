@@ -263,21 +263,20 @@ private fun UnifiedSubtitleList(
         }
 
         item(key = "header-opensubtitles") { SectionHeader(label = stringResource(Res.string.compose_player_opensubtitles_section)) }
-        openSubtitlesItems.forEach { item ->
-            val isSelected = item.fileId == openSubtitlesSelected
-            val label = languageLabelForCode(item.languageCode)
-                .takeIf { it.isNotBlank() && it != item.languageCode }
-                ?: item.language.ifBlank { item.languageCode.ifBlank { "?" } }
-            val suffix = buildString {
-                if (item.hearingImpaired) append(" [HI]")
-                if (item.fromTrusted) append(" \u2605")
-            }
-            item(key = "opensubtitles:${item.fileId}") {
+        openSubtitlesItems.forEach { sub ->
+            item(key = "opensubtitles:${sub.fileId}") {
+                val label = languageLabelForCode(sub.languageCode)
+                    .takeIf { it.isNotBlank() && it != sub.languageCode }
+                    ?: sub.language.ifBlank { sub.languageCode.ifBlank { "?" } }
+                val suffix = buildString {
+                    if (sub.hearingImpaired) append(" [HI]")
+                    if (sub.fromTrusted) append(" \u2605")
+                }
                 UnifiedSubtitleItem(
                     label = label,
                     secondaryLabel = suffix.ifBlank { null },
-                    isSelected = isSelected,
-                    onSelect = { onOpenSubtitlesItemSelected(item) },
+                    isSelected = sub.fileId == openSubtitlesSelected,
+                    onSelect = { onOpenSubtitlesItemSelected(sub) },
                 )
             }
         }
