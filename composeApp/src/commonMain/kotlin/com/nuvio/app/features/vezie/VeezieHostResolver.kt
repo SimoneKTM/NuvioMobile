@@ -56,8 +56,6 @@ internal object VeezieHostResolver {
                 videoUrl.contains("fileupload") || videoUrl.contains("upload") -> resolveGenericUpload(videoUrl)
                 else -> resolveGeneric(videoUrl)
             }
-
-            null
         } catch (e: Exception) {
             log.e(e) { "Failed to resolve: $videoUrl" }
             null
