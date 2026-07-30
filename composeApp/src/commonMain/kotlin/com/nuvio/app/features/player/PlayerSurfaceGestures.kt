@@ -72,12 +72,6 @@ internal fun Modifier.playerSurfaceDragGestures(
                 return@awaitEachGesture
             }
             if (isLiveContentState.value) {
-                while (true) {
-                    val event = awaitPointerEvent()
-                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                    if (!change.pressed) break
-                    change.consume()
-                }
                 return@awaitEachGesture
             }
             val controller = gestureController

@@ -48,22 +48,17 @@ import androidx.compose.ui.unit.sp
 import com.nuvio.app.features.opensubtitles.OpenSubtitlesSubtitleItem
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.compose_player_fetch_subtitles
+import nuvio.composeapp.generated.resources.addon_title
+import nuvio.composeapp.generated.resources.compose_player_built_in
 import nuvio.composeapp.generated.resources.compose_player_none
+import nuvio.composeapp.generated.resources.compose_player_opensubtitles_section
 import nuvio.composeapp.generated.resources.compose_player_subtitles
 import org.jetbrains.compose.resources.stringResource
-
-private data class UnifiedSubtitleItem(
-    val id: String,
-    val label: String,
-    val secondaryLabel: String? = null,
-    val isSelected: Boolean,
-    val isNone: Boolean = false,
-    val onSelect: () -> Unit,
-)
 
 @Composable
 fun SubtitleModal(
     visible: Boolean,
+    subtitleTracks: List<SubtitleTrack>,
     selectedSubtitleIndex: Int,
     addonSubtitles: List<AddonSubtitle>,
     selectedAddonSubtitleId: String?,
@@ -180,6 +175,7 @@ fun SubtitleModal(
                             )
                         } else {
                             UnifiedSubtitleList(
+                                subtitleTracks = subtitleTracks,
                                 selectedSubtitleIndex = selectedSubtitleIndex,
                                 onBuiltInTrackSelected = onBuiltInTrackSelected,
                                 addonSubtitles = addonSubtitles,
@@ -204,6 +200,7 @@ fun SubtitleModal(
 
 @Composable
 private fun UnifiedSubtitleList(
+    subtitleTracks: List<SubtitleTrack>,
     selectedSubtitleIndex: Int,
     onBuiltInTrackSelected: (Int) -> Unit,
     addonSubtitles: List<AddonSubtitle>,
@@ -219,50 +216,8 @@ private fun UnifiedSubtitleList(
     onOpenSubtitlesItemSelected: (OpenSubtitlesSubtitleItem) -> Unit,
 ) {
     val noneLabel = stringResource(Res.string.compose_player_none)
+    val builtInLabel = stringResource(Res.string.compose_player_built_in)
     val openSubtitlesSelected = selectedOpenSubtitlesFileId
-
-    val items = buildList {
-        add(
-            UnifiedSubtitleItem(
-                id = "none",
-                label = noneLabel,
-                isSelected = selectedSubtitleIndex == -1 && selectedAddonSubtitleId == null && openSubtitlesSelected == null,
-                isNone = true,
-                onSelect = { onBuiltInTrackSelected(-1) },
-            )
-        )
-        openSubtitlesItems.forEach { item ->
-            val isSelected = item.fileId == openSubtitlesSelected
-            val label = languageLabelForCode(item.languageCode)
-                .takeIf { it.isNotBlank() && it != item.languageCode }
-                ?: item.language.ifBlank { item.languageCode.ifBlank { "?" } }
-            val suffix = buildString {
-                if (item.hearingImpaired) append(" [HI]")
-                if (item.fromTrusted) append(" \u2605")
-            }
-            add(
-                UnifiedSubtitleItem(
-                    id = "opensubtitles:${item.fileId}",
-                    label = label,
-                    secondaryLabel = suffix.ifBlank { null },
-                    isSelected = isSelected,
-                    onSelect = { onOpenSubtitlesItemSelected(item) },
-                )
-            )
-        }
-        addonSubtitles.forEach { sub ->
-            val isSelected = sub.id == selectedAddonSubtitleId
-            add(
-                UnifiedSubtitleItem(
-                    id = "addon:${sub.id}",
-                    label = sub.display,
-                    secondaryLabel = languageLabelForCode(sub.language).takeIf { it.isNotBlank() },
-                    isSelected = isSelected && openSubtitlesSelected == null,
-                    onSelect = { onAddonSubtitleSelected(sub) },
-                )
-            )
-        }
-    }
 
     if (isLoadingAddonSubtitles || isLoadingOpenSubtitles) {
         Box(
@@ -285,8 +240,64 @@ private fun UnifiedSubtitleList(
             .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        items(items, key = { it.id }) { item ->
-            SubtitleRow(item)
+        item(key = "none") {
+            UnifiedSubtitleItem(
+                label = noneLabel,
+                isSelected = selectedSubtitleIndex == -1 && selectedAddonSubtitleId == null && openSubtitlesSelected == null,
+                isNone = true,
+                onSelect = { onBuiltInTrackSelected(-1) },
+            )
+        }
+
+        if (subtitleTracks.isNotEmpty()) {
+            item(key = "header-builtin") { SectionHeader(label = builtInLabel) }
+        }
+        subtitleTracks.forEach { track ->
+            val isSelected = track.index == selectedSubtitleIndex && selectedAddonSubtitleId == null && openSubtitlesSelected == null
+            item(key = "builtin:${track.index}") {
+                UnifiedSubtitleItem(
+                    label = localizedTrackDisplayName(track.label, track.language, track.index),
+                    isSelected = isSelected,
+                    onSelect = { onBuiltInTrackSelected(track.index) },
+                )
+            }
+        }
+
+        if (openSubtitlesItems.isNotEmpty()) {
+            item(key = "header-opensubtitles") { SectionHeader(label = stringResource(Res.string.compose_player_opensubtitles_section)) }
+        }
+        openSubtitlesItems.forEach { item ->
+            val isSelected = item.fileId == openSubtitlesSelected
+            val label = languageLabelForCode(item.languageCode)
+                .takeIf { it.isNotBlank() && it != item.languageCode }
+                ?: item.language.ifBlank { item.languageCode.ifBlank { "?" } }
+            val suffix = buildString {
+                if (item.hearingImpaired) append(" [HI]")
+                if (item.fromTrusted) append(" \u2605")
+            }
+            item(key = "opensubtitles:${item.fileId}") {
+                UnifiedSubtitleItem(
+                    label = label,
+                    secondaryLabel = suffix.ifBlank { null },
+                    isSelected = isSelected,
+                    onSelect = { onOpenSubtitlesItemSelected(item) },
+                )
+            }
+        }
+
+        if (addonSubtitles.isNotEmpty()) {
+            item(key = "header-addon") { SectionHeader(label = stringResource(Res.string.addon_title)) }
+        }
+        addonSubtitles.forEach { sub ->
+            val isSelected = sub.id == selectedAddonSubtitleId
+            item(key = "addon:${sub.id}") {
+                UnifiedSubtitleItem(
+                    label = sub.display,
+                    secondaryLabel = languageLabelForCode(sub.language).takeIf { it.isNotBlank() },
+                    isSelected = isSelected && openSubtitlesSelected == null,
+                    onSelect = { onAddonSubtitleSelected(sub) },
+                )
+            }
         }
 
         if (openSubtitlesItems.isEmpty() && isOpenSubtitlesConfigured) {
@@ -325,14 +336,20 @@ private fun UnifiedSubtitleList(
 }
 
 @Composable
-private fun SubtitleRow(item: UnifiedSubtitleItem) {
-    val bgColor = if (item.isSelected) Color(0xFF333333) else Color.Transparent
+private fun UnifiedSubtitleItem(
+    label: String,
+    secondaryLabel: String? = null,
+    isSelected: Boolean,
+    isNone: Boolean = false,
+    onSelect: () -> Unit,
+) {
+    val bgColor = if (isSelected) Color(0xFF333333) else Color.Transparent
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .background(bgColor)
-            .clickable(onClick = item.onSelect)
+            .clickable(onClick = onSelect)
             .padding(vertical = 12.dp, horizontal = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -342,12 +359,12 @@ private fun SubtitleRow(item: UnifiedSubtitleItem) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = item.label,
-                color = if (item.isSelected) Color.White else Color.White.copy(alpha = if (item.isNone) 0.5f else 0.8f),
+                text = label,
+                color = if (isSelected) Color.White else Color.White.copy(alpha = if (isNone) 0.5f else 0.8f),
                 fontSize = 14.sp,
-                fontWeight = if (item.isSelected) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
             )
-            item.secondaryLabel?.let {
+            secondaryLabel?.let {
                 Text(
                     text = it,
                     color = Color.White.copy(alpha = 0.4f),
@@ -355,7 +372,7 @@ private fun SubtitleRow(item: UnifiedSubtitleItem) {
                 )
             }
         }
-        if (item.isSelected) {
+        if (isSelected) {
             Icon(
                 imageVector = Icons.Rounded.Check,
                 contentDescription = null,
@@ -364,4 +381,16 @@ private fun SubtitleRow(item: UnifiedSubtitleItem) {
             )
         }
     }
+}
+
+@Composable
+private fun SectionHeader(label: String) {
+    Text(
+        text = label.uppercase(),
+        color = Color.White.copy(alpha = 0.4f),
+        fontSize = 11.sp,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 1.sp,
+        modifier = Modifier.padding(start = 12.dp, top = 16.dp, bottom = 4.dp),
+    )
 }
