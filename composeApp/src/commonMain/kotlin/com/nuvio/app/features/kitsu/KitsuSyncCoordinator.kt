@@ -2,7 +2,6 @@ package com.nuvio.app.features.kitsu
 
 import co.touchlab.kermit.Logger
 import com.nuvio.app.features.watchprogress.WatchProgressClock
-import com.nuvio.app.features.watchprogress.WatchProgressRepository
 import com.nuvio.app.features.watchprogress.WatchProgressEntry
 import com.nuvio.app.features.watched.WatchedRepository
 import com.nuvio.app.features.watched.WatchedItem
@@ -65,6 +64,8 @@ object KitsuSyncCoordinator {
             if (entry.parentMetaType.equals("series", ignoreCase = true) || entry.parentMetaType.equals("anime", ignoreCase = true)) {
                 val progress = entry.episodeNumber ?: return@launch
                 val kitsuMediaId = extractKitsuMediaId(entry.parentMetaId, entry.videoId) ?: return@launch
+
+                KitsuLibraryRepository.ensureLoaded()
 
                 if (!settings.autoAddNewAnime && !KitsuLibraryRepository.isInLibrary(kitsuMediaId)) {
                     return@launch
@@ -131,24 +132,19 @@ object KitsuSyncCoordinator {
 
             try {
                 KitsuLibraryRepository.refreshNow()
-                val localEntries = WatchProgressRepository.uiState.value.entries
                 val kitsuItems = KitsuLibraryRepository.uiState.value.current +
                     KitsuLibraryRepository.uiState.value.completed +
                     KitsuLibraryRepository.uiState.value.planned +
                     KitsuLibraryRepository.uiState.value.onHold +
                     KitsuLibraryRepository.uiState.value.dropped
 
-                val token = KitsuAuthRepository.getAccessTokenRefreshed().orEmpty()
-
                 val lastSyncTimestampMs = settings.lastSyncTimestamp
-                val activeIds = KitsuLibraryRepository.uiState.value.current.map { it.kitsuMediaId }.toSet()
 
                 val itemsToProcess = kitsuItems.filter { item ->
-                    item.updatedAt?.let { parseKitsuDate(it) > lastSyncTimestampMs } ?: false ||
-                    item.kitsuMediaId in activeIds
+                    item.updatedAt?.let { parseKitsuDate(it) > lastSyncTimestampMs } ?: false
                 }
 
-                log.d { "Kitsu sync: ${localEntries.size} local, ${kitsuItems.size} kitsu items, queue: ${itemsToProcess.size}" }
+                log.d { "Kitsu sync: ${kitsuItems.size} kitsu items, queue: ${itemsToProcess.size}" }
 
                 var processedCount = 0
                 for (item in itemsToProcess) {
@@ -159,19 +155,17 @@ object KitsuSyncCoordinator {
 
                     val kitsuUpdatedMs = parseKitsuDate(item.updatedAt)
 
-                    if (kitsuUpdatedMs > lastSyncTimestampMs) {
-                        val watched = WatchedItem(
-                            id = item.kitsuMediaId.toString(),
-                            type = "series",
-                            name = item.title,
-                            poster = item.posterUrl,
-                            season = 1,
-                            episode = item.progress,
-                            markedAtEpochMs = kitsuUpdatedMs
-                        )
-                        if (item.status.equals("completed", ignoreCase = true)) {
-                            WatchedRepository.markWatchedFromPlaybackCompletion(watched, syncRemote = false)
-                        }
+                    val watched = WatchedItem(
+                        id = item.kitsuMediaId.toString(),
+                        type = "series",
+                        name = item.title,
+                        poster = item.posterUrl,
+                        season = 1,
+                        episode = item.progress,
+                        markedAtEpochMs = kitsuUpdatedMs
+                    )
+                    if (item.status.equals("completed", ignoreCase = true)) {
+                        WatchedRepository.markWatchedFromPlaybackCompletion(watched, syncRemote = false)
                     }
                 }
 

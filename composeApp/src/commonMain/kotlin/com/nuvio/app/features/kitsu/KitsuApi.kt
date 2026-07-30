@@ -193,13 +193,13 @@ object KitsuApi {
             )
         )
         return try {
-            httpRequestRaw(
+            val response = httpRequestRaw(
                 method = "PATCH",
                 url = "$API_BASE/library-entries/$entryId",
                 body = body,
                 headers = authHeaders(token) + mapOf("Accept" to "application/vnd.api+json")
             )
-            true
+            response.status in 200..299
         } catch (e: Exception) {
             log.e { "Failed to update Kitsu library entry $entryId: ${e.message}" }
             false
@@ -208,13 +208,13 @@ object KitsuApi {
 
     suspend fun deleteLibraryEntry(token: String, entryId: String): Boolean {
         return try {
-            httpRequestRaw(
+            val response = httpRequestRaw(
                 method = "DELETE",
                 url = "$API_BASE/library-entries/$entryId",
                 body = "",
                 headers = authHeaders(token)
             )
-            true
+            response.status in 200..299
         } catch (e: Exception) {
             log.e { "Failed to delete Kitsu library entry $entryId: ${e.message}" }
             false

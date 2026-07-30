@@ -1,6 +1,7 @@
 package com.nuvio.app.features.mal
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.features.watchprogress.WatchProgressCompletionPercentThreshold
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -53,6 +54,7 @@ object MalSettingsRepository {
     fun clearLocalState() {
         hasLoaded = false
         _uiState.value = MalSettingsUiState()
+        WatchProgressCompletionPercentThreshold = MalSettingsUiState().markWatchedThreshold * 100f
         persist()
     }
 
@@ -103,6 +105,7 @@ object MalSettingsRepository {
         val clamped = threshold.coerceIn(0f, 1f)
         if (_uiState.value.markWatchedThreshold == clamped) return
         _uiState.value = _uiState.value.copy(markWatchedThreshold = clamped)
+        WatchProgressCompletionPercentThreshold = clamped * 100f
         persist()
     }
 
@@ -115,7 +118,7 @@ object MalSettingsRepository {
     private fun loadFromDisk() {
         hasLoaded = true
         val payload = MalLibraryStorage.loadSettingsPayload().orEmpty().trim()
-        _uiState.value = if (payload.isBlank()) {
+        val loadedState = if (payload.isBlank()) {
             MalSettingsUiState()
         } else {
             runCatching { json.decodeFromString<MalSettingsUiState>(payload) }
@@ -124,6 +127,8 @@ object MalSettingsRepository {
                     MalSettingsUiState()
                 }
         }
+        _uiState.value = loadedState
+        WatchProgressCompletionPercentThreshold = loadedState.markWatchedThreshold * 100f
     }
 
     private fun persist() {

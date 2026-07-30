@@ -81,7 +81,7 @@ object MalSyncCoordinator {
                 } else {
                     maxOf(libraryItem?.episodesWatched ?: 0, progress - 1)
                 }
-                val targetStatus = if (entry.isCompleted && entry.title != null) "completed" else "watching"
+                val targetStatus = if (entry.isCompleted) "completed" else "watching"
 
                 val success = MalApiClient.updateAnimeListStatus(
                     accessToken = freshToken,
@@ -134,19 +134,17 @@ object MalSyncCoordinator {
                         _syncMessage.value = "Synchronizing MyAnimeList ($processedCount/${itemsToProcess.size})..."
                     }
 
-                    if ((item.updatedAtEpochMs ?: 0L) > lastSyncTimestampMs) {
-                        val watched = WatchedItem(
-                            id = item.id.toString(),
-                            type = "series",
-                            name = item.title,
-                            poster = item.posterUrl,
-                            season = 1,
-                            episode = item.episodesWatched ?: 0,
-                            markedAtEpochMs = item.updatedAtEpochMs ?: 0L,
-                        )
-                        if (item.listStatus.equals("completed", ignoreCase = true)) {
-                            WatchedRepository.markWatchedFromPlaybackCompletion(watched, syncRemote = false)
-                        }
+                    val watched = WatchedItem(
+                        id = item.id.toString(),
+                        type = "series",
+                        name = item.title,
+                        poster = item.posterUrl,
+                        season = 1,
+                        episode = item.episodesWatched ?: 0,
+                        markedAtEpochMs = item.updatedAtEpochMs ?: 0L,
+                    )
+                    if (item.listStatus.equals("completed", ignoreCase = true)) {
+                        WatchedRepository.markWatchedFromPlaybackCompletion(watched, syncRemote = false)
                     }
                 }
 

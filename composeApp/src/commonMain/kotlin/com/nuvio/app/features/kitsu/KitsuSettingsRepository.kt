@@ -1,6 +1,7 @@
 package com.nuvio.app.features.kitsu
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.features.watchprogress.WatchProgressCompletionPercentThreshold
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,6 +33,7 @@ object KitsuSettingsRepository {
     fun clearLocalState() {
         hasLoaded = false
         _uiState.value = KitsuSettingsUiState()
+        WatchProgressCompletionPercentThreshold = KitsuSettingsUiState().markWatchedThreshold * 100f
         persist()
     }
 
@@ -103,6 +105,7 @@ object KitsuSettingsRepository {
         val clamped = threshold.coerceIn(0f, 1f)
         if (_uiState.value.markWatchedThreshold == clamped) return
         _uiState.value = _uiState.value.copy(markWatchedThreshold = clamped)
+        WatchProgressCompletionPercentThreshold = clamped * 100f
         persist()
     }
 
@@ -126,6 +129,7 @@ object KitsuSettingsRepository {
                 }
         }
         _uiState.value = loadedState
+        WatchProgressCompletionPercentThreshold = loadedState.markWatchedThreshold * 100f
     }
 
     private fun persist() {

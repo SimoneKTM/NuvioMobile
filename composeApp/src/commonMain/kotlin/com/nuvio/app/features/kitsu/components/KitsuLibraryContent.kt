@@ -72,12 +72,17 @@ fun LazyListScope.kitsuLibraryContent(
         else -> {
             val sections = sectionsConfig.mapNotNull { sectionConfig ->
                 if (!sectionConfig.enabled) return@mapNotNull null
-                val rawList = when (sectionConfig.type) {
-                    "Current" -> uiState.current
-                    "Completed" -> uiState.completed
-                    "Planned" -> uiState.planned
-                    "On Hold" -> uiState.onHold
-                    "Dropped" -> uiState.dropped
+                val rawList = when {
+                    sectionConfig.type.equals("current", ignoreCase = true) ||
+                        sectionConfig.type.equals("in corso", ignoreCase = true) -> uiState.current
+                    sectionConfig.type.equals("completed", ignoreCase = true) ||
+                        sectionConfig.type.equals("completato", ignoreCase = true) -> uiState.completed
+                    sectionConfig.type.equals("planned", ignoreCase = true) ||
+                        sectionConfig.type.equals("pianificato", ignoreCase = true) -> uiState.planned
+                    sectionConfig.type.equals("on hold", ignoreCase = true) ||
+                        sectionConfig.type.equals("in pausa", ignoreCase = true) -> uiState.onHold
+                    sectionConfig.type.equals("dropped", ignoreCase = true) ||
+                        sectionConfig.type.equals("abbandonato", ignoreCase = true) -> uiState.dropped
                     else -> emptyList()
                 }
                 val sorted = rawList.sortedWith(

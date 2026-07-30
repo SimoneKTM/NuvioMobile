@@ -48,11 +48,11 @@ data class KitsuSettingsUiState(
 ) {
     companion object {
         val defaultLibrarySections = listOf(
-            KitsuSectionSettings("In Corso", true),
-            KitsuSectionSettings("Completato", true),
-            KitsuSectionSettings("Pianificato", true),
-            KitsuSectionSettings("In Pausa", true),
-            KitsuSectionSettings("Abbandonato", true),
+            KitsuSectionSettings("Current", true),
+            KitsuSectionSettings("Completed", true),
+            KitsuSectionSettings("Planned", true),
+            KitsuSectionSettings("On Hold", true),
+            KitsuSectionSettings("Dropped", true),
         )
     }
 }

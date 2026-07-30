@@ -762,21 +762,31 @@ object LibraryRepository {
             val sectionConfigs = KitsuSettingsRepository.uiState.value.librarySections
             val sections = sectionConfigs.mapNotNull { config ->
                 if (!config.enabled) return@mapNotNull null
-                val statusItems = when (config.type) {
-                    "In Corso" -> kitsuState.current
-                    "Completato" -> kitsuState.completed
-                    "Pianificato" -> kitsuState.planned
-                    "In Pausa" -> kitsuState.onHold
-                    "Abbandonato" -> kitsuState.dropped
+                val statusItems = when {
+                    config.type.equals("in corso", ignoreCase = true) ||
+                        config.type.equals("current", ignoreCase = true) -> kitsuState.current
+                    config.type.equals("completato", ignoreCase = true) ||
+                        config.type.equals("completed", ignoreCase = true) -> kitsuState.completed
+                    config.type.equals("pianificato", ignoreCase = true) ||
+                        config.type.equals("planned", ignoreCase = true) -> kitsuState.planned
+                    config.type.equals("in pausa", ignoreCase = true) ||
+                        config.type.equals("on hold", ignoreCase = true) -> kitsuState.onHold
+                    config.type.equals("abbandonato", ignoreCase = true) ||
+                        config.type.equals("dropped", ignoreCase = true) -> kitsuState.dropped
                     else -> emptyList()
                 }
                 if (statusItems.isEmpty()) return@mapNotNull null
-                val englishKey = when (config.type) {
-                    "In Corso" -> "current"
-                    "Completato" -> "completed"
-                    "Pianificato" -> "planned"
-                    "In Pausa" -> "on_hold"
-                    "Abbandonato" -> "dropped"
+                val englishKey = when {
+                    config.type.equals("in corso", ignoreCase = true) ||
+                        config.type.equals("current", ignoreCase = true) -> "current"
+                    config.type.equals("completato", ignoreCase = true) ||
+                        config.type.equals("completed", ignoreCase = true) -> "completed"
+                    config.type.equals("pianificato", ignoreCase = true) ||
+                        config.type.equals("planned", ignoreCase = true) -> "planned"
+                    config.type.equals("in pausa", ignoreCase = true) ||
+                        config.type.equals("on hold", ignoreCase = true) -> "on_hold"
+                    config.type.equals("abbandonato", ignoreCase = true) ||
+                        config.type.equals("dropped", ignoreCase = true) -> "dropped"
                     else -> config.type.lowercase().replace(" ", "_")
                 }
                 LibrarySection(

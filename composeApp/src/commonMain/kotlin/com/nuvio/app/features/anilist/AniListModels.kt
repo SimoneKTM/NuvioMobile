@@ -62,7 +62,6 @@ data class AniListSettingsUiState(
             AniListSectionSettings("In Pausa", true),
             AniListSectionSettings("Abbandonato", true),
             AniListSectionSettings("Rivisione", true),
-            AniListSectionSettings("Preferiti", true)
         )
     }
 }

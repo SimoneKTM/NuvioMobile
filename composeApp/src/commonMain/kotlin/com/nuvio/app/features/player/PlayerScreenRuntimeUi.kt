@@ -479,7 +479,6 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
         },
         onAudioModalDismissed = { showAudioModal = false },
         showSubtitleModal = showSubtitleModal,
-        activeSubtitleTab = activeSubtitleTab,
         subtitleTracks = subtitleTracks,
         selectedSubtitleIndex = selectedSubtitleIndex,
         addonSubtitles = visibleAddonSubtitles,
@@ -493,7 +492,6 @@ private fun PlayerScreenRuntime.RenderPlayerModals(displayedPositionMs: Long) {
         selectedOpenSubtitlesFileId = selectedOpenSubtitlesFileId,
         isLoadingOpenSubtitles = isLoadingOpenSubtitles,
         isOpenSubtitlesConfigured = isOpenSubtitlesConfigured,
-        onSubtitleTabSelected = { activeSubtitleTab = it },
         onBuiltInSubtitleTrackSelected = { index ->
             val wasCustom = useCustomSubtitles
             selectedSubtitleIndex = index

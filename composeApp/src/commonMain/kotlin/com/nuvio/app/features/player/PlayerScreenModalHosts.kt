@@ -48,7 +48,6 @@ internal fun PlayerScreenModalHosts(
     onAudioTrackSelected: (Int) -> Unit,
     onAudioModalDismissed: () -> Unit,
     showSubtitleModal: Boolean,
-    activeSubtitleTab: SubtitleTab,
     subtitleTracks: List<SubtitleTrack>,
     selectedSubtitleIndex: Int,
     addonSubtitles: List<AddonSubtitle>,
@@ -62,7 +61,6 @@ internal fun PlayerScreenModalHosts(
     selectedOpenSubtitlesFileId: Int?,
     isLoadingOpenSubtitles: Boolean,
     isOpenSubtitlesConfigured: Boolean,
-    onSubtitleTabSelected: (SubtitleTab) -> Unit,
     onBuiltInSubtitleTrackSelected: (Int) -> Unit,
     onAddonSubtitleSelected: (AddonSubtitle) -> Unit,
     onFetchAddonSubtitles: () -> Unit,
@@ -176,7 +174,6 @@ internal fun PlayerScreenModalHosts(
 
     SubtitleModal(
         visible = showSubtitleModal,
-        activeTab = activeSubtitleTab,
         subtitleTracks = subtitleTracks,
         selectedSubtitleIndex = selectedSubtitleIndex,
         addonSubtitles = addonSubtitles,
@@ -190,7 +187,6 @@ internal fun PlayerScreenModalHosts(
         selectedOpenSubtitlesFileId = selectedOpenSubtitlesFileId,
         isLoadingOpenSubtitles = isLoadingOpenSubtitles,
         isOpenSubtitlesConfigured = isOpenSubtitlesConfigured,
-        onTabSelected = onSubtitleTabSelected,
         onBuiltInTrackSelected = onBuiltInSubtitleTrackSelected,
         onAddonSubtitleSelected = onAddonSubtitleSelected,
         onFetchAddonSubtitles = onFetchAddonSubtitles,
