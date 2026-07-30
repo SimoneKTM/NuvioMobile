@@ -266,7 +266,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
 private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, isEpisode: Boolean) {
     val isInPip = rememberIsInPictureInPicture()
     AnimatedVisibility(
-        visible = (controlsVisible || showParentalGuide) && !playerControlsLocked && !isInPip,
+        visible = (controlsVisible || contentType == "live" || showParentalGuide) && !playerControlsLocked && !isInPip,
         enter = fadeIn(),
         exit = fadeOut(),
     ) {
@@ -316,6 +316,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             },
             onSourcesClick = if (activeVideoId != null) { { openSourcesPanel() } } else null,
             onEpisodesClick = if (isSeries) { { openEpisodesPanel() } } else null,
+            isLiveContent = contentType == "live",
             onLiveChannelsClick = if (activeProviderAddonId == "live-tv") { { showLiveTvChannelsPanel = true } } else null,
             onOpenInExternalPlayer = args.onOpenInExternalPlayer?.let { openExternal ->
                 {
