@@ -2092,7 +2092,23 @@ private fun MainAppContent(
                                         animateHomeCollectionGifs = tabsRouteActive,
                                         onCatalogClick = onCatalogClick,
                                         onPosterClick = { meta ->
-                                            if (meta.id.startsWith("anilist:", ignoreCase = true)) {
+                                            if (meta.type == "live") {
+                                                val launchId = PlayerLaunchStore.put(
+                                                    PlayerLaunch(
+                                                        profileId = activePlaybackProfileId,
+                                                        title = meta.name,
+                                                        sourceUrl = meta.id,
+                                                        logo = meta.poster,
+                                                        streamTitle = meta.name,
+                                                        providerName = "Live TV",
+                                                        contentType = "live",
+                                                        videoId = meta.id,
+                                                        parentMetaId = meta.id,
+                                                        parentMetaType = "live",
+                                                    ),
+                                                )
+                                                navController.navigate(PlayerRoute(launchId = launchId))
+                                            } else if (meta.id.startsWith("anilist:", ignoreCase = true)) {
                                                 coroutineScope.launch {
                                                     val anilistId = meta.id.removePrefix("anilist:").substringBefore(":").toIntOrNull()
                                                     val resolvedId = if (anilistId != null) {
@@ -3221,7 +3237,25 @@ private fun MainAppContent(
                         target = target,
                         onBack = onBack,
                         onPosterClick = { meta ->
-                            navController.navigate(DetailRoute(type = meta.type, id = meta.id, title = meta.name, isAnime = meta.isAnime))
+                            if (meta.type == "live") {
+                                val launchId = PlayerLaunchStore.put(
+                                    PlayerLaunch(
+                                        profileId = activePlaybackProfileId,
+                                        title = meta.name,
+                                        sourceUrl = meta.id,
+                                        logo = meta.poster,
+                                        streamTitle = meta.name,
+                                        providerName = "Live TV",
+                                        contentType = "live",
+                                        videoId = meta.id,
+                                        parentMetaId = meta.id,
+                                        parentMetaType = "live",
+                                    ),
+                                )
+                                navController.navigate(PlayerRoute(launchId = launchId))
+                            } else {
+                                navController.navigate(DetailRoute(type = meta.type, id = meta.id, title = meta.name, isAnime = meta.isAnime))
+                            }
                         },
                         onPosterLongClick = { meta ->
                             openPosterActions(
@@ -3535,7 +3569,25 @@ private fun MainAppContent(
                         onBack = onBack,
                         onCatalogClick = onCatalogClick,
                         onPosterClick = { meta ->
-                            navController.navigate(DetailRoute(type = meta.type, id = meta.id, title = meta.name, isAnime = meta.isAnime))
+                            if (meta.type == "live") {
+                                val launchId = PlayerLaunchStore.put(
+                                    PlayerLaunch(
+                                        profileId = activePlaybackProfileId,
+                                        title = meta.name,
+                                        sourceUrl = meta.id,
+                                        logo = meta.poster,
+                                        streamTitle = meta.name,
+                                        providerName = "Live TV",
+                                        contentType = "live",
+                                        videoId = meta.id,
+                                        parentMetaId = meta.id,
+                                        parentMetaType = "live",
+                                    ),
+                                )
+                                navController.navigate(PlayerRoute(launchId = launchId))
+                            } else {
+                                navController.navigate(DetailRoute(type = meta.type, id = meta.id, title = meta.name, isAnime = meta.isAnime))
+                            }
                         },
                     )
                 }
