@@ -41,13 +41,19 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nuvio.app.core.ui.NuvioActionLabel
 import com.nuvio.app.core.ui.NuvioIconActionButton
 import com.nuvio.app.core.ui.NuvioInfoBadge
 import com.nuvio.app.core.ui.NuvioInputField
 import com.nuvio.app.core.ui.NuvioPrimaryButton
 import com.nuvio.app.core.ui.NuvioSectionLabel
 import com.nuvio.app.core.ui.NuvioSurfaceCard
+import com.nuvio.app.features.addons.AddonStorage
+import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.features.settings.globalNetworkSettingsRepository
 import com.nuvio.app.features.tmdb.TmdbSettingsRepository
+import com.nuvio.app.features.vezie.EasyProxyAddonBridge
+import com.nuvio.app.features.vezie.VeezieEasyProxy
 import com.nuvio.app.features.plugins.runtime.PluginRuntime
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res
@@ -140,6 +146,10 @@ fun PluginsSettingsPageContent(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        EasyProxySection()
+        Spacer(modifier = Modifier.height(12.dp))
+        ScraperSitesSection()
+        Spacer(modifier = Modifier.height(12.dp))
         CloudStreamSettingsSection()
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 8.dp),
@@ -564,6 +574,161 @@ fun PluginsSettingsPageContent(
             }
         )
     }
+}
+
+@Composable
+private fun EasyProxySection() {
+    var proxyUrl by rememberSaveable { mutableStateOf(
+        VeezieEasyProxy.getConfig()?.proxyUrl ?: ""
+    ) }
+    var proxyPassword by rememberSaveable { mutableStateOf(
+        VeezieEasyProxy.getConfig()?.apiPassword ?: ""
+    ) }
+    var saved by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = "EasyProxy",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = "Proxy per risolvere link video diretti (streamingcommunity, altadefinizione, ecc.)",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        NuvioSurfaceCard {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = proxyUrl,
+                    onValueChange = { proxyUrl = it; saved = false },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    placeholder = { Text("https://kittemuort-easytwelve.hf.space") },
+                    label = { Text("URL Proxy") },
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                OutlinedTextField(
+                    value = proxyPassword,
+                    onValueChange = { proxyPassword = it; saved = false },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    placeholder = { Text("Password") },
+                    label = { Text("Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                NuvioActionLabel(
+                    text = if (saved) "Salvato" else "Salva",
+                    onClick = {
+                        if (proxyUrl.isNotBlank()) {
+                            VeezieEasyProxy.configure(
+                                proxyUrl = proxyUrl.trim(),
+                                email = "",
+                                apiPassword = proxyPassword.trim(),
+                            )
+                            saved = true
+                        }
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScraperSitesSection() {
+    var newUrl by rememberSaveable { mutableStateOf("") }
+    var scraperUrls by remember { mutableStateOf(
+        EasyProxyAddonBridge.getScrapers().map { it.websiteUrl }
+    ) }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = "Siti Scraper",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = "Aggiungi URL di siti streaming (es. https://streamingcommunityz.team). Appaiono come addon nel catalogo.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        NuvioSurfaceCard {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = newUrl,
+                    onValueChange = { newUrl = it },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    placeholder = { Text("https://streamingcommunityz.team") },
+                    label = { Text("URL sito") },
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                NuvioActionLabel(
+                    text = "Aggiungi",
+                    enabled = newUrl.isNotBlank(),
+                    onClick = {
+                        val url = if (newUrl.startsWith("http")) newUrl else "https://$newUrl"
+                        val manifestUrl = EasyProxyAddonBridge.addOrUpdateScraper(url.trimEnd('/'))
+                        val profileId = ProfileRepository.activeProfileId
+                        val existing = AddonStorage.loadInstalledAddonUrls(profileId)
+                        if (manifestUrl !in existing) {
+                            AddonStorage.saveInstalledAddonUrls(profileId, existing + manifestUrl)
+                        }
+                        scraperUrls = EasyProxyAddonBridge.getScrapers().map { it.websiteUrl }
+                        newUrl = ""
+                    },
+                )
+            }
+        }
+
+        scraperUrls.forEach { url ->
+            NuvioSurfaceCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = url,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                    )
+                    NuvioActionLabel(
+                        text = "Rimuovi",
+                        onClick = {
+                            val id = urlToId(url)
+                            EasyProxyAddonBridge.removeScraper(id)
+                            val manifestUrl = EasyProxyAddonBridge.getManifestUrlFor(url)
+                            val profileId = ProfileRepository.activeProfileId
+                            val existing = AddonStorage.loadInstalledAddonUrls(profileId)
+                            AddonStorage.saveInstalledAddonUrls(profileId, existing.filter { it != manifestUrl })
+                            scraperUrls = EasyProxyAddonBridge.getScrapers().map { it.websiteUrl }
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun urlToId(websiteUrl: String): String {
+    val clean = websiteUrl.trimEnd('/').removePrefix("https://").removePrefix("http://")
+    return "web_${clean.lowercase().replace(Regex("[^a-z0-9.\\-]"), "").replace(".", "_")}"
 }
 
 private fun String.fallbackRepositoryLabel(fallback: String): String {
