@@ -7,25 +7,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 
-data class SiteConfig(
-    val domain: String = "",
-    val usesApi: Boolean = false,
-    val apiSearchUrl: String? = null,
-    val apiMethod: String = "GET",
-    val apiContentType: String? = null,
-    val apiResponsePath: String? = null,
-    val usesCsrf: Boolean = false,
-    val csrfPattern: String? = null,
-    val episodeNavType: EpisodeNavType = EpisodeNavType.FLAT,
-    val searchUrlCandidates: List<String> = emptyList(),
-    val contentLinkPatterns: List<String> = emptyList(),
-) {
-    enum class EpisodeNavType { FLAT, TABBED, DATA_ATTRS }
-}
-
-private val DEFAULT_SEARCH_CANDIDATES = listOf("/?s={query}", "/search/{query}")
-private val DEFAULT_LINK_PATTERNS = listOf("post-title", "entry-title", "article")
-
 internal object SiteProber {
     private val log = Logger.withTag("SiteProber")
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }

@@ -11,7 +11,8 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-internal object AutoScraper {
+internal object AutoScraper : WebScraper {
+    override val name = "AutoScraper"
     private val log = Logger.withTag("AutoScraper")
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
@@ -23,7 +24,9 @@ internal object AutoScraper {
 
     private val fetcher = PageFetcher
 
-    suspend fun searchLinks(
+    override fun supports(url: String): Boolean = true
+
+    override suspend fun searchLinks(
         siteUrl: String,
         title: String,
         season: Int?,
@@ -260,7 +263,7 @@ internal object AutoScraper {
         return try {
             val html = fetcher.fetch("$baseUrl/anime/$animeFullId") ?: return emptyList()
 
-            val videoPlayerMatch = Regex("""(?s)<video-player[^>]*episodes\s*=\s*["']([^"']+)["'][^>]*>""").find(html)
+            val videoPlayerMatch = Regex("""<video-player[^>]*episodes\s*=\s*["']([^"']+)["'][^>]*>""", RegexOption.DOT_MATCHES_ALL).find(html)
             val episodesData = videoPlayerMatch?.groupValues?.getOrNull(1)
                 ?.replace("&quot;", "\"")?.replace("&#039;", "'") ?: "[]"
 
@@ -277,7 +280,9 @@ internal object AutoScraper {
                 val iframeSrc = Regex("""<iframe[^>]*src\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
                     .find(embedHtml)?.groupValues?.getOrNull(1)
                 if (iframeSrc != null) {
-                    val resolved = resolveVixcloudUrl(iframeSrc) ?: iframeSrc
+                    val resolved = VeezieEasyProxy.extractHostUrl("vixcloud", iframeSrc)
+                        ?: VixcloudExtractor.extractPlaylistUrl(iframeSrc)
+                        ?: iframeSrc
                     return listOf(resolved)
                 }
             }
@@ -286,7 +291,9 @@ internal object AutoScraper {
                 val embedUrlMatch = Regex("""<video-player[^>]*embed_url\s*=\s*["']([^"']+)["']""").find(html)
                 if (embedUrlMatch != null) {
                     val embedUrl = embedUrlMatch.groupValues[1].replace("&quot;", "\"")
-                    val resolved = resolveVixcloudUrl(embedUrl) ?: embedUrl
+                    val resolved = VeezieEasyProxy.extractHostUrl("vixcloud", embedUrl)
+                        ?: VixcloudExtractor.extractPlaylistUrl(embedUrl)
+                        ?: embedUrl
                     return listOf(resolved)
                 }
             }
@@ -338,21 +345,6 @@ internal object AutoScraper {
             }
             else -> """{"title":"$title"}"""
         }
-    }
-
-    private suspend fun resolveVixcloudUrl(url: String): String? {
-        return try {
-            val html = httpGetTextWithHeaders(url, browserHeaders)
-            val regexes = listOf(
-                Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
-                Regex("""<source\s+src\s*=\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
-            )
-            for (regex in regexes) {
-                val match = regex.find(html)
-                if (match != null) return match.groupValues[1]
-            }
-            null
-        } catch (_: Exception) { null }
     }
 
     private fun normalizeUrl(href: String, baseUrl: String): String {

@@ -30,10 +30,14 @@ object EasyProxyAddonBridge {
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
     private var registered = false
 
+    private const val DEFAULT_EASY_PROXY_URL = "https://kittemuort-easytwelve.hf.space"
+    private const val DEFAULT_API_PASSWORD = "Simonekittemuort001"
+
     fun register() {
         if (registered) return
         registered = true
         registerUrlInterceptor(::interceptHttpGetText)
+        initializeDefaults()
     }
 
     fun reloadFromManifestUrls(urls: List<String>) {
@@ -49,6 +53,17 @@ object EasyProxyAddonBridge {
                     scrapers[id] = ScraperEntry(id = id, websiteUrl = websiteUrl, name = name)
                 }
             }
+        }
+    }
+
+    private fun initializeDefaults() {
+        val config = VeezieEasyProxy.getConfig()
+        if (config == null) {
+            VeezieEasyProxy.configure(
+                proxyUrl = DEFAULT_EASY_PROXY_URL,
+                email = "",
+                apiPassword = DEFAULT_API_PASSWORD,
+            )
         }
     }
 
@@ -129,7 +144,7 @@ object EasyProxyAddonBridge {
 
         if (searchQuery.isNullOrBlank()) return """{"metas":[]}"""
 
-        val streamUrls = AutoScraper.searchLinks(scraper.websiteUrl, searchQuery, null, null)
+        val streamUrls = ScraperDispatcher.searchLinks(scraper.websiteUrl, searchQuery, null, null)
 
         return buildJsonObject {
             putJsonArray("metas") {
@@ -215,23 +230,43 @@ object EasyProxyAddonBridge {
         val episode = idParts.getOrNull(2)?.toIntOrNull()
         val title = resolveTitle(videoId) ?: return """{"streams":[]}"""
 
-        val streamUrls = AutoScraper.searchLinks(scraper.websiteUrl, title, season, episode)
+        val streamUrls = ScraperDispatcher.searchLinks(scraper.websiteUrl, title, season, episode)
 
         if (streamUrls.isEmpty()) return """{"streams":[]}"""
+
+        val apiPassword = VeezieEasyProxy.getConfig()?.apiPassword ?: DEFAULT_API_PASSWORD
+        val proxyUrl = VeezieEasyProxy.getConfig()?.proxyUrl ?: DEFAULT_EASY_PROXY_URL
 
         val streamEntries = buildJsonArray {
             var index = 0
             for (link in streamUrls.distinct()) {
                 val resolvedUrl = VeezieHostResolver.resolveStreamUrl(link, title)
-                index++
-                add(buildJsonObject {
-                    put("url", resolvedUrl ?: link)
-                    put("title", "Scraper #$index - ${scraper.name}")
-                    putJsonArray("sources") { add(JsonPrimitive("Scraper")) }
-                    put("behaviorHints", buildJsonObject {
-                        put("notWebReady", true)
+                if (resolvedUrl != null) {
+                    index++
+                    val proxyStreamUrl = buildProxyManifestUrl(resolvedUrl, proxyUrl, apiPassword)
+                    add(buildJsonObject {
+                        put("url", proxyStreamUrl)
+                        put("title", "EasyProxy #$index - ${scraper.name}")
+                        putJsonArray("sources") { add(JsonPrimitive("EasyProxy")) }
+                        put("behaviorHints", buildJsonObject {
+                            put("notWebReady", true)
+                        })
                     })
-                })
+                }
+            }
+            if (index == 0) {
+                for (link in streamUrls.distinct()) {
+                    index++
+                    val proxyStreamUrl = buildProxyManifestUrl(link, proxyUrl, apiPassword)
+                    add(buildJsonObject {
+                        put("url", proxyStreamUrl)
+                        put("title", "EasyProxy #$index - ${scraper.name}")
+                        putJsonArray("sources") { add(JsonPrimitive("EasyProxy")) }
+                        put("behaviorHints", buildJsonObject {
+                            put("notWebReady", true)
+                        })
+                    })
+                }
             }
         }
 
@@ -260,7 +295,7 @@ object EasyProxyAddonBridge {
         val scrapers = getScrapers()
         for (entry in scrapers) {
             try {
-                val links = AutoScraper.searchLinks(entry.websiteUrl, title, season, episode)
+                val links = ScraperDispatcher.searchLinks(entry.websiteUrl, title, season, episode)
                 if (links.isNotEmpty()) {
                     val allVideoUrls = mutableListOf<String>()
                     for (link in links) {
@@ -288,6 +323,12 @@ object EasyProxyAddonBridge {
         }
 
         return null
+    }
+
+    private fun buildProxyManifestUrl(targetUrl: String, proxyUrl: String, apiPassword: String): String {
+        val base = proxyUrl.trimEnd('/')
+        val encoded = targetUrl.encodeURL()
+        return "$base/proxy/hls/manifest.m3u8?d=$encoded&api_password=$apiPassword"
     }
 
     private fun decodeUrlEncodedString(input: String): String {

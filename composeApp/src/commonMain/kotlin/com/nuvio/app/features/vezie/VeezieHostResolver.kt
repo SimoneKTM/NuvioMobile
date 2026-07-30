@@ -2,22 +2,11 @@ package com.nuvio.app.features.vezie
 
 import co.touchlab.kermit.Logger
 import com.nuvio.app.core.network.CloudflareSolver
-import com.nuvio.app.features.addons.httpGetTextWithHeaders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 internal object VeezieHostResolver {
     private val log = Logger.withTag("VeezieHostResolver")
-
-    private val browserHeaders = mapOf(
-        "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Accept-Language" to "it-IT,it;q=0.9",
-        "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    )
-
-    private suspend fun httpGetViaProxy(url: String): String {
-        return httpGetTextWithHeaders(url, browserHeaders)
-    }
 
     suspend fun resolveViaCloudflare(videoPageUrl: String): String? {
         log.d { "resolveViaCloudflare: $videoPageUrl" }
@@ -79,7 +68,7 @@ internal object VeezieHostResolver {
         val embedUrl = url.replace("/v/", "/e/").let {
             if (it.startsWith("//")) "https:$it" else if (!it.startsWith("http")) "https:$it" else it
         }
-        val html = httpGetViaProxy(embedUrl)
+        val html = VeezieEasyProxy.httpGetViaProxy(embedUrl)
         val unpacked = unpackPacker(html) ?: return null
         val wurlRegex = Regex("""wurl\s*=\s*["']([^"']+)["']""")
         val match = wurlRegex.find(unpacked) ?: return null
@@ -89,7 +78,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveSupervideo(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val unpacked = unpackPacker(html) ?: html
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -107,7 +96,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveVoeSx(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val regex = Regex("""(?:let|const|var)\s+url\s*=\s*["']([^"']+)["']""")
         val match = regex.find(html) ?: return null
         var directUrl = match.groupValues[1]
@@ -116,7 +105,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveStreamtape(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val regex = Regex("""innerHTML\s*=\s*["'][^"']*\/\/[^"']*videowood[^"']*["']""")
         val match = regex.find(html)
         if (match != null) {
@@ -138,14 +127,14 @@ internal object VeezieHostResolver {
         val embedUrl = url.replace("/d/", "/e/").let {
             if (!it.startsWith("http")) "https:$it" else it
         }
-        val html = httpGetViaProxy(embedUrl)
+        val html = VeezieEasyProxy.httpGetViaProxy(embedUrl)
         val passMd5Regex = Regex("""/pass_md5/[^"']+""")
         val passMatch = passMd5Regex.find(html)?.value
         if (passMatch != null) {
             val baseHost = embedUrl.substringAfter("://").substringBefore("/")
             val passUrl = "https://$baseHost$passMatch"
             try {
-                val passResult = httpGetViaProxy(passUrl)
+                val passResult = VeezieEasyProxy.httpGetViaProxy(passUrl)
                 val directRegex = Regex("""https?://[^"']+\.(?:mp4|m3u8)[^"']*""")
                 val directMatch = directRegex.find(passResult)
                 if (directMatch != null) return directMatch.value
@@ -160,7 +149,7 @@ internal object VeezieHostResolver {
                 tokenUrl = "https://$doodHost$tokenUrl"
             }
             try {
-                val tokenResult = httpGetViaProxy(tokenUrl)
+                val tokenResult = VeezieEasyProxy.httpGetViaProxy(tokenUrl)
                 val directRegex = Regex("""https?://[^"']+\.(?:mp4|m3u8)[^"']*""")
                 val directMatch = directRegex.find(tokenResult)
                 if (directMatch != null) return directMatch.value
@@ -173,7 +162,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveUqload(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
             Regex("""<source\s+src\s*=\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -191,7 +180,7 @@ internal object VeezieHostResolver {
         for (iframeMatch in iframeRegex.findAll(html)) {
             var iframeSrc = iframeMatch.groupValues[1]
             if (!iframeSrc.startsWith("http")) iframeSrc = "https:$iframeSrc"
-            val iframeHtml = httpGetViaProxy(iframeSrc)
+            val iframeHtml = VeezieEasyProxy.httpGetViaProxy(iframeSrc)
             val videoRegex = Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']""")
             val videoMatch = videoRegex.find(iframeHtml)
             if (videoMatch != null) {
@@ -204,7 +193,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveVidmoly(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val scriptRegex = Regex(
             """<script[^>]*>([\s\S]*?window\.video[\s\S]*?)</script>""",
             RegexOption.IGNORE_CASE,
@@ -237,7 +226,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveClipWatching(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
             Regex("""<source\s+src\s*=\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -255,7 +244,7 @@ internal object VeezieHostResolver {
         for (iframeMatch in iframeRegex.findAll(html)) {
             var iframeSrc = iframeMatch.groupValues[1]
             if (!iframeSrc.startsWith("http")) iframeSrc = "https:$iframeSrc"
-            val iframeHtml = httpGetViaProxy(iframeSrc)
+            val iframeHtml = VeezieEasyProxy.httpGetViaProxy(iframeSrc)
             val videoRegex = Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']""")
             val videoMatch = videoRegex.find(iframeHtml)
             if (videoMatch != null) {
@@ -268,7 +257,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveFileMoon(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val unpacked = unpackPacker(html) ?: html
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -287,7 +276,7 @@ internal object VeezieHostResolver {
         if (postMatch != null) {
             var postUrl = postMatch.groupValues[1]
             if (!postUrl.startsWith("http")) postUrl = normalizeUrl(postUrl, url)
-            val postHtml = httpGetViaProxy(postUrl)
+            val postHtml = VeezieEasyProxy.httpGetViaProxy(postUrl)
             val unpackedPost = unpackPacker(postHtml) ?: postHtml
             for (regex in regexes) {
                 val match = regex.find(unpackedPost)
@@ -302,7 +291,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveStreamWish(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val unpacked = unpackPacker(html) ?: html
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -320,7 +309,7 @@ internal object VeezieHostResolver {
         for (iframeMatch in iframeRegex.findAll(html)) {
             var iframeSrc = iframeMatch.groupValues[1]
             if (!iframeSrc.startsWith("http")) iframeSrc = "https:$iframeSrc"
-            val iframeHtml = httpGetViaProxy(iframeSrc)
+            val iframeHtml = VeezieEasyProxy.httpGetViaProxy(iframeSrc)
             val unpackedIframe = unpackPacker(iframeHtml) ?: iframeHtml
             for (regex in regexes) {
                 val match = regex.find(unpackedIframe)
@@ -335,7 +324,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveMp4Upload(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
             Regex("""<source\s+src\s*=\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -360,7 +349,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveSpeedoStream(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val unpacked = unpackPacker(html) ?: html
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -385,7 +374,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveKwik(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
             Regex("""["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -409,7 +398,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveMystream(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val scriptRegex = Regex(
             """<script[^>]*>([\s\S]*?player[\s\S]*?source[\s\S]*?)</script>""",
             RegexOption.IGNORE_CASE,
@@ -433,7 +422,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveMangoplayer(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
             Regex("""["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -453,7 +442,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveEmbedsito(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val iframeRegex = Regex("""<iframe[^>]*src\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
         for (iframeMatch in iframeRegex.findAll(html)) {
             var iframeSrc = iframeMatch.groupValues[1]
@@ -482,7 +471,7 @@ internal object VeezieHostResolver {
         if (videoId != null) {
             val apiUrl = "https://www.dailymotion.com/player/metadata/video/$videoId"
             try {
-                val apiResult = httpGetViaProxy(apiUrl)
+                val apiResult = VeezieEasyProxy.httpGetViaProxy(apiUrl)
                 val qualitiesRegex = Regex(""""url"\s*:\s*"([^"]+\.(?:mp4|m3u8)[^"]*)"""")
                 val qualitiesMatch = qualitiesRegex.find(apiResult)
                 if (qualitiesMatch != null) {
@@ -493,7 +482,7 @@ internal object VeezieHostResolver {
             } catch (_: Exception) {}
         }
         val embedUrl = if (videoId != null) "https://www.dailymotion.com/embed/video/$videoId" else url
-        val html = httpGetViaProxy(embedUrl)
+        val html = VeezieEasyProxy.httpGetViaProxy(embedUrl)
         val hlsRegex = Regex("""https?://[^"']+\.m3u8[^"']*""")
         val hlsMatch = hlsRegex.find(html)
         return hlsMatch?.value
@@ -505,7 +494,7 @@ internal object VeezieHostResolver {
         if (videoId != null) {
             val oembedUrl = "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=$videoId&format=json"
             try {
-                val oembedResult = httpGetViaProxy(oembedUrl)
+                val oembedResult = VeezieEasyProxy.httpGetViaProxy(oembedUrl)
                 val htmlUrl = oembedResult
                 if (htmlUrl.isNotBlank()) {
                     return url
@@ -516,7 +505,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveYourUpload(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
             Regex("""<source\s+src\s*=\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -541,7 +530,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveUpToBox(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
             Regex("""<source\s+src\s*=\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -561,7 +550,7 @@ internal object VeezieHostResolver {
         if (formMatch != null) {
             var formAction = formMatch.groupValues[1]
             if (!formAction.startsWith("http")) formAction = normalizeUrl(formAction, url)
-            val formHtml = httpGetViaProxy(formAction)
+            val formHtml = VeezieEasyProxy.httpGetViaProxy(formAction)
             val directRegex = Regex("""https?://[^"']+\.(?:mp4|m3u8)[^"']*""")
             val directMatch = directRegex.find(formHtml)
             if (directMatch != null) return directMatch.value
@@ -570,7 +559,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveStreamHub(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val unpacked = unpackPacker(html) ?: html
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -588,7 +577,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveStreamLocker(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
             Regex("""["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -605,7 +594,11 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveVixcloudDirect(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val local = VixcloudExtractor.extractPlaylistUrl(url)
+        if (local != null) return local
+        val remote = VeezieEasyProxy.extractHostUrl("vixcloud", url)
+        if (remote != null) return remote
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
             Regex("""<source\s+src\s*=\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -622,7 +615,7 @@ internal object VeezieHostResolver {
     }
 
     private suspend fun resolveGenericUpload(url: String): String? {
-        val html = httpGetViaProxy(url)
+        val html = VeezieEasyProxy.httpGetViaProxy(url)
         val regexes = listOf(
             Regex("""(?:file|src):\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
             Regex("""<source\s+src\s*=\s*["']([^"']+\.(?:mp4|m3u8)[^"']*)["']"""),
@@ -641,7 +634,7 @@ internal object VeezieHostResolver {
 
     private suspend fun resolveGeneric(url: String): String? {
         return try {
-            val html = httpGetViaProxy(url)
+            val html = VeezieEasyProxy.httpGetViaProxy(url)
             val unpacked = unpackPacker(html) ?: html
             val regexes = listOf(
                 Regex("""wurl\s*=\s*["']([^"']+)["']"""),
@@ -671,7 +664,8 @@ internal object VeezieHostResolver {
 
     private fun unpackPacker(html: String): String? {
         val packerRegex = Regex(
-            """(?s)eval\(function\(p,a,c,k,e,d\)\{.*?return p\}\((.+?)\)\)""",
+            """eval\(function\(p,a,c,k,e,d\)\{.*?return p\}\((.+?)\)\)""",
+            setOf(RegexOption.DOT_MATCHES_ALL),
         )
         val match = packerRegex.find(html) ?: return null
         val raw = match.groupValues[1]
