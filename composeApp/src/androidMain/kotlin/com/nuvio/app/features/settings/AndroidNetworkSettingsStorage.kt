@@ -10,6 +10,7 @@ class AndroidNetworkSettingsStorage(context: Context) : NetworkSettingsStorage {
     private val OVERRIDE_FOR_ADDONS_KEY = "override_for_addons"
     private val OVERRIDE_FOR_PLUGINS_KEY = "override_for_plugins"
     private val OVERRIDE_FOR_BOTH_KEY = "override_for_both"
+    private val SCRAPER_URLS_KEY = "scraper_urls"
 
     override fun getDnsProvider(): String? =
         prefs.getString(DNS_PROVIDER_KEY, null)
@@ -44,5 +45,16 @@ class AndroidNetworkSettingsStorage(context: Context) : NetworkSettingsStorage {
 
     override fun setOverrideForBoth(enabled: Boolean) {
         prefs.edit().putBoolean(OVERRIDE_FOR_BOTH_KEY, enabled).apply()
+    }
+
+    override fun getScraperUrls(): List<String> {
+        val json = prefs.getString(SCRAPER_URLS_KEY, null) ?: return emptyList()
+        return try {
+            json.split("\n").filter { it.isNotBlank() }
+        } catch (_: Exception) { emptyList() }
+    }
+
+    override fun setScraperUrls(urls: List<String>) {
+        prefs.edit().putString(SCRAPER_URLS_KEY, urls.joinToString("\n")).apply()
     }
 }

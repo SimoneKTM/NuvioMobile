@@ -8,21 +8,28 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.nuvio.app.core.network.CloudflareSolver
+import com.nuvio.app.core.network.PageScrapeResult
 import com.nuvio.app.core.ui.NuvioActionLabel
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
+import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.custom_user_agent_input_placeholder
 import nuvio.composeapp.generated.resources.custom_user_agent_not_set
@@ -181,6 +188,320 @@ internal fun LazyListScope.networkSettingsContent(
                 }
             }
 
+            Spacer(modifier = Modifier.height(NuvioTokens.Space.s24))
+
+            ScraperSitesSection(repository = repository, isTablet = isTablet)
+
+            Spacer(modifier = Modifier.height(NuvioTokens.Space.s24))
+
+            UrlScraperSection(isTablet = isTablet)
+        }
+    }
+}
+
+@Composable
+private fun UrlScraperSection(isTablet: Boolean) {
+    val tokens = MaterialTheme.nuvio
+    var urlInput by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf<PageScrapeResult?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var followIframes by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+
+    SettingsSection(
+        title = "URL Scraper Test",
+        isTablet = isTablet,
+    ) {
+        Text(
+            text = "Inserisci un URL per testare lo scraper via WebView (bypassa Cloudflare)",
+            style = MaterialTheme.typography.bodyMedium,
+            color = tokens.colors.textMuted,
+            modifier = Modifier.padding(
+                horizontal = if (isTablet) 20.dp else 16.dp,
+                vertical = 12.dp,
+            ),
+        )
+
+        SettingsGroup(isTablet = isTablet) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = if (isTablet) 20.dp else 16.dp,
+                        vertical = 12.dp,
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = urlInput,
+                    onValueChange = { urlInput = it; errorMessage = null },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    placeholder = { Text("https://example.com/page") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = tokens.colors.borderFocus.copy(alpha = tokens.opacity.strong),
+                        unfocusedBorderColor = tokens.colors.borderDefault.copy(alpha = tokens.opacity.medium),
+                        focusedContainerColor = tokens.colors.surface,
+                        unfocusedContainerColor = tokens.colors.surface,
+                    ),
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                NuvioActionLabel(
+                    text = if (isLoading) "..." else "Scrape",
+                    onClick = {
+                        if (!isLoading && urlInput.isNotBlank()) {
+                            isLoading = true
+                            result = null
+                            errorMessage = null
+                            scope.launch {
+                                try {
+                                    val res = if (followIframes) {
+                                        CloudflareSolver.scrapePageWithIframeFollow(urlInput)
+                                    } else {
+                                        CloudflareSolver.scrapePage(urlInput)
+                                    }
+                                    if (res != null) {
+                                        result = res
+                                    } else {
+                                        errorMessage = "Nessun risultato (WebView non disponibile o timeout)"
+                                    }
+                                } catch (e: Exception) {
+                                    errorMessage = "Errore: ${e.message ?: e.javaClass.simpleName}"
+                                } finally {
+                                    isLoading = false
+                                }
+                            }
+                        }
+                    },
+                )
+            }
+
+            SettingsGroupDivider(isTablet = isTablet)
+
+            Row(
+                modifier = Modifier.padding(
+                    horizontal = if (isTablet) 20.dp else 16.dp,
+                    vertical = 8.dp,
+                ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                androidx.compose.material3.Checkbox(
+                    checked = followIframes,
+                    onCheckedChange = { followIframes = it },
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Segui iframe",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+
+            if (isLoading) {
+                Text(
+                    text = "Caricamento in corso...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = tokens.colors.textMuted,
+                    modifier = Modifier.padding(
+                        horizontal = if (isTablet) 20.dp else 16.dp,
+                        vertical = 12.dp,
+                    ),
+                )
+            }
+
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage!!,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(
+                        horizontal = if (isTablet) 20.dp else 16.dp,
+                        vertical = 12.dp,
+                    ),
+                )
+            }
+
+            if (result != null) {
+                val res = result!!
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = if (isTablet) 20.dp else 16.dp,
+                            vertical = 8.dp,
+                        ),
+                ) {
+                    Text(
+                        text = "URL: ${res.url}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = tokens.colors.textPrimary,
+                    )
+                    Text(
+                        text = "Iframe trovati: ${res.iframes.size}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = tokens.colors.textPrimary,
+                    )
+                    Text(
+                        text = "Video URL trovati: ${res.videoUrls.size}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (res.videoUrls.isNotEmpty()) MaterialTheme.colorScheme.primary else tokens.colors.textPrimary,
+                    )
+
+                    if (res.iframes.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Iframe:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = tokens.colors.textMuted,
+                        )
+                        for (iframe in res.iframes) {
+                            Text(
+                                text = iframe,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = tokens.colors.textPrimary,
+                                modifier = Modifier.padding(start = 8.dp, top = 2.dp),
+                                maxLines = 1,
+                            )
+                        }
+                    }
+
+                    if (res.videoUrls.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Video URL:",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        for (videoUrl in res.videoUrls) {
+                            Text(
+                                text = videoUrl,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(start = 8.dp, top = 2.dp),
+                                maxLines = 2,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScraperSitesSection(repository: NetworkSettingsRepository, isTablet: Boolean) {
+    val tokens = MaterialTheme.nuvio
+    val scraperUrls by repository.scraperUrls.collectAsState()
+    var newUrl by remember { mutableStateOf("") }
+    var showAddInput by remember { mutableStateOf(false) }
+
+    SettingsSection(
+        title = "Siti Scraper",
+        isTablet = isTablet,
+    ) {
+        Text(
+            text = "Aggiungi siti streaming da usare come scraper con TMDB. " +
+                    "Il sistema cerca automaticamente film/serie su questi siti usando il titolo TMDB.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = tokens.colors.textMuted,
+            modifier = Modifier.padding(
+                horizontal = if (isTablet) 20.dp else 16.dp,
+                vertical = 12.dp,
+            ),
+        )
+
+        SettingsGroup(isTablet = isTablet) {
+            if (scraperUrls.isEmpty()) {
+                Text(
+                    text = "Nessun sito configurato",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = tokens.colors.textMuted,
+                    modifier = Modifier.padding(
+                        horizontal = if (isTablet) 20.dp else 16.dp,
+                        vertical = 12.dp,
+                    ),
+                )
+            } else {
+                scraperUrls.forEachIndexed { index, url ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = if (isTablet) 20.dp else 16.dp,
+                                vertical = 8.dp,
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = url,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = tokens.colors.textPrimary,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        NuvioActionLabel(
+                            text = "Rimuovi",
+                            onClick = { repository.removeScraperUrl(url) },
+                        )
+                    }
+                    if (index < scraperUrls.lastIndex) {
+                        SettingsGroupDivider(isTablet = isTablet)
+                    }
+                }
+            }
+
+            SettingsGroupDivider(isTablet = isTablet)
+
+            if (showAddInput) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = if (isTablet) 20.dp else 16.dp,
+                            vertical = 8.dp,
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedTextField(
+                        value = newUrl,
+                        onValueChange = { newUrl = it },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        placeholder = { Text("https://streamingcommunityz.team") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = tokens.colors.borderFocus.copy(alpha = tokens.opacity.strong),
+                            unfocusedBorderColor = tokens.colors.borderDefault.copy(alpha = tokens.opacity.medium),
+                            focusedContainerColor = tokens.colors.surface,
+                            unfocusedContainerColor = tokens.colors.surface,
+                        ),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    NuvioActionLabel(
+                        text = "Aggiungi",
+                        onClick = {
+                            if (newUrl.isNotBlank()) {
+                                val url = if (newUrl.startsWith("http")) newUrl else "https://$newUrl"
+                                repository.addScraperUrl(url)
+                                newUrl = ""
+                                showAddInput = false
+                            }
+                        },
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.padding(
+                        horizontal = if (isTablet) 20.dp else 16.dp,
+                        vertical = 8.dp,
+                    )
+                ) {
+                    NuvioActionLabel(
+                        text = "+ Aggiungi sito",
+                        onClick = { showAddInput = true },
+                    )
+                }
+            }
         }
     }
 }

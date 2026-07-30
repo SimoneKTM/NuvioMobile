@@ -58,6 +58,9 @@ actual object CloudflareSolver {
         }
     }
 
+    actual suspend fun scrapePage(url: String): PageScrapeResult? = null
+    actual suspend fun scrapePageWithIframeFollow(url: String): PageScrapeResult? = null
+
     private fun getUserAgent(webView: WKWebView) {
         evaluateJs(webView, "navigator.userAgent")?.let {
             webViewUserAgent = it

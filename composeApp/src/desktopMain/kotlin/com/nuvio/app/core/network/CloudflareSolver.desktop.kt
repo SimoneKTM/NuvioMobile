@@ -8,4 +8,7 @@ actual object CloudflareSolver {
     actual fun getWebViewUserAgent(): String? = null
 
     actual fun clear() = Unit
+
+    actual suspend fun scrapePage(url: String): PageScrapeResult? = null
+    actual suspend fun scrapePageWithIframeFollow(url: String): PageScrapeResult? = null
 }
