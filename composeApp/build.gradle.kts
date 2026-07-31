@@ -19,6 +19,15 @@ import java.io.File
 import java.util.Properties
 import javax.inject.Inject
 
+// 1. BLOCCO PLUGIN FONDAMENTALE (Risolve l'errore Unresolved reference 'android')
+plugins {
+    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinMultiplatform)
+}
+
+// 2. CONFIGURAZIONE DEL TASK PERSONALIZZATO DI NUVIO
 abstract class GenerateRuntimeConfigsTask : DefaultTask() {
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -218,9 +227,10 @@ abstract class GenerateRuntimeConfigsTask : DefaultTask() {
     }
 }
 
-// Configurazione dei plugin e dell'applicazione Android
+// 3. CONFIGURAZIONE ESTENSIONE ANDROID CON COMPILAZIONE E SPLIT APK
 android {
-    // Gestione dello split per architetture (Genera i 5 APK separati)
+    // Inserisci qui sotto il namespace corretto del tuo progetto se l'IDE te lo richiede (es: namespace = "com.nuvio.app")
+    
     splits {
         abi {
             isEnable = true
