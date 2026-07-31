@@ -54,6 +54,7 @@ internal object VeezieHostResolver {
                 videoUrl.contains("streamlocker") -> resolveStreamLocker(videoUrl)
                 videoUrl.contains("vixcloud") -> resolveVixcloudDirect(videoUrl)
                 videoUrl.contains("fileupload") || videoUrl.contains("upload") -> resolveGenericUpload(videoUrl)
+                videoUrl.contains("watchluna") -> resolveViaCloudflare(videoUrl)
                 else -> resolveGeneric(videoUrl)
             }
         } catch (e: Exception) {

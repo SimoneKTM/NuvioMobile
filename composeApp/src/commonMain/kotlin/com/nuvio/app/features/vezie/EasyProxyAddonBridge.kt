@@ -222,15 +222,21 @@ object EasyProxyAddonBridge {
         val typeAndId = pathWithoutPrefix.substringAfter("/stream/").removeSuffix(".json")
         val slashIndex = typeAndId.indexOf('/')
         if (slashIndex < 0) return """{"streams":[]}"""
+        val type = typeAndId.substring(0, slashIndex)
 
         val videoId = decodeUrlEncodedString(typeAndId.substring(slashIndex + 1))
         val idAfterPrefix = videoId.substringAfter("tmdb:")
         val idParts = idAfterPrefix.split(":")
         val season = idParts.getOrNull(1)?.toIntOrNull()
         val episode = idParts.getOrNull(2)?.toIntOrNull()
+        val tmdbId = idParts.firstOrNull()
         val title = resolveTitle(videoId) ?: return """{"streams":[]}"""
 
-        val streamUrls = AutoScraper.searchLinks(scraper.websiteUrl, title, season, episode)
+        val streamUrls = if (isCloudflareSite(scraper.websiteUrl) && tmdbId != null && season != null && episode != null) {
+            buildCloudflareUrl(tmdbId, type, season, episode)?.videoUrls ?: emptyList()
+        } else {
+            AutoScraper.searchLinks(scraper.websiteUrl, title, season, episode)
+        }
 
         if (streamUrls.isEmpty()) return """{"streams":[]}"""
 
@@ -285,10 +291,14 @@ object EasyProxyAddonBridge {
                     if (allVideoUrls.isNotEmpty()) {
                         val followResult = PageFetcher.fetchWithIframes(entry.websiteUrl)
                         return PageScrapeResult(
-                            url = entry.websiteUrl,
-                            html = followResult?.html ?: "",
+                            originalUrl = entry.websiteUrl,
+                            finalUrl = entry.websiteUrl,
+                            pageTitle = "",
+                            pageHtml = followResult?.pageHtml ?: "",
                             iframes = followResult?.iframes ?: emptyList(),
+                            videoSources = emptyList(),
                             videoUrls = allVideoUrls,
+                            scriptContents = "",
                         )
                     }
                 }

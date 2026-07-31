@@ -106,12 +106,16 @@ class CloudflareScraperTest {
     @Test
     fun `PageScrapeResult dati corretti`() {
         val result = com.nuvio.app.core.network.PageScrapeResult(
-            url = "https://example.com",
-            html = "<html></html>",
+            originalUrl = "https://example.com",
+            finalUrl = "https://example.com",
+            pageTitle = "Test",
+            pageHtml = "<html></html>",
             iframes = listOf("https://iframe.com"),
+            videoSources = emptyList(),
             videoUrls = listOf("https://video.com/stream.mp4"),
+            scriptContents = "",
         )
-        assertEquals("https://example.com", result.url)
+        assertEquals("https://example.com", result.originalUrl)
         assertEquals(1, result.iframes.size)
         assertEquals(1, result.videoUrls.size)
         assertEquals("https://iframe.com", result.iframes[0])

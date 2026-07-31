@@ -6,16 +6,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -188,8 +187,183 @@ internal fun LazyListScope.networkSettingsContent(
                 }
             }
 
+            Spacer(modifier = Modifier.height(NuvioTokens.Space.s24))
+
+            urlScraperSection(isTablet, tokens)
         }
     }
 }
 
+@Composable
+private fun urlScraperSection(isTablet: Boolean, tokens: com.nuvio.app.core.ui.NuvioTokens) {
+    val scope = rememberCoroutineScope()
+    var urlInput by remember { mutableStateOf("") }
+    var isScraping by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf<PageScrapeResult?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    SettingsSection(
+        title = "URL Scraper (WebView)",
+        isTablet = isTablet,
+    ) {
+        Text(
+            text = "Incolla un URL di una pagina streaming per estrarre i video. Usa WebView per bypassare Cloudflare.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = tokens.colors.textMuted,
+            modifier = Modifier.padding(
+                horizontal = if (isTablet) 20.dp else 16.dp,
+                vertical = 12.dp
+            ),
+        )
+
+        SettingsGroup(isTablet = isTablet) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = if (isTablet) 20.dp else 16.dp,
+                        vertical = 12.dp
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = urlInput,
+                    onValueChange = { urlInput = it },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    placeholder = {
+                        Text("https://animesaturn.ro/episodio-1")
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = tokens.colors.borderFocus.copy(alpha = tokens.opacity.strong),
+                        unfocusedBorderColor = tokens.colors.borderDefault.copy(alpha = tokens.opacity.medium),
+                        focusedContainerColor = tokens.colors.surface,
+                        unfocusedContainerColor = tokens.colors.surface,
+                    ),
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                if (isScraping) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                        color = tokens.colors.accent,
+                    )
+                } else {
+                    NuvioActionLabel(
+                        text = "Scrape",
+                        onClick = {
+                            val url = urlInput.trim()
+                            if (url.isBlank()) return@NuvioActionLabel
+                            isScraping = true
+                            result = null
+                            errorMessage = null
+                            scope.launch {
+                                try {
+                                    val scraped = CloudflareSolver.scrapePageWithIframeFollow(
+                                        url = url,
+                                        maxDepth = 3,
+                                        jsRenderDelayMs = 3000L,
+                                    )
+                                    result = scraped
+                                    if (scraped == null) {
+                                        errorMessage = "Nessun risultato"
+                                    }
+                                } catch (e: Exception) {
+                                    errorMessage = "Errore: ${e.message}"
+                                } finally {
+                                    isScraping = false
+                                }
+                            }
+                        },
+                    )
+                }
+            }
+
+            if (errorMessage != null) {
+                SettingsGroupDivider(isTablet = isTablet)
+                Text(
+                    text = errorMessage ?: "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = tokens.colors.error,
+                    modifier = Modifier.padding(
+                        horizontal = if (isTablet) 20.dp else 16.dp,
+                        vertical = 12.dp
+                    ),
+                )
+            }
+
+            if (result != null) {
+                SettingsGroupDivider(isTablet = isTablet)
+                val r = result ?: return@SettingsGroup
+
+                Text(
+                    text = "Titolo: ${r.pageTitle}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = tokens.colors.textPrimary,
+                    modifier = Modifier.padding(
+                        horizontal = if (isTablet) 20.dp else 16.dp,
+                        vertical = 4.dp
+                    ),
+                )
+
+                if (r.iframes.isNotEmpty()) {
+                    Text(
+                        text = "Iframe trovati (${r.iframes.size}):",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = tokens.colors.textMuted,
+                        modifier = Modifier.padding(
+                            horizontal = if (isTablet) 20.dp else 16.dp,
+                            vertical = 4.dp
+                        ),
+                    )
+                    r.iframes.take(3).forEach { iframe ->
+                        Text(
+                            text = iframe,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = tokens.colors.accent,
+                            modifier = Modifier.padding(
+                                horizontal = if (isTablet) 20.dp else 16.dp,
+                                vertical = 2.dp
+                            ),
+                        )
+                    }
+                }
+
+                if (r.videoUrls.isNotEmpty()) {
+                    Text(
+                        text = "Video trovati (${r.videoUrls.size}):",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = tokens.colors.textMuted,
+                        modifier = Modifier.padding(
+                            horizontal = if (isTablet) 20.dp else 16.dp,
+                            vertical = 4.dp
+                        ),
+                    )
+                    r.videoUrls.take(5).forEach { video ->
+                        Text(
+                            text = video,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = tokens.colors.accent,
+                            modifier = Modifier.padding(
+                                horizontal = if (isTablet) 20.dp else 16.dp,
+                                vertical = 2.dp
+                            ),
+                        )
+                    }
+                }
+
+                if (r.hasVideo) {
+                    Text(
+                        text = "Stream pronto per la riproduzione!",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = tokens.colors.success,
+                        modifier = Modifier.padding(
+                            horizontal = if (isTablet) 20.dp else 16.dp,
+                            vertical = 8.dp
+                        ),
+                    )
+                }
+            }
+        }
+    }
+}

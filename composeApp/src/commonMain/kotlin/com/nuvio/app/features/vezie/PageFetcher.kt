@@ -59,7 +59,7 @@ internal object PageFetcher {
         if (flareResult != null) return flareResult
 
         return try {
-            CloudflareSolver.scrapePage(url)?.html
+            CloudflareSolver.scrapePage(url)?.pageHtml
         } catch (_: Exception) { null }
     }
 
@@ -68,14 +68,32 @@ internal object PageFetcher {
         if (httpResult != null) {
             val iframes = extractIframes(httpResult)
             val videoUrls = extractVideoUrls(httpResult)
-            return PageScrapeResult(url, httpResult, iframes, videoUrls)
+            return PageScrapeResult(
+                originalUrl = url,
+                finalUrl = url,
+                pageTitle = "",
+                pageHtml = httpResult,
+                iframes = iframes,
+                videoSources = emptyList(),
+                videoUrls = videoUrls,
+                scriptContents = "",
+            )
         }
 
         val flareHtml = tryFlareSolverr(url)
         if (flareHtml != null) {
             val iframes = extractIframes(flareHtml)
             val videoUrls = extractVideoUrls(flareHtml)
-            return PageScrapeResult(url, flareHtml, iframes, videoUrls)
+            return PageScrapeResult(
+                originalUrl = url,
+                finalUrl = url,
+                pageTitle = "",
+                pageHtml = flareHtml,
+                iframes = iframes,
+                videoSources = emptyList(),
+                videoUrls = videoUrls,
+                scriptContents = "",
+            )
         }
 
         return try {
