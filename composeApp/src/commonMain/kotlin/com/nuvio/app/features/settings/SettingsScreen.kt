@@ -67,6 +67,8 @@ import com.nuvio.app.features.ai.AiAssistantSettingsRepository
 import com.nuvio.app.features.debrid.DebridSettings
 import com.nuvio.app.features.debrid.DebridSettingsRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsItem
+import com.nuvio.app.features.vpn.VpnSettings
+import com.nuvio.app.features.vpn.VpnSettingsRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsUiState
 import com.nuvio.app.features.livetv.LiveTvRepository
@@ -219,6 +221,10 @@ fun SettingsScreen(
         val debridSettings by remember {
             DebridSettingsRepository.ensureLoaded()
             DebridSettingsRepository.uiState
+        }.collectAsStateWithLifecycle()
+        val vpnSettings by remember {
+            VpnSettingsRepository.ensureLoaded()
+            VpnSettingsRepository.uiState
         }.collectAsStateWithLifecycle()
         val traktAuthUiState by remember {
             TraktAuthRepository.ensureLoaded()
@@ -492,6 +498,7 @@ fun SettingsScreen(
                 aiAssistantSettings = aiAssistantSettings,
                 openSubtitlesSettings = openSubtitlesSettings,
                 debridSettings = debridSettings,
+                vpnSettings = vpnSettings,
                 liveTvUiState = liveTvUiState,
                 traktAuthUiState = traktAuthUiState,
                 malAuthUiState = malAuthUiState,
@@ -582,6 +589,7 @@ fun SettingsScreen(
                 aiAssistantSettings = aiAssistantSettings,
                 openSubtitlesSettings = openSubtitlesSettings,
                 debridSettings = debridSettings,
+                vpnSettings = vpnSettings,
                 liveTvUiState = liveTvUiState,
                 traktAuthUiState = traktAuthUiState,
                 malAuthUiState = malAuthUiState,
@@ -678,6 +686,7 @@ private fun MobileSettingsScreen(
     aiAssistantSettings: AiAssistantSettings,
     openSubtitlesSettings: OpenSubtitlesSettings,
     debridSettings: DebridSettings,
+    vpnSettings: VpnSettings,
     liveTvUiState: com.nuvio.app.features.livetv.LiveTvUiState,
     traktAuthUiState: TraktAuthUiState,
     malAuthUiState: MalAuthUiState,
@@ -978,9 +987,10 @@ private fun MobileSettingsScreen(
                         onTvdbClick = { onPageChange(SettingsPage.TvdbEnrichment) },
                         onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
                         onDebridClick = { onPageChange(SettingsPage.Debrid) },
+                        onVpnClick = { onPageChange(SettingsPage.Vpn) },
                     )
                     SettingsPage.AiAssistant -> aiAssistantSettingsContent(
-                    isTablet = false,
+                        isTablet = false,
                     settings = aiAssistantSettings,
                 )
                 SettingsPage.Mal -> malSettingsContent(
@@ -1025,6 +1035,10 @@ private fun MobileSettingsScreen(
                 SettingsPage.Debrid -> debridSettingsContent(
                     isTablet = false,
                     settings = debridSettings,
+                )
+                SettingsPage.Vpn -> vpnSettingsContent(
+                    isTablet = false,
+                    settings = vpnSettings,
                 )
                 SettingsPage.LiveTv -> liveTvSettingsContent(
                     isTablet = false,
@@ -1113,6 +1127,7 @@ private fun MobileSettingsScreen(
                     onTvdbClick = { onPageChange(SettingsPage.AnimeTvdb) },
                         onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
                         onDebridClick = { onPageChange(SettingsPage.Debrid) },
+                        onVpnClick = { onPageChange(SettingsPage.Vpn) },
                     )
                 SettingsPage.AnimeStreams -> streamsSettingsContent(isTablet = false)
                 SettingsPage.AnimeMetaScreen -> animeMetaScreenSettingsContent(
@@ -1232,6 +1247,7 @@ private fun TabletSettingsScreen(
     aiAssistantSettings: AiAssistantSettings,
     openSubtitlesSettings: OpenSubtitlesSettings,
     debridSettings: DebridSettings,
+    vpnSettings: VpnSettings,
     liveTvUiState: com.nuvio.app.features.livetv.LiveTvUiState,
     traktAuthUiState: TraktAuthUiState,
     malAuthUiState: MalAuthUiState,
@@ -1595,6 +1611,7 @@ private fun TabletSettingsScreen(
                         onTvdbClick = { onPageChange(SettingsPage.TvdbEnrichment) },
                         onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
                         onDebridClick = { onPageChange(SettingsPage.Debrid) },
+                        onVpnClick = { onPageChange(SettingsPage.Vpn) },
                     )
                     SettingsPage.AiAssistant -> aiAssistantSettingsContent(
                         isTablet = true,
@@ -1646,6 +1663,10 @@ private fun TabletSettingsScreen(
                     SettingsPage.Debrid -> debridSettingsContent(
                         isTablet = true,
                         settings = debridSettings,
+                    )
+                    SettingsPage.Vpn -> vpnSettingsContent(
+                        isTablet = true,
+                        settings = vpnSettings,
                     )
                     SettingsPage.Network -> networkSettingsContent(
                         isTablet = true,
@@ -1726,7 +1747,8 @@ private fun TabletSettingsScreen(
                         onTvdbClick = { onPageChange(SettingsPage.AnimeTvdb) },
                         onLiveTvClick = { onPageChange(SettingsPage.LiveTv) },
                         onDebridClick = { onPageChange(SettingsPage.Debrid) },
-                    )
+                        onVpnClick = { onPageChange(SettingsPage.Vpn) },
+                        )
                     SettingsPage.AnimeStreams -> streamsSettingsContent(isTablet = true)
                     SettingsPage.AnimeMetaScreen -> animeMetaScreenSettingsContent(
                         isTablet = true,

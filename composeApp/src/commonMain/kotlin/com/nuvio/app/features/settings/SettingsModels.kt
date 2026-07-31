@@ -36,6 +36,7 @@ import nuvio.composeapp.generated.resources.compose_settings_page_streams
 import nuvio.composeapp.generated.resources.compose_settings_page_supporters_contributors
 import nuvio.composeapp.generated.resources.compose_settings_page_tmdb_enrichment
 import nuvio.composeapp.generated.resources.compose_settings_page_tvdb_enrichment
+import nuvio.composeapp.generated.resources.compose_settings_page_vpn
 import nuvio.composeapp.generated.resources.compose_settings_page_trakt
 import nuvio.composeapp.generated.resources.compose_settings_page_mal
 import nuvio.composeapp.generated.resources.compose_settings_page_kitsu
@@ -189,6 +190,11 @@ internal enum class SettingsPage(
     ),
     Debrid(
         titleRes = Res.string.compose_settings_page_debrid,
+        category = SettingsCategory.General,
+        parentPage = Integrations,
+    ),
+    Vpn(
+        titleRes = Res.string.compose_settings_page_vpn,
         category = SettingsCategory.General,
         parentPage = Integrations,
     ),

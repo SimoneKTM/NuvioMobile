@@ -57,6 +57,9 @@ import com.nuvio.app.features.trakt.TraktAuthStorage
 import com.nuvio.app.features.trakt.TraktCommentsStorage
 import com.nuvio.app.features.trakt.TraktLibraryStorage
 import com.nuvio.app.features.trakt.TraktSettingsStorage
+import com.nuvio.app.features.vpn.VpnController
+import com.nuvio.app.features.vpn.VpnSettingsRepository
+import com.nuvio.app.features.vpn.VpnSettingsStorage
 import com.nuvio.app.features.tmdb.TmdbSettingsStorage
 import com.nuvio.app.features.anime.tmdb.AnimeTmdbSettingsStorage
 import com.nuvio.app.features.anime.mdblist.AnimeMdbListSettingsStorage
@@ -154,6 +157,9 @@ class MainActivity : AppCompatActivity() {
         CardDepthStyleStorage.initialize(applicationContext)
         com.nuvio.app.features.settings.globalNetworkSettingsRepository = com.nuvio.app.features.settings.NetworkSettingsRepository(com.nuvio.app.features.settings.AndroidNetworkSettingsStorage(applicationContext))
         DebridSettingsStorage.initialize(applicationContext)
+        VpnSettingsStorage.initialize(applicationContext)
+        VpnController.initialize(applicationContext)
+        VpnSettingsRepository.restoreActiveTunnel()
         TmdbSettingsStorage.initialize(applicationContext)
         MdbListSettingsStorage.initialize(applicationContext)
         AnimeTmdbSettingsStorage.initialize(applicationContext)
@@ -208,6 +214,18 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleIncomingAppIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        VpnController.handlePermissionIfNeeded(this)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == VpnController.VPN_PERMISSION_REQUEST && resultCode == android.app.Activity.RESULT_OK) {
+            VpnController.retryPendingActivation()
+        }
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onUserLeaveHint() {

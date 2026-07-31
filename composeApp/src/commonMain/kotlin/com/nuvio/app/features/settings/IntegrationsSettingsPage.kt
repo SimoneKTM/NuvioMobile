@@ -5,8 +5,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.LiveTv
+import androidx.compose.material.icons.rounded.VpnKey
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.nuvio.app.core.build.AppFeaturePolicy
 import com.nuvio.app.features.ai.AiAssistantSettings
 import com.nuvio.app.features.ai.AiAssistantSettingsRepository
 import nuvio.composeapp.generated.resources.Res
@@ -22,6 +24,7 @@ import nuvio.composeapp.generated.resources.compose_settings_page_simkl
 import nuvio.composeapp.generated.resources.compose_settings_page_subdl
 import nuvio.composeapp.generated.resources.compose_settings_page_tmdb_enrichment
 import nuvio.composeapp.generated.resources.compose_settings_page_trakt
+import nuvio.composeapp.generated.resources.compose_settings_page_vpn
 import nuvio.composeapp.generated.resources.compose_settings_root_trakt_description
 import nuvio.composeapp.generated.resources.settings_integrations_ai_description
 import nuvio.composeapp.generated.resources.settings_integrations_anilist_description
@@ -39,6 +42,7 @@ import nuvio.composeapp.generated.resources.settings_integrations_simkl_descript
 import nuvio.composeapp.generated.resources.settings_integrations_subdl_description
 import nuvio.composeapp.generated.resources.settings_integrations_tmdb_description
 import nuvio.composeapp.generated.resources.settings_integrations_tvdb_description
+import nuvio.composeapp.generated.resources.settings_integrations_vpn_description
 import nuvio.composeapp.generated.resources.compose_settings_page_tvdb_enrichment
 import org.jetbrains.compose.resources.stringResource
 
@@ -57,6 +61,7 @@ internal fun LazyListScope.integrationsContent(
     onTvdbClick: () -> Unit = {},
     onLiveTvClick: () -> Unit,
     onDebridClick: () -> Unit,
+    onVpnClick: () -> Unit = {},
 ) {
     item {
         SettingsSection(
@@ -191,6 +196,16 @@ internal fun LazyListScope.integrationsContent(
                     isTablet = isTablet,
                     onClick = onDebridClick,
                 )
+                if (AppFeaturePolicy.vpnEnabled) {
+                    SettingsGroupDivider(isTablet = isTablet)
+                    SettingsNavigationRow(
+                        title = stringResource(Res.string.compose_settings_page_vpn),
+                        description = stringResource(Res.string.settings_integrations_vpn_description),
+                        icon = Icons.Rounded.VpnKey,
+                        isTablet = isTablet,
+                        onClick = onVpnClick,
+                    )
+                }
             }
         }
     }

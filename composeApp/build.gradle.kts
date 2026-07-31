@@ -1081,6 +1081,9 @@ kotlin {
                 implementation(libs.play.services.cast.framework)
                 implementation(libs.androidx.mediarouter)
                 implementation(libs.mpv.android.lib)
+                if (androidDistribution == "full") {
+                    implementation(libs.wireguard.tunnel)
+                }
             }
         }
         val desktopMain by getting {

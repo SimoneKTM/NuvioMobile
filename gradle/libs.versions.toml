@@ -38,6 +38,7 @@ androidx-mediarouter = "1.7.0"
 jackson = "2.17.0"
 nicehttp = "0.4.16"
 conscrypt = "2.5.2"
+wireguardTunnel = "1.0.20260102"
 
 
 [libraries]
@@ -104,6 +105,7 @@ jackson-module-kotlin = { group = "com.fasterxml.jackson.module", name = "jackso
 nicehttp = { group = "com.github.Blatzar", name = "NiceHttp", version.ref = "nicehttp" }
 conscrypt-android = { group = "org.conscrypt", name = "conscrypt-android", version.ref = "conscrypt" }
 mpv-android-lib = { module = "io.github.abdallahmehiz:mpv-android-lib", version.ref = "mpv-android-lib" }
+wireguard-tunnel = { module = "com.wireguard.android:tunnel", version.ref = "wireguardTunnel" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
