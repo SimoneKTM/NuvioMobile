@@ -254,11 +254,6 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    override fun onTaskRemoved(rootIntent: Intent?) {
-        VpnSettingsRepository.setEnabled(false)
-        super.onTaskRemoved(rootIntent)
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
