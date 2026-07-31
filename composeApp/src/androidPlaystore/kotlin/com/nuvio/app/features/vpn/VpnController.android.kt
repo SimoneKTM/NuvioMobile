@@ -13,6 +13,8 @@ actual object VpnController {
     actual val runtimeState: StateFlow<VpnRuntimeState> =
         MutableStateFlow(VpnRuntimeState.OFF).asStateFlow()
 
+    actual val pendingPermission: StateFlow<Boolean> = MutableStateFlow(false).asStateFlow()
+
     fun initialize(context: Context) {}
 
     fun hasPendingActivation(): Boolean = false
@@ -22,6 +24,8 @@ actual object VpnController {
     fun handlePermissionIfNeeded(activity: Activity) {}
 
     fun retryPendingActivation() {}
+
+    actual fun requestPendingPermission() {}
 
     actual fun activate(configText: String): VpnActivationResult = VpnActivationResult.FAILED
 

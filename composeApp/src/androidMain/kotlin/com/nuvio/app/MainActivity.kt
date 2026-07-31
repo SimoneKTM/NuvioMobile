@@ -251,6 +251,7 @@ class MainActivity : AppCompatActivity() {
         if (!isChangingConfigurations) {
             VpnController.deactivate()
         }
+        VpnController.unbindActivity(this)
         super.onDestroy()
     }
 

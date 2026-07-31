@@ -17,6 +17,8 @@ enum class VpnRuntimeState {
 
 expect object VpnController {
     val runtimeState: StateFlow<VpnRuntimeState>
+    val pendingPermission: StateFlow<Boolean>
     fun activate(configText: String): VpnActivationResult
     fun deactivate(): Boolean
+    fun requestPendingPermission()
 }

@@ -20,14 +20,28 @@ actual object VpnController {
     private val _runtimeState = MutableStateFlow(VpnRuntimeState.OFF)
     actual val runtimeState: StateFlow<VpnRuntimeState> = _runtimeState.asStateFlow()
 
+    private val _pendingPermission = MutableStateFlow(false)
+    actual val pendingPermission: StateFlow<Boolean> = _pendingPermission.asStateFlow()
+
     private var appContext: Context? = null
     private var backend: GoBackend? = null
     private var tunnel: Tunnel? = null
     private var pendingConfigText: String? = null
+    private var currentActivity: Activity? = null
 
     fun initialize(context: Context) {
         appContext = context.applicationContext
         backend = GoBackend(appContext)
+    }
+
+    fun bindActivity(activity: Activity) {
+        currentActivity = activity
+    }
+
+    fun unbindActivity(activity: Activity) {
+        if (currentActivity === activity) {
+            currentActivity = null
+        }
     }
 
     fun hasPendingActivation(): Boolean = pendingConfigText != null
@@ -35,7 +49,14 @@ actual object VpnController {
     fun permissionIntent(): Intent? = appContext?.let { VpnService.prepare(it) }
 
     fun handlePermissionIfNeeded(activity: Activity) {
+        bindActivity(activity)
         if (!hasPendingActivation()) return
+        requestPendingPermission()
+    }
+
+    actual fun requestPendingPermission() {
+        if (!hasPendingActivation()) return
+        val activity = currentActivity ?: return
         val intent = permissionIntent()
         if (intent == null) {
             retryPendingActivation()
@@ -47,6 +68,7 @@ actual object VpnController {
     fun retryPendingActivation() {
         val configText = pendingConfigText ?: return
         pendingConfigText = null
+        _pendingPermission.value = false
         activate(configText)
     }
 
@@ -78,6 +100,7 @@ actual object VpnController {
         } catch (e: BackendException) {
             if (e.reason == BackendException.Reason.VPN_NOT_AUTHORIZED) {
                 pendingConfigText = configText
+                _pendingPermission.value = true
                 _runtimeState.value = VpnRuntimeState.OFF
                 VpnActivationResult.UNAUTHORIZED
             } else {
@@ -99,6 +122,7 @@ actual object VpnController {
             currentBackend.setState(currentTunnel, Tunnel.State.DOWN, null)
             tunnel = null
             pendingConfigText = null
+            _pendingPermission.value = false
             _runtimeState.value = VpnRuntimeState.OFF
             true
         } catch (e: Exception) {

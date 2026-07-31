@@ -30,6 +30,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -85,8 +86,15 @@ private fun VpnSettingsPageContent(
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var profileToRemove by rememberSaveable { mutableStateOf<String?>(null) }
     val runtimeState by VpnController.runtimeState.collectAsState()
+    val pendingPermission by VpnController.pendingPermission.collectAsState()
     val activeProfile = settings.activeProfile
     val isActive = runtimeState == VpnRuntimeState.ACTIVE
+
+    LaunchedEffect(pendingPermission) {
+        if (pendingPermission) {
+            VpnController.requestPendingPermission()
+        }
+    }
 
     Column {
         SettingsSection(
@@ -106,7 +114,7 @@ private fun VpnSettingsPageContent(
                 SettingsGroupDivider(isTablet = isTablet)
                 VpnStatusRow(
                     isActive = isActive && settings.enabled,
-                    pendingPermission = settings.enabled && !isActive,
+                    pendingPermission = pendingPermission && settings.enabled,
                     isTablet = isTablet,
                 )
             }
