@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.nuvio.app.core.network.CloudflareSolver
 import com.nuvio.app.core.network.PageScrapeResult
 import com.nuvio.app.core.ui.NuvioActionLabel
+import com.nuvio.app.core.ui.NuvioThemeTokens
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.features.addons.AddonRepository
@@ -199,7 +201,7 @@ internal fun LazyListScope.networkSettingsContent(
 @Composable
 private fun urlScraperSection(
     isTablet: Boolean,
-    tokens: com.nuvio.app.core.ui.NuvioTokens,
+    tokens: NuvioThemeTokens,
     repository: NetworkSettingsRepository,
 ) {
     val scope = rememberCoroutineScope()
@@ -376,7 +378,7 @@ private fun urlScraperSection(
                 Text(
                     text = errorMessage ?: "",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = tokens.colors.error,
+                    color = tokens.colors.danger,
                     modifier = Modifier.padding(
                         horizontal = if (isTablet) 20.dp else 16.dp,
                         vertical = 12.dp
