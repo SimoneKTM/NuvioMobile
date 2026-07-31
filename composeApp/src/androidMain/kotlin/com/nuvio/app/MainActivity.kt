@@ -249,7 +249,7 @@ class MainActivity : AppCompatActivity() {
             pipRemoteActionReceiver = null
         }
         if (!isChangingConfigurations) {
-            VpnSettingsRepository.setEnabled(false)
+            VpnController.deactivate()
         }
         super.onDestroy()
     }
