@@ -17,6 +17,9 @@ internal object VixcloudExtractor {
                 ),
             )
 
+            extractMasterPlaylistUrl(html)?.let { return it }
+            extractStreamsUrl(html)?.let { return it }
+
             val scriptText = extractScriptWithVideoData(html) ?: return null
 
             val videoId = extractVideoId(scriptText) ?: return null
@@ -27,12 +30,30 @@ internal object VixcloudExtractor {
             val host = vixcloudUrl.substringAfter("://").substringBefore("/")
             val baseUrl = "https://$host"
 
-            val playlistUrl = buildPlaylistUrl(baseUrl, videoId, token, expires)
-            playlistUrl
+            buildPlaylistUrl(baseUrl, videoId, token, expires)
         } catch (e: Exception) {
             log.e(e) { "Failed to extract Vixcloud playlist from $vixcloudUrl" }
             null
         }
+    }
+
+    private fun extractMasterPlaylistUrl(html: String): String? {
+        val urlMatch = Regex("""window\.masterPlaylist[\s\S]*?url\s*:\s*'([^']+)'""").find(html) ?: return null
+        val url = urlMatch.groupValues[1].replace("\\/", "/")
+        val token = Regex("""'token'\s*:\s*'([^']+)'""").find(html)?.groupValues?.getOrNull(1)
+        val expires = Regex("""'expires'\s*:\s*'([^']+)'""").find(html)?.groupValues?.getOrNull(1)
+        val params = mutableListOf<String>()
+        if (token != null) params.add("token=${token.encodeURL()}")
+        if (expires != null) params.add("expires=${expires.encodeURL()}")
+        return if (params.isNotEmpty()) "$url?${params.joinToString("&")}" else url
+    }
+
+    private fun extractStreamsUrl(html: String): String? {
+        val active = Regex(""""name":"[^"]+","active":true,"url":"([^"]+)"""").find(html)
+        val url = active?.groupValues?.getOrNull(1)
+            ?: Regex("""window\.streams\s*=\s*\[[\s\S]*?"url":"([^"]+)"""").find(html)?.groupValues?.getOrNull(1)
+            ?: return null
+        return url.replace("\\/", "/")
     }
 
     private fun extractScriptWithVideoData(html: String): String? {
@@ -45,8 +66,8 @@ internal object VixcloudExtractor {
 
     private fun extractVideoId(script: String): Int? {
         val patterns = listOf(
-            Regex("""window\.video\s*=\s*\{[^}]*id\s*:\s*(\d+)"""),
-            Regex("""id\s*:\s*(\d+)"""),
+            Regex("""window\.video\s*=\s*\{[^}]*id\s*:\s*['"]?(\d+)['"]?"""),
+            Regex("""id\s*:\s*['"]?(\d+)['"]?"""),
             Regex(""""id"\s*:\s*(\d+)"""),
         )
         for (pattern in patterns) {

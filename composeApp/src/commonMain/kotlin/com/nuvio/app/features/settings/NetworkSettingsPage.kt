@@ -28,6 +28,8 @@ import com.nuvio.app.core.network.PageScrapeResult
 import com.nuvio.app.core.ui.NuvioActionLabel
 import com.nuvio.app.core.ui.NuvioTokens
 import com.nuvio.app.core.ui.nuvio
+import com.nuvio.app.features.addons.AddonRepository
+import com.nuvio.app.features.profiles.ProfileRepository
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.custom_user_agent_input_placeholder
@@ -189,25 +191,31 @@ internal fun LazyListScope.networkSettingsContent(
 
             Spacer(modifier = Modifier.height(NuvioTokens.Space.s24))
 
-            urlScraperSection(isTablet, tokens)
+            urlScraperSection(isTablet, tokens, repository)
         }
     }
 }
 
 @Composable
-private fun urlScraperSection(isTablet: Boolean, tokens: com.nuvio.app.core.ui.NuvioTokens) {
+private fun urlScraperSection(
+    isTablet: Boolean,
+    tokens: com.nuvio.app.core.ui.NuvioTokens,
+    repository: NetworkSettingsRepository,
+) {
     val scope = rememberCoroutineScope()
     var urlInput by remember { mutableStateOf("") }
     var isScraping by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<PageScrapeResult?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var registerMessage by remember { mutableStateOf<String?>(null) }
+    val scraperUrls by repository.scraperUrls.collectAsState()
 
     SettingsSection(
-        title = "URL Scraper (WebView)",
+        title = "URL Scraper",
         isTablet = isTablet,
     ) {
         Text(
-            text = "Incolla un URL di una pagina streaming per estrarre i video. Usa WebView per bypassare Cloudflare.",
+            text = "Incolla l'URL di un sito streaming (es. https://streamingcommunityz.team) e premi \"Registra addon\": il sito viene aggiunto come addon con flussi riproducibili. \"Scrape\" serve solo per la diagnostica della pagina.",
             style = MaterialTheme.typography.bodyMedium,
             color = tokens.colors.textMuted,
             modifier = Modifier.padding(
@@ -232,7 +240,7 @@ private fun urlScraperSection(isTablet: Boolean, tokens: com.nuvio.app.core.ui.N
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     placeholder = {
-                        Text("https://animesaturn.ro/episodio-1")
+                        Text("https://streamingcommunityz.team")
                     },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = tokens.colors.borderFocus.copy(alpha = tokens.opacity.strong),
@@ -242,6 +250,90 @@ private fun urlScraperSection(isTablet: Boolean, tokens: com.nuvio.app.core.ui.N
                     ),
                 )
                 Spacer(modifier = Modifier.width(12.dp))
+                NuvioActionLabel(
+                    text = "Registra addon",
+                    onClick = {
+                        val url = urlInput.trim()
+                        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                            registerMessage = "URL non valido: deve iniziare con http(s)://"
+                            return@NuvioActionLabel
+                        }
+                        repository.addScraperUrl(url)
+                        AddonRepository.onProfileChanged(ProfileRepository.activeProfileId)
+                        AddonRepository.initialize()
+                        registerMessage = "Registrato come addon: $url"
+                    },
+                )
+            }
+
+            if (registerMessage != null) {
+                SettingsGroupDivider(isTablet = isTablet)
+                Text(
+                    text = registerMessage ?: "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = tokens.colors.success,
+                    modifier = Modifier.padding(
+                        horizontal = if (isTablet) 20.dp else 16.dp,
+                        vertical = 12.dp
+                    ),
+                )
+            }
+
+            if (scraperUrls.isNotEmpty()) {
+                SettingsGroupDivider(isTablet = isTablet)
+                Text(
+                    text = "Siti registrati (addon attivi):",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = tokens.colors.textMuted,
+                    modifier = Modifier.padding(
+                        horizontal = if (isTablet) 20.dp else 16.dp,
+                        vertical = 4.dp
+                    ),
+                )
+                scraperUrls.forEach { scraperUrl ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = if (isTablet) 20.dp else 16.dp,
+                                vertical = 4.dp
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = scraperUrl,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = tokens.colors.accent,
+                            modifier = Modifier.weight(1f),
+                        )
+                        NuvioActionLabel(
+                            text = "Rimuovi",
+                            onClick = {
+                                repository.removeScraperUrl(scraperUrl)
+                                registerMessage = "Rimosso: $scraperUrl"
+                            },
+                        )
+                    }
+                }
+            }
+
+            SettingsGroupDivider(isTablet = isTablet)
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = if (isTablet) 20.dp else 16.dp,
+                        vertical = 12.dp
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Diagnostica:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = tokens.colors.textMuted,
+                    modifier = Modifier.weight(1f),
+                )
                 if (isScraping) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
