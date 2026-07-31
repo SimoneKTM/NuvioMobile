@@ -248,7 +248,15 @@ class MainActivity : AppCompatActivity() {
             runCatching { unregisterReceiver(receiver) }
             pipRemoteActionReceiver = null
         }
+        if (!isChangingConfigurations) {
+            VpnSettingsRepository.setEnabled(false)
+        }
         super.onDestroy()
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        VpnSettingsRepository.setEnabled(false)
+        super.onTaskRemoved(rootIntent)
     }
 
     override fun onRequestPermissionsResult(

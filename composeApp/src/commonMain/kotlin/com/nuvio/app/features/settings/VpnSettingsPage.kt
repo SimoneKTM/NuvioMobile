@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
@@ -23,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -292,63 +294,67 @@ private fun VpnAddProfileDialog(
     var showError by rememberSaveable { mutableStateOf(false) }
 
     BasicAlertDialog(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surface,
         ) {
-            Text(
-                text = stringResource(Res.string.settings_vpn_add_title),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text(stringResource(Res.string.settings_vpn_name_optional)) },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-            )
-            OutlinedTextField(
-                value = configText,
-                onValueChange = { configText = it },
-                label = { Text(stringResource(Res.string.settings_vpn_config_placeholder)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp)
-                    .heightIn(min = 140.dp),
-            )
-            if (showError) {
-                Text(
-                    text = stringResource(Res.string.settings_vpn_invalid_config),
-                    modifier = Modifier.padding(top = 8.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-                horizontalArrangement = Arrangement.End,
+            Column(
+                modifier = Modifier.padding(20.dp),
             ) {
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(Res.string.settings_vpn_cancel))
+                Text(
+                    text = stringResource(Res.string.settings_vpn_add_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(Res.string.settings_vpn_name_optional)) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                )
+                OutlinedTextField(
+                    value = configText,
+                    onValueChange = { configText = it },
+                    label = { Text(stringResource(Res.string.settings_vpn_config_placeholder)) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
+                        .heightIn(min = 140.dp),
+                )
+                if (showError) {
+                    Text(
+                        text = stringResource(Res.string.settings_vpn_invalid_config),
+                        modifier = Modifier.padding(top = 8.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
-                TextButton(
-                    onClick = {
-                        if (onAdd(name, configText)) {
-                            name = ""
-                            configText = ""
-                            showError = false
-                        } else {
-                            showError = true
-                        }
-                    },
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.End,
                 ) {
-                    Text(stringResource(Res.string.settings_vpn_add))
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(Res.string.settings_vpn_cancel))
+                    }
+                    TextButton(
+                        onClick = {
+                            if (onAdd(name, configText)) {
+                                name = ""
+                                configText = ""
+                                showError = false
+                            } else {
+                                showError = true
+                            }
+                        },
+                    ) {
+                        Text(stringResource(Res.string.settings_vpn_add))
+                    }
                 }
             }
         }
@@ -363,36 +369,40 @@ private fun VpnRemoveProfileDialog(
     onConfirm: () -> Unit,
 ) {
     BasicAlertDialog(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surface,
         ) {
-            Text(
-                text = stringResource(Res.string.settings_vpn_remove_title),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = stringResource(Res.string.settings_vpn_remove_message, profile.label),
-                modifier = Modifier.padding(top = 8.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-                horizontalArrangement = Arrangement.End,
+            Column(
+                modifier = Modifier.padding(20.dp),
             ) {
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(Res.string.settings_vpn_cancel))
-                }
-                TextButton(onClick = onConfirm) {
-                    Text(
-                        text = stringResource(Res.string.settings_vpn_remove),
-                        color = MaterialTheme.colorScheme.error,
-                    )
+                Text(
+                    text = stringResource(Res.string.settings_vpn_remove_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = stringResource(Res.string.settings_vpn_remove_message, profile.label),
+                    modifier = Modifier.padding(top = 8.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(stringResource(Res.string.settings_vpn_cancel))
+                    }
+                    TextButton(onClick = onConfirm) {
+                        Text(
+                            text = stringResource(Res.string.settings_vpn_remove),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                 }
             }
         }
