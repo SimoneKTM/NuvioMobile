@@ -8,4 +8,8 @@ internal actual object MalLibraryStorage {
     actual fun loadPayload(): String? = store.getString("mal_library_payload")
 
     actual fun savePayload(payload: String) = store.putString("mal_library_payload", payload)
+
+    actual fun loadSettingsPayload(): String? = store.getString("mal_library_settings_payload")
+
+    actual fun saveSettingsPayload(payload: String) = store.putString("mal_library_settings_payload", payload)
 }

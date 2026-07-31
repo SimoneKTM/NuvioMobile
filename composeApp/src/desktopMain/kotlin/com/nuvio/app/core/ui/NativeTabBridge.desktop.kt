@@ -12,6 +12,7 @@ internal actual fun publishNativeTabAccentColor(hexColor: String) {}
 
 internal actual fun publishNativeTabTitles(
     home: String,
+    anime: String,
     search: String,
     library: String,
     profile: String,
