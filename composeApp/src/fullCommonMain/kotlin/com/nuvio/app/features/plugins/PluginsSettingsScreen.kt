@@ -14,14 +14,11 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material.icons.rounded.Visibility
-import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,8 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,13 +44,7 @@ import com.nuvio.app.core.ui.NuvioInputField
 import com.nuvio.app.core.ui.NuvioPrimaryButton
 import com.nuvio.app.core.ui.NuvioSectionLabel
 import com.nuvio.app.core.ui.NuvioSurfaceCard
-import com.nuvio.app.features.addons.AddonStorage
-import com.nuvio.app.features.profiles.ProfileRepository
-import com.nuvio.app.features.settings.globalNetworkSettingsRepository
 import com.nuvio.app.features.tmdb.TmdbSettingsRepository
-import com.nuvio.app.features.vezie.EasyProxyAddonBridge
-import com.nuvio.app.features.vezie.FlareSolverr
-import com.nuvio.app.features.vezie.VeezieEasyProxy
 import com.nuvio.app.features.plugins.runtime.PluginRuntime
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res
@@ -148,12 +137,6 @@ fun PluginsSettingsPageContent(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        EasyProxySection()
-        Spacer(modifier = Modifier.height(12.dp))
-        FlareSolverrSection()
-        Spacer(modifier = Modifier.height(12.dp))
-        ScraperSitesSection()
-        Spacer(modifier = Modifier.height(12.dp))
         CloudStreamSettingsSection()
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 8.dp),
@@ -578,207 +561,6 @@ fun PluginsSettingsPageContent(
             }
         )
     }
-}
-
-@Composable
-private fun EasyProxySection() {
-    var proxyUrl by rememberSaveable { mutableStateOf(
-        VeezieEasyProxy.getConfig()?.proxyUrl ?: ""
-    ) }
-    var proxyPassword by rememberSaveable { mutableStateOf(
-        VeezieEasyProxy.getConfig()?.apiPassword ?: ""
-    ) }
-    var saved by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = "EasyProxy",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            text = "Proxy per risolvere link video diretti (streamingcommunity, altadefinizione, ecc.)",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        NuvioSurfaceCard {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedTextField(
-                    value = proxyUrl,
-                    onValueChange = { proxyUrl = it; saved = false },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    placeholder = { Text("https://kittemuort-easytwelve.hf.space") },
-                    label = { Text("URL Proxy") },
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                OutlinedTextField(
-                    value = proxyPassword,
-                    onValueChange = { proxyPassword = it; saved = false },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    placeholder = { Text("Password") },
-                    label = { Text("Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                NuvioActionLabel(
-                    text = if (saved) "Salvato" else "Salva",
-                    onClick = {
-                        if (proxyUrl.isNotBlank()) {
-                            VeezieEasyProxy.configure(
-                                proxyUrl = proxyUrl.trim(),
-                                email = "",
-                                apiPassword = proxyPassword.trim(),
-                            )
-                            saved = true
-                        }
-                    },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun FlareSolverrSection() {
-    var flareUrl by rememberSaveable { mutableStateOf(
-        FlareSolverr.getUrl() ?: ""
-    ) }
-    var saved by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = "FlareSolverr",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            text = "Proxy Cloudflare per siti con challenge JS (es. https://Krishna8287-My-flaresolverr.hf.space). Se configurato, viene usato come fallback dopo HTTP diretto.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        NuvioSurfaceCard {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedTextField(
-                    value = flareUrl,
-                    onValueChange = { flareUrl = it; saved = false },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    placeholder = { Text("https://Krishna8287-My-flaresolverr.hf.space") },
-                    label = { Text("URL FlareSolverr") },
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                NuvioActionLabel(
-                    text = if (saved) "Salvato" else "Salva",
-                    onClick = {
-                        FlareSolverr.configure(flareUrl.trim())
-                        saved = true
-                    },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ScraperSitesSection() {
-    var newUrl by rememberSaveable { mutableStateOf("") }
-    var scraperUrls by remember { mutableStateOf(
-        EasyProxyAddonBridge.getScrapers().map { it.websiteUrl }
-    ) }
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = "Siti Scraper",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            text = "Aggiungi URL di siti streaming (es. https://streamingcommunityz.team). Appaiono come addon nel catalogo.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        NuvioSurfaceCard {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedTextField(
-                    value = newUrl,
-                    onValueChange = { newUrl = it },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    placeholder = { Text("https://streamingcommunityz.team") },
-                    label = { Text("URL sito") },
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                NuvioActionLabel(
-                    text = "Aggiungi",
-                    onClick = if (newUrl.isNotBlank()) ({
-                        val url = if (newUrl.startsWith("http")) newUrl else "https://$newUrl"
-                        val manifestUrl = EasyProxyAddonBridge.addOrUpdateScraper(url.trimEnd('/'))
-                        val profileId = ProfileRepository.activeProfileId
-                        val existing = AddonStorage.loadInstalledAddonUrls(profileId)
-                        if (manifestUrl !in existing) {
-                            AddonStorage.saveInstalledAddonUrls(profileId, existing + manifestUrl)
-                        }
-                        scraperUrls = EasyProxyAddonBridge.getScrapers().map { it.websiteUrl }
-                        newUrl = ""
-                    }) else null,
-                )
-            }
-        }
-
-        scraperUrls.forEach { url ->
-            NuvioSurfaceCard {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = url,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1,
-                    )
-                    NuvioActionLabel(
-                        text = "Rimuovi",
-                        onClick = {
-                            val id = urlToId(url)
-                            EasyProxyAddonBridge.removeScraper(id)
-                            val manifestUrl = EasyProxyAddonBridge.getManifestUrlFor(url)
-                            val profileId = ProfileRepository.activeProfileId
-                            val existing = AddonStorage.loadInstalledAddonUrls(profileId)
-                            AddonStorage.saveInstalledAddonUrls(profileId, existing.filter { it != manifestUrl })
-                            scraperUrls = EasyProxyAddonBridge.getScrapers().map { it.websiteUrl }
-                        },
-                    )
-                }
-            }
-        }
-    }
-}
-
-private fun urlToId(websiteUrl: String): String {
-    val clean = websiteUrl.trimEnd('/').removePrefix("https://").removePrefix("http://")
-    return "web_${clean.lowercase().replace(Regex("[^a-z0-9.\\-]"), "").replace(".", "_")}"
 }
 
 private fun String.fallbackRepositoryLabel(fallback: String): String {

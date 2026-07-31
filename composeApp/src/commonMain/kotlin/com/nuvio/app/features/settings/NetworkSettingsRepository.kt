@@ -1,8 +1,5 @@
 package com.nuvio.app.features.settings
 
-import com.nuvio.app.features.addons.AddonStorage
-import com.nuvio.app.features.profiles.ProfileRepository
-import com.nuvio.app.features.vezie.EasyProxyAddonBridge
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,8 +26,6 @@ interface NetworkSettingsStorage {
     fun setOverrideForPlugins(enabled: Boolean)
     fun getOverrideForBoth(): Boolean
     fun setOverrideForBoth(enabled: Boolean)
-    fun getScraperUrls(): List<String>
-    fun setScraperUrls(urls: List<String>)
 }
 
 class NetworkSettingsRepository(
@@ -55,35 +50,6 @@ class NetworkSettingsRepository(
 
     private val _overrideForBoth = MutableStateFlow(storage.getOverrideForBoth())
     val overrideForBoth: StateFlow<Boolean> = _overrideForBoth.asStateFlow()
-
-    private val _scraperUrls = MutableStateFlow(storage.getScraperUrls())
-    val scraperUrls: StateFlow<List<String>> = _scraperUrls.asStateFlow()
-
-    fun addScraperUrl(url: String) {
-        val current = _scraperUrls.value.toMutableList()
-        if (url !in current) {
-            current.add(url.trimEnd('/'))
-            storage.setScraperUrls(current)
-            _scraperUrls.value = current
-            val manifestUrl = EasyProxyAddonBridge.addOrUpdateScraper(url.trimEnd('/'))
-            val profileId = ProfileRepository.activeProfileId
-            val existing = AddonStorage.loadInstalledAddonUrls(profileId)
-            if (manifestUrl !in existing) {
-                AddonStorage.saveInstalledAddonUrls(profileId, existing + manifestUrl)
-            }
-        }
-    }
-
-    fun removeScraperUrl(url: String) {
-        val current = _scraperUrls.value.toMutableList()
-        current.remove(url)
-        storage.setScraperUrls(current)
-        _scraperUrls.value = current
-        val manifestUrl = EasyProxyAddonBridge.getManifestUrlFor(url)
-        val profileId = ProfileRepository.activeProfileId
-        val existing = AddonStorage.loadInstalledAddonUrls(profileId)
-        AddonStorage.saveInstalledAddonUrls(profileId, existing.filter { it != manifestUrl })
-    }
 
     fun setDnsProvider(provider: DnsProvider) {
         storage.setDnsProvider(provider.name)

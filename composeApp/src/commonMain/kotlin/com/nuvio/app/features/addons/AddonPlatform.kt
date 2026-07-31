@@ -1,19 +1,6 @@
 package com.nuvio.app.features.addons
 
-typealias UrlInterceptor = suspend (String) -> String?
-
-private val urlInterceptors = mutableListOf<UrlInterceptor>()
-
-fun registerUrlInterceptor(interceptor: UrlInterceptor) {
-    urlInterceptors.add(interceptor)
-}
-
-suspend fun httpGetText(url: String): String {
-    for (interceptor in urlInterceptors) {
-        interceptor(url)?.let { return it }
-    }
-    return httpGetTextActual(url)
-}
+suspend fun httpGetText(url: String): String = httpGetTextActual(url)
 
 internal expect object AddonStorage {
     fun loadInstalledAddonUrls(profileId: Int): List<String>
