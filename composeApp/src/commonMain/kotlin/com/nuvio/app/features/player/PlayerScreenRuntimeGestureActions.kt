@@ -271,6 +271,10 @@ internal fun PlayerScreenRuntime.rememberSurfaceGestureCallbacks(): PlayerSurfac
             revealLockedOverlay()
             return@rememberUpdatedState
         }
+        if (activeProviderAddonId == "live-tv") {
+            showGestureMessage("TAP VIDEO OK")
+            return@rememberUpdatedState
+        }
         val centerStart = layoutSize.width * PlayerLeftGestureBoundary
         val centerEnd = layoutSize.width * PlayerRightGestureBoundary
         if (controlsVisible && offset.x in centerStart..centerEnd) {
