@@ -161,6 +161,7 @@ actual fun PlatformPlayerSurface(
             yuv420pEnabled = playerSettings.androidLibmpvYuv420pEnabled,
             onControllerReady = onControllerReady,
             onSnapshot = onSnapshot,
+            onOverlayEvent = onOverlayEvent,
             onError = onError,
         )
     }
@@ -803,6 +804,12 @@ private fun ExoPlayerSurface(
                 layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
                 player = exoPlayer
                 keepScreenOn = exoPlayer.shouldKeepPlayerScreenOn()
+                setOnTouchListener { _, event ->
+                    if (event.action == android.view.MotionEvent.ACTION_DOWN) {
+                        onOverlayEvent?.invoke("touchProbeExo", event.x.toDouble())
+                    }
+                    false
+                }
                 this.resizeMode = resizeMode.toExoResizeMode()
                 setShutterBackgroundColor(android.graphics.Color.BLACK)
                 playerViewRef = this
@@ -844,6 +851,7 @@ private fun LibmpvPlayerSurface(
     yuv420pEnabled: Boolean,
     onControllerReady: (PlayerEngineController) -> Unit,
     onSnapshot: (PlayerPlaybackSnapshot) -> Unit,
+    onOverlayEvent: ((type: String, value: Double) -> Unit)? = null,
     onError: (String?) -> Unit,
 ) {
     val context = LocalContext.current
@@ -1041,6 +1049,12 @@ private fun LibmpvPlayerSurface(
             ).apply {
                 layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
                 keepScreenOn = false
+                setOnTouchListener { _, event ->
+                    if (event.action == android.view.MotionEvent.ACTION_DOWN) {
+                        onOverlayEvent?.invoke("touchProbeMpv", event.x.toDouble())
+                    }
+                    false
+                }
                 runCatching {
                     Utils.copyAssets(viewContext)
                     initialize(viewContext.filesDir.path, viewContext.cacheDir.path)

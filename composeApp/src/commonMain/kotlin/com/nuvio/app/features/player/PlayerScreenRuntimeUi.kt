@@ -6,6 +6,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,13 +17,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.features.p2p.P2pStreamingState
 import com.nuvio.app.features.p2p.formatP2pMegabytes
@@ -29,6 +34,7 @@ import com.nuvio.app.features.p2p.formatP2pSpeed
 import com.nuvio.app.features.player.cast.CastDevicePicker
 import com.nuvio.app.isIos
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import nuvio.composeapp.generated.resources.*
 
 @Composable
@@ -97,11 +103,20 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
         }
     }
     val gestureCallbacks = rememberSurfaceGestureCallbacks()
+    val rawRootProbe = rememberUpdatedState<(androidx.compose.ui.geometry.Offset) -> Unit> { offset ->
+        showGestureMessage("ROOT DOWN ${offset.x.roundToInt()},${offset.y.roundToInt()}")
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .onSizeChanged { layoutSize = it }
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    rawRootProbe.value(down.position)
+                }
+            }
             .playerSurfaceTapGestures(
                 layoutSize = layoutSize,
                 playerControlsLockedState = gestureCallbacks.playerControlsLocked,
@@ -193,6 +208,8 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                             flushWatchProgress()
                             args.onBack()
                         }
+                        "touchProbeExo" -> showGestureMessage("VIEW TOUCH EXO")
+                        "touchProbeMpv" -> showGestureMessage("VIEW TOUCH MPV")
                         "toggleFullscreen" -> {}
                         "subtitles" -> {
                             refreshTracks()
@@ -286,6 +303,18 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             }
         }
         Box(modifier = Modifier.fillMaxSize()) {
+            Text(
+                text = "DIAG lock=$playerControlsLocked panel=$showLiveTvChannelsPanel",
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(top = 100.dp, start = 20.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.Black.copy(alpha = 0.6f))
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                color = Color.Yellow,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+            )
             LiveTvPlayerControls(
                 title = title,
                 streamTitle = activeStreamTitle,
