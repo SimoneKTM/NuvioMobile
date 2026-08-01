@@ -241,10 +241,21 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        com.nuvio.app.features.player.PlayerTouchDiagnostics.windowHasFocus = window?.hasWindowFocus()
         VpnSettingsRepository.restoreActiveTunnel()
         VpnController.handlePermissionIfNeeded(this)
         vpnRestoreHandler.removeCallbacks(vpnRestoreRetryRunnable)
         vpnRestoreHandler.postDelayed(vpnRestoreRetryRunnable, 3000)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        com.nuvio.app.features.player.PlayerTouchDiagnostics.windowHasFocus = hasFocus
+    }
+
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+        com.nuvio.app.features.player.PlayerTouchDiagnostics.userInteractions++
     }
 
     override fun onPause() {

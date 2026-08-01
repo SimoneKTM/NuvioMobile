@@ -262,7 +262,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
 
         RenderPlayerControls(displayedPositionMs = displayedPositionMs, isEpisode = isEpisode)
         Text(
-            text = "PROBE decor=${PlayerTouchDiagnostics.decorViewDownEvents} compose=${PlayerTouchDiagnostics.composeViewDownEvents} main=${PlayerTouchDiagnostics.mainThreadBlocks}",
+            text = "PROBE decor=${PlayerTouchDiagnostics.decorViewDownEvents} compose=${PlayerTouchDiagnostics.composeViewDownEvents} main=${PlayerTouchDiagnostics.mainThreadBlocks} focus=${PlayerTouchDiagnostics.windowHasFocus} interact=${PlayerTouchDiagnostics.userInteractions}",
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(top = 40.dp, start = 20.dp)
@@ -315,6 +315,21 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             }
         }
         Box(modifier = Modifier.fillMaxSize()) {
+            Text(
+                text = "EXIT",
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 100.dp, end = 20.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.Red.copy(alpha = 0.85f))
+                    .clickable {
+                        flushWatchProgress()
+                        args.onBack()
+                    }
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+            )
             Text(
                 text = "DIAG lock=$playerControlsLocked panel=$showLiveTvChannelsPanel",
                 modifier = Modifier

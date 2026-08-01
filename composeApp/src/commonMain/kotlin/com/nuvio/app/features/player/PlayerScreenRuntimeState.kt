@@ -31,6 +31,10 @@ internal object PlayerTouchDiagnostics {
         internal set
     var mainThreadBlocks by mutableStateOf(0)
         internal set
+    var windowHasFocus by mutableStateOf<Boolean?>(null)
+        internal set
+    var userInteractions by mutableStateOf(0)
+        internal set
 }
 
 internal class PlayerScreenRuntime(
