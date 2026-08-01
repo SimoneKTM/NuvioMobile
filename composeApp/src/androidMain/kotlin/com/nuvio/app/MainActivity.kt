@@ -241,7 +241,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        com.nuvio.app.features.player.PlayerTouchDiagnostics.windowHasFocus = window?.hasWindowFocus()
+        com.nuvio.app.features.player.PlayerTouchDiagnostics.windowHasFocus = window?.decorView?.hasWindowFocus()
         VpnSettingsRepository.restoreActiveTunnel()
         VpnController.handlePermissionIfNeeded(this)
         vpnRestoreHandler.removeCallbacks(vpnRestoreRetryRunnable)
