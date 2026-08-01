@@ -103,13 +103,14 @@ object VpnSettingsRepository {
         persist()
     }
 
-    fun restoreActiveTunnel() {
+    fun restoreActiveTunnel(): Boolean {
         ensureLoaded()
         val current = _uiState.value
-        if (!current.enabled) return
-        val profile = current.activeProfile ?: return
-        if (VpnController.runtimeState.value == VpnRuntimeState.ACTIVE) return
-        VpnController.activate(profile.configText)
+        if (!current.enabled) return false
+        val profile = current.activeProfile ?: return false
+        if (VpnController.runtimeState.value == VpnRuntimeState.ACTIVE) return true
+        if (VpnController.pendingPermission.value) return false
+        return VpnController.activate(profile.configText) == VpnActivationResult.ACTIVE
     }
 
     private fun loadFromDisk() {

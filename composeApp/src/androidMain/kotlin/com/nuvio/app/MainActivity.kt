@@ -3,6 +3,8 @@ package com.nuvio.app
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -114,6 +116,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
     private var pipRemoteActionReceiver: PipRemoteActionReceiver? = null
+    private val vpnRestoreHandler = Handler(Looper.getMainLooper())
+    private val vpnRestoreRetryRunnable = Runnable {
+        VpnSettingsRepository.restoreActiveTunnel()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -159,7 +165,6 @@ class MainActivity : AppCompatActivity() {
         DebridSettingsStorage.initialize(applicationContext)
         VpnSettingsStorage.initialize(applicationContext)
         VpnController.initialize(applicationContext)
-        VpnSettingsRepository.restoreActiveTunnel()
         TmdbSettingsStorage.initialize(applicationContext)
         MdbListSettingsStorage.initialize(applicationContext)
         AnimeTmdbSettingsStorage.initialize(applicationContext)
@@ -218,12 +223,25 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        VpnSettingsRepository.restoreActiveTunnel()
         VpnController.handlePermissionIfNeeded(this)
+        vpnRestoreHandler.removeCallbacks(vpnRestoreRetryRunnable)
+        vpnRestoreHandler.postDelayed(vpnRestoreRetryRunnable, 3000)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        vpnRestoreHandler.removeCallbacks(vpnRestoreRetryRunnable)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == VpnController.VPN_PERMISSION_REQUEST && resultCode == android.app.Activity.RESULT_OK) {
-            VpnController.retryPendingActivation()
+        if (requestCode == VpnController.VPN_PERMISSION_REQUEST) {
+            if (resultCode == android.app.Activity.RESULT_OK) {
+                VpnController.retryPendingActivation()
+            } else {
+                VpnController.deactivate()
+                VpnSettingsRepository.setEnabled(false)
+            }
         }
         super.onActivityResult(requestCode, resultCode, data)
     }

@@ -116,13 +116,17 @@ actual object VpnController {
     }
 
     actual fun deactivate(): Boolean {
-        val currentBackend = backend ?: return true
-        val currentTunnel = tunnel ?: return true
+        val currentBackend = backend
+        val currentTunnel = tunnel
+        pendingConfigText = null
+        _pendingPermission.value = false
+        if (currentBackend == null || currentTunnel == null) {
+            _runtimeState.value = VpnRuntimeState.OFF
+            return true
+        }
         return try {
             currentBackend.setState(currentTunnel, Tunnel.State.DOWN, null)
             tunnel = null
-            pendingConfigText = null
-            _pendingPermission.value = false
             _runtimeState.value = VpnRuntimeState.OFF
             true
         } catch (e: Exception) {
