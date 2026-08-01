@@ -266,34 +266,24 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
 @Composable
 private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, isEpisode: Boolean) {
     if (activeProviderAddonId == "live-tv") {
-        val isInPip = rememberIsInPictureInPicture()
-        AnimatedVisibility(
-            visible = controlsVisible && !playerControlsLocked && !isInPip,
-            enter = fadeIn(),
-            exit = fadeOut(),
-        ) {
-            LiveTvPlayerControls(
-                title = title,
-                streamTitle = activeStreamTitle,
-                providerName = activeProviderName,
-                metrics = metrics,
-                isLocked = playerControlsLocked,
-                onLockToggle = {
-                    if (playerControlsLocked) unlockPlayerControls() else lockPlayerControls()
-                },
-                onBack = {
-                    flushWatchProgress()
-                    args.onBack()
-                },
-                onResizeModeClick = { cycleResizeMode() },
-                onVolumeBoostClick = { showVolumeBoostModal = true },
-                resizeModeLabel = stringResource(resizeMode.labelRes),
-                horizontalSafePadding = horizontalSafePadding,
-                onCastClick = if (castController != null) { { showCastPicker = true } } else null,
-                isCastConnected = castController?.isCasting == true,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
+        LiveTvPlayerControls(
+            title = title,
+            streamTitle = activeStreamTitle,
+            providerName = activeProviderName,
+            metrics = metrics,
+            isLocked = playerControlsLocked,
+            onLockToggle = {
+                if (playerControlsLocked) unlockPlayerControls() else lockPlayerControls()
+            },
+            onBack = {
+                flushWatchProgress()
+                args.onBack()
+            },
+            horizontalSafePadding = horizontalSafePadding,
+            onCastClick = if (castController != null) { { showCastPicker = true } } else null,
+            isCastConnected = castController?.isCasting == true,
+            modifier = Modifier.fillMaxSize(),
+        )
         return
     }
     val isInPip = rememberIsInPictureInPicture()

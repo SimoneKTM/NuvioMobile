@@ -870,9 +870,6 @@ internal fun LiveTvPlayerControls(
     isLocked: Boolean,
     onLockToggle: () -> Unit,
     onBack: () -> Unit,
-    onResizeModeClick: () -> Unit,
-    onVolumeBoostClick: () -> Unit,
-    resizeModeLabel: String,
     horizontalSafePadding: androidx.compose.ui.unit.Dp,
     onCastClick: (() -> Unit)? = null,
     isCastConnected: Boolean = false,
@@ -889,21 +886,6 @@ internal fun LiveTvPlayerControls(
                         colors = listOf(
                             Color.Black.copy(alpha = 0.7f),
                             Color.Transparent,
-                        ),
-                    ),
-                ),
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(160.dp)
-                .align(Alignment.BottomCenter)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            Color.Black.copy(alpha = 0.7f),
                         ),
                     ),
                 ),
@@ -997,42 +979,6 @@ internal fun LiveTvPlayerControls(
                     iconSize = metrics.headerIconSize,
                     contentDescription = stringResource(Res.string.compose_player_close),
                 )
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = horizontalSafePadding + metrics.horizontalPadding)
-                .padding(bottom = metrics.sliderBottomOffset),
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            Surface(
-                color = Color.Black.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.border(
-                    width = 1.dp,
-                    color = Color.White.copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(24.dp),
-                ),
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    PlayerActionPillButton(
-                        label = resizeModeLabel,
-                        painter = appIconPainter(AppIconResource.PlayerAspectRatio),
-                        onClick = onResizeModeClick,
-                    )
-                    PlayerActionPillButton(
-                        label = stringResource(Res.string.player_action_volume_boost),
-                        icon = Icons.Rounded.VolumeUp,
-                        onClick = onVolumeBoostClick,
-                    )
-                }
             }
         }
     }
