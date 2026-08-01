@@ -135,6 +135,7 @@ class MainActivity : AppCompatActivity() {
         NuvioAppIconSwitcher.initialize(applicationContext)
         super.onCreate(savedInstanceState)
         window.setBackgroundDrawableResource(R.color.nuvio_background)
+        com.nuvio.app.features.player.MainThreadBlockWatcher.start()
         pipRemoteActionReceiver = PipRemoteActionReceiver.register(this)
         SyncClientIdentityStorage.initialize(applicationContext)
         AddonStorage.initialize(applicationContext)

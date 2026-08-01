@@ -262,7 +262,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
 
         RenderPlayerControls(displayedPositionMs = displayedPositionMs, isEpisode = isEpisode)
         Text(
-            text = "PROBE decor=${PlayerTouchDiagnostics.decorViewDownEvents} compose=${PlayerTouchDiagnostics.composeViewDownEvents}",
+            text = "PROBE decor=${PlayerTouchDiagnostics.decorViewDownEvents} compose=${PlayerTouchDiagnostics.composeViewDownEvents} main=${PlayerTouchDiagnostics.mainThreadBlocks}",
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(top = 40.dp, start = 20.dp)

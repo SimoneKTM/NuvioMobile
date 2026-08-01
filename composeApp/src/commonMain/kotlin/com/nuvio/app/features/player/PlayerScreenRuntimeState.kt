@@ -29,6 +29,8 @@ internal object PlayerTouchDiagnostics {
         internal set
     var composeViewDownEvents by mutableStateOf(0)
         internal set
+    var mainThreadBlocks by mutableStateOf(0)
+        internal set
 }
 
 internal class PlayerScreenRuntime(

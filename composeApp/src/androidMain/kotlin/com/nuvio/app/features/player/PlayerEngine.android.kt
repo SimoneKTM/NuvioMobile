@@ -9,6 +9,8 @@ import android.util.Log
 import android.util.TypedValue
 import android.graphics.Typeface
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.util.AttributeSet
 import com.nuvio.app.features.addons.httpGetText
@@ -1064,6 +1066,7 @@ private fun LibmpvPlayerSurface(
                     latestOnError.value(error.localizedMessage ?: "libmpv unavailable")
                 }
                 playerViewRef = this
+                globalMpvView = this
             }
         },
         update = { view ->
@@ -1072,9 +1075,56 @@ private fun LibmpvPlayerSurface(
         },
         onRelease = { view ->
             if (playerViewRef === view) playerViewRef = null
+            if (globalMpvView === view) globalMpvView = null
             runCatching { view.destroy() }
         },
     )
+}
+
+private var globalMpvView: NuvioLibmpvView? = null
+
+internal object MainThreadBlockWatcher {
+    private val mainHandler = Handler(Looper.getMainLooper())
+    @Volatile private var pingPending = false
+    @Volatile private var started = false
+    private val pingRunnable = Runnable { pingPending = false }
+
+    fun start() {
+        if (started) return
+        started = true
+        Thread {
+            while (true) {
+                try {
+                    Thread.sleep(3000)
+                    pingPending = true
+                    mainHandler.post(pingRunnable)
+                    Thread.sleep(3000)
+                    if (pingPending) {
+                        pingPending = false
+                        onMainThreadBlocked()
+                    }
+                } catch (e: InterruptedException) {
+                    return@Thread
+                }
+            }
+        }.apply {
+            name = "nuvio-main-watchdog"
+            isDaemon = true
+        }.start()
+    }
+
+    private fun onMainThreadBlocked() {
+        PlayerTouchDiagnostics.mainThreadBlocks++
+        val stack = Looper.getMainLooper().thread.stackTrace
+            .take(14)
+            .joinToString("\n") { "at ${it.className}.${it.methodName}(${it.fileName}:${it.lineNumber})" }
+        Log.e(TAG, "MAIN THREAD BLOCKED >3s:\n$stack")
+        val osdLine = stack.lineSequence()
+            .firstOrNull { it.contains(" at ") && !it.contains("MainThreadBlockWatcher") }
+            ?.trim()
+            ?: "main thread blocked"
+        runCatching { globalMpvView?.osdShow("MAIN BLOCKED: $osdLine") }
+    }
 }
 
 private tailrec fun Context.findActivity(): Activity? =
@@ -1182,6 +1232,10 @@ private class NuvioLibmpvView(
 
     fun setPaused(paused: Boolean) {
         runCatching { mpv.setPropertyBoolean("pause", paused) }
+    }
+
+    fun osdShow(text: String) {
+        runCatching { mpv.command("show-text", text, "5000") }
     }
 
     fun seekToMs(positionMs: Long) {
