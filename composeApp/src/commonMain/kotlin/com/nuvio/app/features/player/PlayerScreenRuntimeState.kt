@@ -24,6 +24,13 @@ import com.nuvio.app.features.watchprogress.WatchProgressUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 
+internal object PlayerTouchDiagnostics {
+    var decorViewDownEvents by mutableStateOf(0)
+        internal set
+    var composeViewDownEvents by mutableStateOf(0)
+        internal set
+}
+
 internal class PlayerScreenRuntime(
     args: PlayerScreenArgs,
 ) {

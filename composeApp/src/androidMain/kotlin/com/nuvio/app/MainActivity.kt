@@ -213,6 +213,23 @@ class MainActivity : AppCompatActivity() {
         setContent {
             App()
         }
+        runCatching {
+            window.decorView.setOnTouchListener { _, event ->
+                if (event.action == android.view.MotionEvent.ACTION_DOWN) {
+                    com.nuvio.app.features.player.PlayerTouchDiagnostics.decorViewDownEvents++
+                }
+                false
+            }
+        }
+        runCatching {
+            findViewById<androidx.compose.ui.platform.ComposeView>(android.R.id.content)
+                ?.setOnTouchListener { _, event ->
+                    if (event.action == android.view.MotionEvent.ACTION_DOWN) {
+                        com.nuvio.app.features.player.PlayerTouchDiagnostics.composeViewDownEvents++
+                    }
+                    false
+                }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {

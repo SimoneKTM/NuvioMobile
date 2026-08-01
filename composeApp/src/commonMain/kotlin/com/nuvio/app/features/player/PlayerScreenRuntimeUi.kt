@@ -261,6 +261,18 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
         }
 
         RenderPlayerControls(displayedPositionMs = displayedPositionMs, isEpisode = isEpisode)
+        Text(
+            text = "PROBE decor=${PlayerTouchDiagnostics.decorViewDownEvents} compose=${PlayerTouchDiagnostics.composeViewDownEvents}",
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(top = 40.dp, start = 20.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.Black.copy(alpha = 0.6f))
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            color = Color.White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+        )
         RenderPlaybackOverlays(
             runtime = runtime,
             displayedPositionMs = displayedPositionMs,
