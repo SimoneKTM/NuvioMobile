@@ -99,6 +99,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                 activateHoldToSpeedState = gestureCallbacks.activateHoldToSpeed,
                 deactivateHoldToSpeedState = gestureCallbacks.deactivateHoldToSpeed,
                 revealLockedOverlayState = gestureCallbacks.revealLockedOverlay,
+                onSurfaceLongPress = gestureCallbacks.onSurfaceLongPress,
             )
             .playerSurfaceDragGestures(
                 gestureController = gestureController,
@@ -259,6 +260,8 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                 showLiveTvChannelsPanel = false
                 controlsVisible = true
             },
+            onCastClick = if (castController != null) { { showCastPicker = true } } else null,
+            isCastConnected = castController?.isCasting == true,
         )
     }
 }
@@ -266,6 +269,11 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
 @Composable
 private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, isEpisode: Boolean) {
     if (activeProviderAddonId == "live-tv") {
+        LaunchedEffect(Unit) {
+            if (PlayerSettingsRepository.uiState.value.resizeMode != PlayerResizeMode.Fit) {
+                PlayerSettingsRepository.setResizeMode(PlayerResizeMode.Fit)
+            }
+        }
         LiveTvPlayerControls(
             title = title,
             streamTitle = activeStreamTitle,

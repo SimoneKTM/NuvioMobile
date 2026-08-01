@@ -406,9 +406,10 @@ private fun PlayerHeaderIconButton(
     buttonSize: androidx.compose.ui.unit.Dp,
     iconSize: androidx.compose.ui.unit.Dp,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(buttonSize)
             .clip(CircleShape)
             .background(Color.Black.copy(alpha = 0.35f))
@@ -875,6 +876,8 @@ internal fun LiveTvPlayerControls(
     isCastConnected: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    val buttonSize = metrics.headerIconSize + 16.dp
+    val iconSize = metrics.headerIconSize
     Box(modifier = modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
@@ -891,95 +894,81 @@ internal fun LiveTvPlayerControls(
                 ),
         )
 
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .align(Alignment.TopStart)
+                .fillMaxWidth(0.5f)
                 .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
                 .padding(
                     start = horizontalSafePadding + metrics.horizontalPadding,
-                    end = horizontalSafePadding + metrics.horizontalPadding,
                     top = metrics.verticalPadding / 4,
                 ),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
+            Text(
+                text = title,
+                style = MaterialTheme.nuvioTypeScale.titleLg.copy(
+                    fontSize = metrics.titleSize,
+                    lineHeight = metrics.titleSize * 1.16f,
+                    fontWeight = FontWeight.Bold,
+                ),
+                color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (streamTitle != title) {
                 Text(
-                    text = title,
-                    style = MaterialTheme.nuvioTypeScale.titleLg.copy(
-                        fontSize = metrics.titleSize,
-                        lineHeight = metrics.titleSize * 1.16f,
-                        fontWeight = FontWeight.Bold,
+                    text = streamTitle,
+                    style = MaterialTheme.nuvioTypeScale.labelSm.copy(
+                        fontSize = metrics.metadataSize,
+                        lineHeight = metrics.metadataSize * 1.25f,
                     ),
-                    color = Color.White,
-                    maxLines = 2,
+                    color = Color.White.copy(alpha = 0.7f),
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (streamTitle != title) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = streamTitle,
-                            style = MaterialTheme.nuvioTypeScale.labelSm.copy(
-                                fontSize = metrics.metadataSize,
-                                lineHeight = metrics.metadataSize * 1.25f,
-                            ),
-                            color = Color.White.copy(alpha = 0.7f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = providerName,
-                            style = MaterialTheme.nuvioTypeScale.labelSm.copy(
-                                fontSize = metrics.metadataSize,
-                                lineHeight = metrics.metadataSize * 1.25f,
-                                fontStyle = FontStyle.Italic,
-                            ),
-                            color = Color.White.copy(alpha = 0.7f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
             }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (onCastClick != null) {
-                    PlayerHeaderIconButton(
-                        icon = if (isCastConnected) Icons.Rounded.CastConnected else Icons.Rounded.Cast,
-                        contentDescription = stringResource(Res.string.player_action_cast),
-                        buttonSize = metrics.headerIconSize + 16.dp,
-                        iconSize = metrics.headerIconSize,
-                        onClick = onCastClick,
-                    )
-                }
-                PlayerHeaderIconButton(
-                    icon = if (isLocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
-                    contentDescription = if (isLocked) {
-                        stringResource(Res.string.compose_player_unlock_controls)
-                    } else {
-                        stringResource(Res.string.compose_player_lock_controls)
-                    },
-                    buttonSize = metrics.headerIconSize + 16.dp,
-                    iconSize = metrics.headerIconSize,
-                    onClick = onLockToggle,
-                )
-                NuvioBackButton(
-                    onClick = onBack,
-                    containerColor = Color.Black.copy(alpha = 0.35f),
-                    contentColor = Color.White,
-                    buttonSize = metrics.headerIconSize + 16.dp,
-                    iconSize = metrics.headerIconSize,
-                    contentDescription = stringResource(Res.string.compose_player_close),
-                )
-            }
+        }
+
+        NuvioBackButton(
+            onClick = onBack,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
+                .padding(top = 20.dp, end = 20.dp),
+            containerColor = Color.Black.copy(alpha = 0.35f),
+            contentColor = Color.White,
+            buttonSize = buttonSize,
+            iconSize = iconSize,
+            contentDescription = stringResource(Res.string.compose_player_close),
+        )
+        PlayerHeaderIconButton(
+            icon = if (isLocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
+            contentDescription = if (isLocked) {
+                stringResource(Res.string.compose_player_unlock_controls)
+            } else {
+                stringResource(Res.string.compose_player_lock_controls)
+            },
+            buttonSize = buttonSize,
+            iconSize = iconSize,
+            onClick = onLockToggle,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
+                .padding(top = 20.dp, end = 20.dp + buttonSize + 10.dp),
+        )
+        if (onCastClick != null) {
+            PlayerHeaderIconButton(
+                icon = if (isCastConnected) Icons.Rounded.CastConnected else Icons.Rounded.Cast,
+                contentDescription = stringResource(Res.string.player_action_cast),
+                buttonSize = buttonSize,
+                iconSize = iconSize,
+                onClick = onCastClick,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
+                    .padding(top = 20.dp, end = 20.dp + (buttonSize + 10.dp) * 2),
+            )
         }
     }
 }

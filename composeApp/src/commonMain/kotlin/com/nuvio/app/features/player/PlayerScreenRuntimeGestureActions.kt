@@ -22,6 +22,7 @@ internal data class PlayerSurfaceGestureCallbacks(
     val showVolumeFeedback: State<(PlayerAudioLevel) -> Unit>,
     val clearLiveGestureFeedback: State<() -> Unit>,
     val revealLockedOverlay: State<() -> Unit>,
+    val onSurfaceLongPress: State<() -> Unit>,
     val isHoldToSpeedGestureActive: State<Boolean>,
     val touchGesturesEnabled: State<Boolean>,
     val playerControlsLocked: State<Boolean>,
@@ -283,6 +284,10 @@ internal fun PlayerScreenRuntime.rememberSurfaceGestureCallbacks(): PlayerSurfac
             revealLockedOverlay()
             return@rememberUpdatedState
         }
+        if (activeProviderAddonId == "live-tv") {
+            showLiveTvChannelsPanel = true
+            return@rememberUpdatedState
+        }
         if (!playerSettingsUiState.touchGesturesEnabled) {
             controlsVisible = !controlsVisible
             return@rememberUpdatedState
@@ -308,6 +313,16 @@ internal fun PlayerScreenRuntime.rememberSurfaceGestureCallbacks(): PlayerSurfac
         showVolumeFeedback = rememberUpdatedState(::showVolumeFeedback),
         clearLiveGestureFeedback = rememberUpdatedState(::clearLiveGestureFeedback),
         revealLockedOverlay = rememberUpdatedState(::revealLockedOverlay),
+        onSurfaceLongPress = rememberUpdatedState {
+            if (playerControlsLocked) {
+                revealLockedOverlay()
+            } else if (activeProviderAddonId == "live-tv") {
+                lockPlayerControls()
+                revealLockedOverlay()
+            } else {
+                activateHoldToSpeed()
+            }
+        },
         isHoldToSpeedGestureActive = rememberUpdatedState(isHoldToSpeedGestureActive),
         touchGesturesEnabled = rememberUpdatedState(playerSettingsUiState.touchGesturesEnabled),
         playerControlsLocked = rememberUpdatedState(playerControlsLocked),

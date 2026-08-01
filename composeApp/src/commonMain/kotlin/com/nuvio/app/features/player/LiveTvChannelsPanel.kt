@@ -25,6 +25,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Cast
+import androidx.compose.material.icons.rounded.CastConnected
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarBorder
@@ -62,6 +64,7 @@ import nuvio.composeapp.generated.resources.live_tv_all_channels
 import nuvio.composeapp.generated.resources.live_tv_favorites
 import nuvio.composeapp.generated.resources.live_tv_choose_category
 import nuvio.composeapp.generated.resources.live_tv_no_channels_found
+import nuvio.composeapp.generated.resources.player_action_cast
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -70,6 +73,8 @@ internal fun LiveTvChannelsPanel(
     currentStreamUrl: String,
     onChannelSelected: (LiveTvChannel) -> Unit,
     onDismiss: () -> Unit,
+    onCastClick: (() -> Unit)? = null,
+    isCastConnected: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.nuvio
@@ -146,14 +151,33 @@ internal fun LiveTvChannelsPanel(
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                         )
-                        Text(
-                            text = stringResource(Res.string.action_close),
-                            modifier = Modifier
-                                .clickable(onClick = onDismiss)
-                                .padding(8.dp),
-                            color = tokens.colors.accent,
-                            style = MaterialTheme.typography.labelLarge,
-                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(tokens.spacing.cardPadding),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (onCastClick != null) {
+                                Icon(
+                                    imageVector = if (isCastConnected) {
+                                        Icons.Rounded.CastConnected
+                                    } else {
+                                        Icons.Rounded.Cast
+                                    },
+                                    contentDescription = stringResource(Res.string.player_action_cast),
+                                    modifier = Modifier
+                                        .clickable(onClick = onCastClick)
+                                        .padding(8.dp),
+                                    tint = tokens.colors.accent,
+                                )
+                            }
+                            Text(
+                                text = stringResource(Res.string.action_close),
+                                modifier = Modifier
+                                    .clickable(onClick = onDismiss)
+                                    .padding(8.dp),
+                                color = tokens.colors.accent,
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                        }
                     }
 
                     if (channels.isNotEmpty()) {

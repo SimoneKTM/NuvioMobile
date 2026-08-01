@@ -19,6 +19,7 @@ internal fun Modifier.playerSurfaceTapGestures(
     activateHoldToSpeedState: State<() -> Unit>,
     deactivateHoldToSpeedState: State<() -> Unit>,
     revealLockedOverlayState: State<() -> Unit>,
+    onSurfaceLongPress: State<() -> Unit>,
 ): Modifier =
     pointerInput(layoutSize) {
         detectTapGestures(
@@ -28,13 +29,7 @@ internal fun Modifier.playerSurfaceTapGestures(
             },
             onTap = { offset -> onSurfaceTap.value(offset) },
             onDoubleTap = { offset -> onSurfaceDoubleTap.value(offset) },
-            onLongPress = {
-                if (playerControlsLockedState.value) {
-                    revealLockedOverlayState.value()
-                } else {
-                    activateHoldToSpeedState.value()
-                }
-            },
+            onLongPress = { onSurfaceLongPress.value() },
         )
     }
 
