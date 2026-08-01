@@ -124,30 +124,32 @@ private fun VpnSettingsPageContent(
             title = stringResource(Res.string.settings_vpn_section_profiles),
             isTablet = isTablet,
         ) {
-            if (settings.profiles.isEmpty()) {
-                SettingsGroup(isTablet = isTablet) {
+            SettingsGroup(isTablet = isTablet) {
+                if (settings.profiles.isEmpty()) {
                     VpnEmptyProfilesRow(isTablet = isTablet)
+                } else {
+                    settings.profiles.forEachIndexed { index, profile ->
+                        if (index > 0) {
+                            SettingsGroupDivider(isTablet = isTablet)
+                        }
+                        VpnProfileRow(
+                            profile = profile,
+                            selected = profile.id == settings.activeProfileId,
+                            isTablet = isTablet,
+                            onSelect = { VpnSettingsRepository.selectProfile(profile.id) },
+                            onRemove = { profileToRemove = profile.id },
+                        )
+                    }
                 }
+                SettingsGroupDivider(isTablet = isTablet)
+                SettingsNavigationRow(
+                    title = stringResource(Res.string.settings_vpn_add_profile),
+                    description = stringResource(Res.string.settings_vpn_config_placeholder),
+                    icon = Icons.Rounded.Add,
+                    isTablet = isTablet,
+                    onClick = { showAddDialog = true },
+                )
             }
-            settings.profiles.forEach { profile ->
-                SettingsGroup(isTablet = isTablet) {
-                    VpnProfileRow(
-                        profile = profile,
-                        selected = profile.id == settings.activeProfileId,
-                        isTablet = isTablet,
-                        onSelect = { VpnSettingsRepository.selectProfile(profile.id) },
-                        onRemove = { profileToRemove = profile.id },
-                    )
-                }
-            }
-            SettingsGroupDivider(isTablet = isTablet)
-            SettingsNavigationRow(
-                title = stringResource(Res.string.settings_vpn_add_profile),
-                description = stringResource(Res.string.settings_vpn_config_placeholder),
-                icon = Icons.Rounded.Add,
-                isTablet = isTablet,
-                onClick = { showAddDialog = true },
-            )
         }
     }
 
