@@ -66,21 +66,20 @@ internal fun BoxScope.PlayerPlaybackOverlays(
     errorMessage: String?,
     onDismissError: () -> Unit,
 ) {
-    if (!isLiveContent) {
-        AnimatedVisibility(
-            visible = playerControlsLocked && lockedOverlayVisible,
-            enter = fadeIn(),
-            exit = fadeOut(),
-        ) {
-            LockedPlayerOverlay(
+    AnimatedVisibility(
+        visible = playerControlsLocked && lockedOverlayVisible,
+        enter = fadeIn(),
+        exit = fadeOut(),
+    ) {
+        LockedPlayerOverlay(
             playbackSnapshot = playbackSnapshot,
             displayedPositionMs = displayedPositionMs,
             metrics = metrics,
             horizontalSafePadding = horizontalSafePadding,
             onUnlock = onUnlock,
+            showTimeline = !isLiveContent,
             modifier = Modifier.fillMaxSize(),
         )
-        }
     }
 
     AnimatedVisibility(

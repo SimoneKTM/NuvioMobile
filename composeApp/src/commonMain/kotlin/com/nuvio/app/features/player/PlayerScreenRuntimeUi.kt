@@ -6,22 +6,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContent
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
-import com.nuvio.app.core.ui.NuvioBackButton
 import com.nuvio.app.features.p2p.P2pStreamingState
 import com.nuvio.app.features.p2p.formatP2pMegabytes
 import com.nuvio.app.features.p2p.formatP2pSpeed
@@ -276,19 +266,32 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
 @Composable
 private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, isEpisode: Boolean) {
     if (activeProviderAddonId == "live-tv") {
-        Box(modifier = Modifier.fillMaxSize()) {
-            NuvioBackButton(
-                onClick = {
+        val isInPip = rememberIsInPictureInPicture()
+        AnimatedVisibility(
+            visible = controlsVisible && !playerControlsLocked && !isInPip,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            LiveTvPlayerControls(
+                title = title,
+                streamTitle = activeStreamTitle,
+                providerName = activeProviderName,
+                metrics = metrics,
+                isLocked = playerControlsLocked,
+                onLockToggle = {
+                    if (playerControlsLocked) unlockPlayerControls() else lockPlayerControls()
+                },
+                onBack = {
                     flushWatchProgress()
                     args.onBack()
                 },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
-                    .padding(top = 20.dp, end = 20.dp),
-                containerColor = Color.Black.copy(alpha = 0.35f),
-                contentColor = Color.White,
-                contentDescription = stringResource(Res.string.compose_player_close),
+                onResizeModeClick = { cycleResizeMode() },
+                onVolumeBoostClick = { showVolumeBoostModal = true },
+                resizeModeLabel = stringResource(resizeMode.labelRes),
+                horizontalSafePadding = horizontalSafePadding,
+                onCastClick = if (castController != null) { { showCastPicker = true } } else null,
+                isCastConnected = castController?.isCasting == true,
+                modifier = Modifier.fillMaxSize(),
             )
         }
         return

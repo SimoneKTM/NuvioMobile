@@ -701,6 +701,7 @@ internal fun LockedPlayerOverlay(
     metrics: PlayerLayoutMetrics,
     horizontalSafePadding: androidx.compose.ui.unit.Dp,
     onUnlock: () -> Unit,
+    showTimeline: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val durationMs = playbackSnapshot.durationMs.coerceAtLeast(1L)
@@ -759,35 +760,37 @@ internal fun LockedPlayerOverlay(
             )
         }
 
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = horizontalSafePadding + metrics.horizontalPadding)
-                .padding(bottom = metrics.sliderBottomOffset),
-        ) {
-            Slider(
+        if (showTimeline) {
+            Column(
                 modifier = Modifier
+                    .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .height(metrics.sliderTouchHeight)
-                    .graphicsLayer(scaleY = metrics.sliderScaleY),
-                value = displayedPositionMs.coerceIn(0L, durationMs).toFloat(),
-                onValueChange = {},
-                onValueChangeFinished = {},
-                valueRange = 0f..durationMs.toFloat(),
-                enabled = false,
-                colors = sliderColors,
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp)
-                    .padding(top = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(horizontal = horizontalSafePadding + metrics.horizontalPadding)
+                    .padding(bottom = metrics.sliderBottomOffset),
             ) {
-                TimePill(text = formatPlaybackTime(displayedPositionMs), fontSize = metrics.timeSize)
-                TimePill(text = formatPlaybackTime(durationMs), fontSize = metrics.timeSize)
+                Slider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(metrics.sliderTouchHeight)
+                        .graphicsLayer(scaleY = metrics.sliderScaleY),
+                    value = displayedPositionMs.coerceIn(0L, durationMs).toFloat(),
+                    onValueChange = {},
+                    onValueChangeFinished = {},
+                    valueRange = 0f..durationMs.toFloat(),
+                    enabled = false,
+                    colors = sliderColors,
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp)
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TimePill(text = formatPlaybackTime(displayedPositionMs), fontSize = metrics.timeSize)
+                    TimePill(text = formatPlaybackTime(durationMs), fontSize = metrics.timeSize)
+                }
             }
         }
     }
@@ -855,5 +858,182 @@ private fun PlayerActionPillButton(
             overflow = TextOverflow.Ellipsis,
             softWrap = false,
         )
+    }
+}
+
+@Composable
+internal fun LiveTvPlayerControls(
+    title: String,
+    streamTitle: String,
+    providerName: String,
+    metrics: PlayerLayoutMetrics,
+    isLocked: Boolean,
+    onLockToggle: () -> Unit,
+    onBack: () -> Unit,
+    onResizeModeClick: () -> Unit,
+    onVolumeBoostClick: () -> Unit,
+    resizeModeLabel: String,
+    horizontalSafePadding: androidx.compose.ui.unit.Dp,
+    onCastClick: (() -> Unit)? = null,
+    isCastConnected: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .align(Alignment.TopCenter)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.7f),
+                            Color.Transparent,
+                        ),
+                    ),
+                ),
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.7f),
+                        ),
+                    ),
+                ),
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
+                .padding(
+                    start = horizontalSafePadding + metrics.horizontalPadding,
+                    end = horizontalSafePadding + metrics.horizontalPadding,
+                    top = metrics.verticalPadding / 4,
+                ),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.nuvioTypeScale.titleLg.copy(
+                        fontSize = metrics.titleSize,
+                        lineHeight = metrics.titleSize * 1.16f,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (streamTitle != title) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = streamTitle,
+                            style = MaterialTheme.nuvioTypeScale.labelSm.copy(
+                                fontSize = metrics.metadataSize,
+                                lineHeight = metrics.metadataSize * 1.25f,
+                            ),
+                            color = Color.White.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = providerName,
+                            style = MaterialTheme.nuvioTypeScale.labelSm.copy(
+                                fontSize = metrics.metadataSize,
+                                lineHeight = metrics.metadataSize * 1.25f,
+                                fontStyle = FontStyle.Italic,
+                            ),
+                            color = Color.White.copy(alpha = 0.7f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (onCastClick != null) {
+                    PlayerHeaderIconButton(
+                        icon = if (isCastConnected) Icons.Rounded.CastConnected else Icons.Rounded.Cast,
+                        contentDescription = stringResource(Res.string.player_action_cast),
+                        buttonSize = metrics.headerIconSize + 16.dp,
+                        iconSize = metrics.headerIconSize,
+                        onClick = onCastClick,
+                    )
+                }
+                PlayerHeaderIconButton(
+                    icon = if (isLocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
+                    contentDescription = if (isLocked) {
+                        stringResource(Res.string.compose_player_unlock_controls)
+                    } else {
+                        stringResource(Res.string.compose_player_lock_controls)
+                    },
+                    buttonSize = metrics.headerIconSize + 16.dp,
+                    iconSize = metrics.headerIconSize,
+                    onClick = onLockToggle,
+                )
+                NuvioBackButton(
+                    onClick = onBack,
+                    containerColor = Color.Black.copy(alpha = 0.35f),
+                    contentColor = Color.White,
+                    buttonSize = metrics.headerIconSize + 16.dp,
+                    iconSize = metrics.headerIconSize,
+                    contentDescription = stringResource(Res.string.compose_player_close),
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = horizontalSafePadding + metrics.horizontalPadding)
+                .padding(bottom = metrics.sliderBottomOffset),
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Surface(
+                color = Color.Black.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.border(
+                    width = 1.dp,
+                    color = Color.White.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(24.dp),
+                ),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    PlayerActionPillButton(
+                        label = resizeModeLabel,
+                        painter = appIconPainter(AppIconResource.PlayerAspectRatio),
+                        onClick = onResizeModeClick,
+                    )
+                    PlayerActionPillButton(
+                        label = stringResource(Res.string.player_action_volume_boost),
+                        icon = Icons.Rounded.VolumeUp,
+                        onClick = onVolumeBoostClick,
+                    )
+                }
+            }
+        }
     }
 }
