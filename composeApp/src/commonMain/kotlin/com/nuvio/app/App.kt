@@ -3125,7 +3125,17 @@ private fun MainAppContent(
                         emptyMap()
                     },
                 ) { route ->
-                    val onBack = rememberGuardedPopBackStack(navController, route)
+                    val onBack = remember(navController, route) {
+                        {
+                            val matches = navController.currentRoute == route
+                            com.nuvio.app.features.player.PlayerTouchDiagnostics.lastBackMatches = matches
+                            com.nuvio.app.features.player.PlayerTouchDiagnostics.lastBackNote =
+                                if (matches) "" else "routeMismatch current=${navController.currentRoute} target=${route}"
+                            if (matches) {
+                                navController.popBackStack(expectedRoute = route)
+                            }
+                        }
+                    }
                     val launch = remember(route.launchId) { PlayerLaunchStore.get(route.launchId) }
                     if (launch == null) {
                         LaunchedEffect(route.launchId) {

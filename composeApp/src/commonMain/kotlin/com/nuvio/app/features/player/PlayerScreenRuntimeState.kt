@@ -47,6 +47,10 @@ internal object PlayerTouchDiagnostics {
         internal set
     var lastLostNote by mutableStateOf("")
         internal set
+    var lastBackMatches by mutableStateOf<Boolean?>(null)
+        internal set
+    var lastBackNote by mutableStateOf("")
+        internal set
 }
 
 internal class PlayerScreenRuntime(

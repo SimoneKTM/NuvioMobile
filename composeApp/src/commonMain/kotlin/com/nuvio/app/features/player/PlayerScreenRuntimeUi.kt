@@ -367,7 +367,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "DIAG lock=$playerControlsLocked panel=$showLiveTvChannelsPanel",
+                text = "DIAG lock=$playerControlsLocked panel=$showLiveTvChannelsPanel back=${PlayerTouchDiagnostics.lastBackMatches} ${PlayerTouchDiagnostics.lastBackNote}",
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(top = 100.dp, start = 20.dp)

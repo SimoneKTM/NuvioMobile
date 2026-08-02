@@ -806,6 +806,7 @@ private fun ExoPlayerSurface(
                 layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
                 player = exoPlayer
                 keepScreenOn = exoPlayer.shouldKeepPlayerScreenOn()
+                keepVideoSurfaceBelowWindow()
                 setOnTouchListener { _, event ->
                     if (event.action == android.view.MotionEvent.ACTION_DOWN) {
                         onOverlayEvent?.invoke("touchProbeExo", event.x.toDouble())
@@ -1032,7 +1033,10 @@ private fun LibmpvPlayerSurface(
     LaunchedEffect(playerViewRef) {
         val view = playerViewRef ?: return@LaunchedEffect
         while (isActive) {
-            val snapshot = view.snapshot()
+            val snapshot = withContext(Dispatchers.Default) {
+                kotlinx.coroutines.withTimeoutOrNull(750L) { view.snapshot() }
+                    ?: PlayerPlaybackSnapshot()
+            }
             latestOnSnapshot.value(snapshot)
             nowPlayingController?.syncPlayback(snapshot)
             view.keepScreenOn = view.shouldKeepScreenOn()
@@ -1051,6 +1055,7 @@ private fun LibmpvPlayerSurface(
             ).apply {
                 layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
                 keepScreenOn = false
+                keepVideoSurfaceBelowWindow()
                 setOnTouchListener { _, event ->
                     if (event.action == android.view.MotionEvent.ACTION_DOWN) {
                         onOverlayEvent?.invoke("touchProbeMpv", event.x.toDouble())
@@ -1095,10 +1100,10 @@ internal object MainThreadBlockWatcher {
         Thread {
             while (true) {
                 try {
-                    Thread.sleep(3000)
+                    Thread.sleep(1500)
                     pingPending = true
                     mainHandler.post(pingRunnable)
-                    Thread.sleep(3000)
+                    Thread.sleep(1500)
                     if (pingPending) {
                         pingPending = false
                         onMainThreadBlocked()
@@ -1119,6 +1124,7 @@ internal object MainThreadBlockWatcher {
             .take(14)
             .joinToString("\n") { "at ${it.className}.${it.methodName}(${it.fileName}:${it.lineNumber})" }
         Log.e(TAG, "MAIN THREAD BLOCKED >3s:\n$stack")
+        InAppLogger.error("Player/Android", "MAIN THREAD BLOCKED >3s: ${stack.lineSequence().firstOrNull()?.trim().orEmpty()}")
         val osdLine = stack.lineSequence()
             .firstOrNull { it.contains(" at ") && !it.contains("MainThreadBlockWatcher") }
             ?.trim()
@@ -1133,6 +1139,23 @@ private tailrec fun Context.findActivity(): Activity? =
         is ContextWrapper -> baseContext.findActivity()
         else -> null
     }
+
+private fun android.view.View.keepVideoSurfaceBelowWindow() {
+    fun bindSurfaces(v: android.view.View) {
+        if (v is android.view.SurfaceView) {
+            v.setZOrderOnTop(false)
+            v.setZOrderMediaOverlay(false)
+        }
+        if (v is android.view.ViewGroup) {
+            for (i in 0 until v.childCount) bindSurfaces(v.getChildAt(i))
+        }
+    }
+    addOnAttachStateChangeListener(object : android.view.View.OnAttachStateChangeListener {
+        override fun onViewAttachedToWindow(view: android.view.View) = bindSurfaces(view)
+        override fun onViewDetachedFromWindow(view: android.view.View) = Unit
+    })
+    if (isAttachedToWindow) bindSurfaces(this)
+}
 
 private class NuvioLibmpvView(
     context: Context,
