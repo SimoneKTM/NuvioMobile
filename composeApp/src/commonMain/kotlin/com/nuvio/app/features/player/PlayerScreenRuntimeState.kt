@@ -24,35 +24,6 @@ import com.nuvio.app.features.watchprogress.WatchProgressUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 
-internal object PlayerTouchDiagnostics {
-    var decorViewDownEvents by mutableStateOf(0)
-        internal set
-    var composeViewDownEvents by mutableStateOf(0)
-        internal set
-    var mainThreadBlocks by mutableStateOf(0)
-        internal set
-    var windowHasFocus by mutableStateOf<Boolean?>(null)
-        internal set
-    var userInteractions by mutableStateOf(0)
-        internal set
-    var exitButtonClicks by mutableStateOf(0)
-        internal set
-    var touchTestButtonClicks by mutableStateOf(0)
-        internal set
-    var lastTouchDownAtMs by mutableStateOf(0L)
-        internal set
-    var lastButtonTouchAtMs by mutableStateOf(0L)
-        internal set
-    var lostTaps by mutableStateOf(0)
-        internal set
-    var lastLostNote by mutableStateOf("")
-        internal set
-    var lastBackMatches by mutableStateOf<Boolean?>(null)
-        internal set
-    var lastBackNote by mutableStateOf("")
-        internal set
-}
-
 internal class PlayerScreenRuntime(
     args: PlayerScreenArgs,
 ) {

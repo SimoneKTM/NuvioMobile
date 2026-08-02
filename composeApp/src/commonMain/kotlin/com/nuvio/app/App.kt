@@ -3127,11 +3127,7 @@ private fun MainAppContent(
                 ) { route ->
                     val onBack = remember(navController, route) {
                         {
-                            val matches = navController.currentRoute == route
-                            com.nuvio.app.features.player.PlayerTouchDiagnostics.lastBackMatches = matches
-                            com.nuvio.app.features.player.PlayerTouchDiagnostics.lastBackNote =
-                                if (matches) "" else "routeMismatch current=${navController.currentRoute} target=${route}"
-                            if (matches) {
+                            if (navController.currentRoute == route) {
                                 navController.popBackStack(expectedRoute = route)
                             }
                         }

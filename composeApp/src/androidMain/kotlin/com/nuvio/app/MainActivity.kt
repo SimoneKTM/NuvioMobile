@@ -135,7 +135,6 @@ class MainActivity : AppCompatActivity() {
         NuvioAppIconSwitcher.initialize(applicationContext)
         super.onCreate(savedInstanceState)
         window.setBackgroundDrawableResource(R.color.nuvio_background)
-        com.nuvio.app.features.player.MainThreadBlockWatcher.start()
         pipRemoteActionReceiver = PipRemoteActionReceiver.register(this)
         SyncClientIdentityStorage.initialize(applicationContext)
         AddonStorage.initialize(applicationContext)
@@ -216,13 +215,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
-        if (ev.action == android.view.MotionEvent.ACTION_DOWN) {
-            com.nuvio.app.features.player.PlayerTouchDiagnostics.decorViewDownEvents++
-        }
-        return super.dispatchTouchEvent(ev)
-    }
-
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -231,21 +223,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        com.nuvio.app.features.player.PlayerTouchDiagnostics.windowHasFocus = window?.decorView?.hasWindowFocus()
         VpnSettingsRepository.restoreActiveTunnel()
         VpnController.handlePermissionIfNeeded(this)
         vpnRestoreHandler.removeCallbacks(vpnRestoreRetryRunnable)
         vpnRestoreHandler.postDelayed(vpnRestoreRetryRunnable, 3000)
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        com.nuvio.app.features.player.PlayerTouchDiagnostics.windowHasFocus = hasFocus
-    }
-
-    override fun onUserInteraction() {
-        super.onUserInteraction()
-        com.nuvio.app.features.player.PlayerTouchDiagnostics.userInteractions++
     }
 
     override fun onPause() {

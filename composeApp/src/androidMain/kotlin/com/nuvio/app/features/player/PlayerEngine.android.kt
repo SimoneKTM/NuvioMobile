@@ -807,12 +807,6 @@ private fun ExoPlayerSurface(
                 player = exoPlayer
                 keepScreenOn = exoPlayer.shouldKeepPlayerScreenOn()
                 keepVideoSurfaceBelowWindow()
-                setOnTouchListener { _, event ->
-                    if (event.action == android.view.MotionEvent.ACTION_DOWN) {
-                        onOverlayEvent?.invoke("touchProbeExo", event.x.toDouble())
-                    }
-                    false
-                }
                 this.resizeMode = resizeMode.toExoResizeMode()
                 setShutterBackgroundColor(android.graphics.Color.BLACK)
                 playerViewRef = this
@@ -1056,12 +1050,6 @@ private fun LibmpvPlayerSurface(
                 layoutParams = android.view.ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
                 keepScreenOn = false
                 keepVideoSurfaceBelowWindow()
-                setOnTouchListener { _, event ->
-                    if (event.action == android.view.MotionEvent.ACTION_DOWN) {
-                        onOverlayEvent?.invoke("touchProbeMpv", event.x.toDouble())
-                    }
-                    false
-                }
                 runCatching {
                     Utils.copyAssets(viewContext)
                     initialize(viewContext.filesDir.path, viewContext.cacheDir.path)
@@ -1071,7 +1059,6 @@ private fun LibmpvPlayerSurface(
                     latestOnError.value(error.localizedMessage ?: "libmpv unavailable")
                 }
                 playerViewRef = this
-                globalMpvView = this
             }
         },
         update = { view ->
@@ -1080,57 +1067,9 @@ private fun LibmpvPlayerSurface(
         },
         onRelease = { view ->
             if (playerViewRef === view) playerViewRef = null
-            if (globalMpvView === view) globalMpvView = null
             runCatching { view.destroy() }
         },
     )
-}
-
-private var globalMpvView: NuvioLibmpvView? = null
-
-internal object MainThreadBlockWatcher {
-    private val mainHandler = Handler(Looper.getMainLooper())
-    @Volatile private var pingPending = false
-    @Volatile private var started = false
-    private val pingRunnable = Runnable { pingPending = false }
-
-    fun start() {
-        if (started) return
-        started = true
-        Thread {
-            while (true) {
-                try {
-                    Thread.sleep(1500)
-                    pingPending = true
-                    mainHandler.post(pingRunnable)
-                    Thread.sleep(1500)
-                    if (pingPending) {
-                        pingPending = false
-                        onMainThreadBlocked()
-                    }
-                } catch (e: InterruptedException) {
-                    return@Thread
-                }
-            }
-        }.apply {
-            name = "nuvio-main-watchdog"
-            isDaemon = true
-        }.start()
-    }
-
-    private fun onMainThreadBlocked() {
-        PlayerTouchDiagnostics.mainThreadBlocks++
-        val stack = Looper.getMainLooper().thread.stackTrace
-            .take(14)
-            .joinToString("\n") { "at ${it.className}.${it.methodName}(${it.fileName}:${it.lineNumber})" }
-        Log.e(TAG, "MAIN THREAD BLOCKED >3s:\n$stack")
-        InAppLogger.error("Player/Android", "MAIN THREAD BLOCKED >3s: ${stack.lineSequence().firstOrNull()?.trim().orEmpty()}")
-        val osdLine = stack.lineSequence()
-            .firstOrNull { it.contains(" at ") && !it.contains("MainThreadBlockWatcher") }
-            ?.trim()
-            ?: "main thread blocked"
-        runCatching { globalMpvView?.osdShow("MAIN BLOCKED: $osdLine") }
-    }
 }
 
 private tailrec fun Context.findActivity(): Activity? =

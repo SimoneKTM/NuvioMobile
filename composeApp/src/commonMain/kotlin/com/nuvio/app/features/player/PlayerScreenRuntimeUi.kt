@@ -5,9 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,9 +31,7 @@ import com.nuvio.app.features.p2p.formatP2pMegabytes
 import com.nuvio.app.features.p2p.formatP2pSpeed
 import com.nuvio.app.features.player.cast.CastDevicePicker
 import com.nuvio.app.isIos
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 import nuvio.composeapp.generated.resources.*
 
 @Composable
@@ -106,25 +101,6 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
     }
     val gestureCallbacks = rememberSurfaceGestureCallbacks()
     val isLiveTv = activeProviderAddonId == "live-tv"
-    val rawRootProbe = rememberUpdatedState<(androidx.compose.ui.geometry.Offset) -> Unit> { offset ->
-        PlayerTouchDiagnostics.composeViewDownEvents++
-        showGestureMessage("ROOT DOWN ${offset.x.roundToInt()},${offset.y.roundToInt()}")
-        if (isLiveTv) {
-            val now = System.currentTimeMillis()
-            PlayerTouchDiagnostics.lastTouchDownAtMs = now
-            scope.launch {
-                delay(500)
-                if (PlayerTouchDiagnostics.lastTouchDownAtMs == now &&
-                    PlayerTouchDiagnostics.lastButtonTouchAtMs < now
-                ) {
-                    PlayerTouchDiagnostics.lostTaps++
-                    PlayerTouchDiagnostics.lastLostNote =
-                        "LOST ${offset.x.roundToInt()},${offset.y.roundToInt()} focus=${PlayerTouchDiagnostics.windowHasFocus} main=${PlayerTouchDiagnostics.mainThreadBlocks} win=${PlayerTouchDiagnostics.decorViewDownEvents} proCompose=${PlayerTouchDiagnostics.composeViewDownEvents}"
-                    showGestureMessage(PlayerTouchDiagnostics.lastLostNote)
-                }
-            }
-        }
-    }
     PlatformBackHandler(enabled = true) {
         if (showLiveTvChannelsPanel) {
             showLiveTvChannelsPanel = false
@@ -137,7 +113,11 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
 
     val surfaceTapGesturesModifier =
         if (isLiveTv) {
-            Modifier
+            Modifier.pointerInput(playerControlsLocked) {
+                if (playerControlsLocked) {
+                    detectTapGestures { gestureCallbacks.revealLockedOverlay.value() }
+                }
+            }
         } else {
             Modifier.playerSurfaceTapGestures(
                 layoutSize = layoutSize,
@@ -155,12 +135,6 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
         modifier = Modifier
             .fillMaxSize()
             .onSizeChanged { layoutSize = it }
-            .pointerInput(Unit) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    rawRootProbe.value(down.position)
-                }
-            }
             .then(surfaceTapGesturesModifier)
             .playerSurfaceDragGestures(
                 gestureController = gestureController,
@@ -243,8 +217,6 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                             flushWatchProgress()
                             args.onBack()
                         }
-                        "touchProbeExo" -> showGestureMessage("VIEW TOUCH EXO")
-                        "touchProbeMpv" -> showGestureMessage("VIEW TOUCH MPV")
                         "toggleFullscreen" -> {}
                         "subtitles" -> {
                             refreshTracks()
@@ -307,18 +279,6 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             isCastConnected = castController?.isCasting == true,
         )
         RenderPlayerControls(displayedPositionMs = displayedPositionMs, isEpisode = isEpisode)
-        Text(
-            text = "PROBE win=${PlayerTouchDiagnostics.decorViewDownEvents} compose=${PlayerTouchDiagnostics.composeViewDownEvents} main=${PlayerTouchDiagnostics.mainThreadBlocks} focus=${PlayerTouchDiagnostics.windowHasFocus} interact=${PlayerTouchDiagnostics.userInteractions} exit=${PlayerTouchDiagnostics.exitButtonClicks} ttest=${PlayerTouchDiagnostics.touchTestButtonClicks} lost=${PlayerTouchDiagnostics.lostTaps}",
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(top = 40.dp, start = 20.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color.Black.copy(alpha = 0.6f))
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            color = Color.White,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-        )
         RenderPlaybackOverlays(
             runtime = runtime,
             displayedPositionMs = displayedPositionMs,
@@ -349,35 +309,6 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
             }
         }
         Box(modifier = Modifier.fillMaxSize()) {
-            Text(
-                text = "EXIT",
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 100.dp, end = 20.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color.Red.copy(alpha = 0.85f))
-                    .clickable {
-                        PlayerTouchDiagnostics.lastButtonTouchAtMs = System.currentTimeMillis()
-                        PlayerTouchDiagnostics.exitButtonClicks++
-                        flushWatchProgress()
-                        args.onBack()
-                    }
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = "DIAG lock=$playerControlsLocked panel=$showLiveTvChannelsPanel back=${PlayerTouchDiagnostics.lastBackMatches} ${PlayerTouchDiagnostics.lastBackNote}",
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(top = 100.dp, start = 20.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.Black.copy(alpha = 0.6f))
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                color = Color.Yellow,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-            )
             LiveTvPlayerControls(
                 title = title,
                 streamTitle = activeStreamTitle,
@@ -396,26 +327,6 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 isCastConnected = castController?.isCasting == true,
                 modifier = Modifier.fillMaxSize(),
             )
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 96.dp)
-                    .size(160.dp, 72.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color.Red.copy(alpha = 0.85f))
-                    .clickable {
-                        PlayerTouchDiagnostics.lastButtonTouchAtMs = System.currentTimeMillis()
-                        PlayerTouchDiagnostics.touchTestButtonClicks++
-                        showGestureMessage("BOTTOM TAP OK")
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "TOUCH TEST",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
         }
         return
     }
