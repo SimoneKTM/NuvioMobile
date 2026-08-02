@@ -34,6 +34,7 @@ import com.nuvio.app.features.p2p.formatP2pMegabytes
 import com.nuvio.app.features.p2p.formatP2pSpeed
 import com.nuvio.app.features.player.cast.CastDevicePicker
 import com.nuvio.app.isIos
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import nuvio.composeapp.generated.resources.*
@@ -108,6 +109,21 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
     val rawRootProbe = rememberUpdatedState<(androidx.compose.ui.geometry.Offset) -> Unit> { offset ->
         PlayerTouchDiagnostics.composeViewDownEvents++
         showGestureMessage("ROOT DOWN ${offset.x.roundToInt()},${offset.y.roundToInt()}")
+        if (isLiveTv) {
+            val now = System.currentTimeMillis()
+            PlayerTouchDiagnostics.lastTouchDownAtMs = now
+            scope.launch {
+                delay(500)
+                if (PlayerTouchDiagnostics.lastTouchDownAtMs == now &&
+                    PlayerTouchDiagnostics.lastButtonTouchAtMs < now
+                ) {
+                    PlayerTouchDiagnostics.lostTaps++
+                    PlayerTouchDiagnostics.lastLostNote =
+                        "LOST ${offset.x.roundToInt()},${offset.y.roundToInt()} focus=${PlayerTouchDiagnostics.windowHasFocus} main=${PlayerTouchDiagnostics.mainThreadBlocks} win=${PlayerTouchDiagnostics.decorViewDownEvents} proCompose=${PlayerTouchDiagnostics.composeViewDownEvents}"
+                    showGestureMessage(PlayerTouchDiagnostics.lastLostNote)
+                }
+            }
+        }
     }
     PlatformBackHandler(enabled = true) {
         if (showLiveTvChannelsPanel) {
@@ -292,7 +308,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
         )
         RenderPlayerControls(displayedPositionMs = displayedPositionMs, isEpisode = isEpisode)
         Text(
-            text = "PROBE win=${PlayerTouchDiagnostics.decorViewDownEvents} compose=${PlayerTouchDiagnostics.composeViewDownEvents} main=${PlayerTouchDiagnostics.mainThreadBlocks} focus=${PlayerTouchDiagnostics.windowHasFocus} interact=${PlayerTouchDiagnostics.userInteractions} exit=${PlayerTouchDiagnostics.exitButtonClicks} ttest=${PlayerTouchDiagnostics.touchTestButtonClicks}",
+            text = "PROBE win=${PlayerTouchDiagnostics.decorViewDownEvents} compose=${PlayerTouchDiagnostics.composeViewDownEvents} main=${PlayerTouchDiagnostics.mainThreadBlocks} focus=${PlayerTouchDiagnostics.windowHasFocus} interact=${PlayerTouchDiagnostics.userInteractions} exit=${PlayerTouchDiagnostics.exitButtonClicks} ttest=${PlayerTouchDiagnostics.touchTestButtonClicks} lost=${PlayerTouchDiagnostics.lostTaps}",
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(top = 40.dp, start = 20.dp)
@@ -341,6 +357,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                     .clip(RoundedCornerShape(20.dp))
                     .background(Color.Red.copy(alpha = 0.85f))
                     .clickable {
+                        PlayerTouchDiagnostics.lastButtonTouchAtMs = System.currentTimeMillis()
                         PlayerTouchDiagnostics.exitButtonClicks++
                         flushWatchProgress()
                         args.onBack()
@@ -387,6 +404,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color.Red.copy(alpha = 0.85f))
                     .clickable {
+                        PlayerTouchDiagnostics.lastButtonTouchAtMs = System.currentTimeMillis()
                         PlayerTouchDiagnostics.touchTestButtonClicks++
                         showGestureMessage("BOTTOM TAP OK")
                     },
