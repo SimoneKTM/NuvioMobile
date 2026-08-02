@@ -35,6 +35,10 @@ internal object PlayerTouchDiagnostics {
         internal set
     var userInteractions by mutableStateOf(0)
         internal set
+    var exitButtonClicks by mutableStateOf(0)
+        internal set
+    var touchTestButtonClicks by mutableStateOf(0)
+        internal set
 }
 
 internal class PlayerScreenRuntime(

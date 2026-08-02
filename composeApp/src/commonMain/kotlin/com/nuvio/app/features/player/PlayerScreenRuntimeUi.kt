@@ -105,6 +105,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
     }
     val gestureCallbacks = rememberSurfaceGestureCallbacks()
     val rawRootProbe = rememberUpdatedState<(androidx.compose.ui.geometry.Offset) -> Unit> { offset ->
+        PlayerTouchDiagnostics.composeViewDownEvents++
         showGestureMessage("ROOT DOWN ${offset.x.roundToInt()},${offset.y.roundToInt()}")
     }
     PlatformBackHandler(enabled = true) {
@@ -270,9 +271,20 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
             )
         }
 
+        LiveTvChannelsPanel(
+            visible = showLiveTvChannelsPanel,
+            currentStreamUrl = activeSourceUrl,
+            onChannelSelected = { channel -> switchToLiveTvChannel(channel) },
+            onDismiss = {
+                showLiveTvChannelsPanel = false
+                controlsVisible = true
+            },
+            onCastClick = if (castController != null) { { showCastPicker = true } } else null,
+            isCastConnected = castController?.isCasting == true,
+        )
         RenderPlayerControls(displayedPositionMs = displayedPositionMs, isEpisode = isEpisode)
         Text(
-            text = "PROBE decor=${PlayerTouchDiagnostics.decorViewDownEvents} compose=${PlayerTouchDiagnostics.composeViewDownEvents} main=${PlayerTouchDiagnostics.mainThreadBlocks} focus=${PlayerTouchDiagnostics.windowHasFocus} interact=${PlayerTouchDiagnostics.userInteractions}",
+            text = "PROBE win=${PlayerTouchDiagnostics.decorViewDownEvents} compose=${PlayerTouchDiagnostics.composeViewDownEvents} main=${PlayerTouchDiagnostics.mainThreadBlocks} focus=${PlayerTouchDiagnostics.windowHasFocus} interact=${PlayerTouchDiagnostics.userInteractions} exit=${PlayerTouchDiagnostics.exitButtonClicks} ttest=${PlayerTouchDiagnostics.touchTestButtonClicks}",
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(top = 40.dp, start = 20.dp)
@@ -301,18 +313,6 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                 onDismiss = { showCastPicker = false },
             )
         }
-
-        LiveTvChannelsPanel(
-            visible = showLiveTvChannelsPanel,
-            currentStreamUrl = activeSourceUrl,
-            onChannelSelected = { channel -> switchToLiveTvChannel(channel) },
-            onDismiss = {
-                showLiveTvChannelsPanel = false
-                controlsVisible = true
-            },
-            onCastClick = if (castController != null) { { showCastPicker = true } } else null,
-            isCastConnected = castController?.isCasting == true,
-        )
     }
 }
 
@@ -333,6 +333,7 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                     .clip(RoundedCornerShape(20.dp))
                     .background(Color.Red.copy(alpha = 0.85f))
                     .clickable {
+                        PlayerTouchDiagnostics.exitButtonClicks++
                         flushWatchProgress()
                         args.onBack()
                     }
@@ -377,7 +378,10 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                     .size(160.dp, 72.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color.Red.copy(alpha = 0.85f))
-                    .clickable { showGestureMessage("BOTTOM TAP OK") },
+                    .clickable {
+                        PlayerTouchDiagnostics.touchTestButtonClicks++
+                        showGestureMessage("BOTTOM TAP OK")
+                    },
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
