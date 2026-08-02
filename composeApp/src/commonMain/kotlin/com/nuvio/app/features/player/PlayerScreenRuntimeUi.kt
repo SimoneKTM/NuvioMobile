@@ -104,6 +104,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
         }
     }
     val gestureCallbacks = rememberSurfaceGestureCallbacks()
+    val isLiveTv = activeProviderAddonId == "live-tv"
     val rawRootProbe = rememberUpdatedState<(androidx.compose.ui.geometry.Offset) -> Unit> { offset ->
         PlayerTouchDiagnostics.composeViewDownEvents++
         showGestureMessage("ROOT DOWN ${offset.x.roundToInt()},${offset.y.roundToInt()}")
@@ -118,6 +119,22 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
         }
     }
 
+    val surfaceTapGesturesModifier =
+        if (isLiveTv) {
+            Modifier
+        } else {
+            Modifier.playerSurfaceTapGestures(
+                layoutSize = layoutSize,
+                playerControlsLockedState = gestureCallbacks.playerControlsLocked,
+                onSurfaceTap = gestureCallbacks.onSurfaceTap,
+                onSurfaceDoubleTap = gestureCallbacks.onSurfaceDoubleTap,
+                activateHoldToSpeedState = gestureCallbacks.activateHoldToSpeed,
+                deactivateHoldToSpeedState = gestureCallbacks.deactivateHoldToSpeed,
+                revealLockedOverlayState = gestureCallbacks.revealLockedOverlay,
+                onSurfaceLongPress = gestureCallbacks.onSurfaceLongPress,
+            )
+        }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -128,16 +145,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
                     rawRootProbe.value(down.position)
                 }
             }
-            .playerSurfaceTapGestures(
-                layoutSize = layoutSize,
-                playerControlsLockedState = gestureCallbacks.playerControlsLocked,
-                onSurfaceTap = gestureCallbacks.onSurfaceTap,
-                onSurfaceDoubleTap = gestureCallbacks.onSurfaceDoubleTap,
-                activateHoldToSpeedState = gestureCallbacks.activateHoldToSpeed,
-                deactivateHoldToSpeedState = gestureCallbacks.deactivateHoldToSpeed,
-                revealLockedOverlayState = gestureCallbacks.revealLockedOverlay,
-                onSurfaceLongPress = gestureCallbacks.onSurfaceLongPress,
-            )
+            .then(surfaceTapGesturesModifier)
             .playerSurfaceDragGestures(
                 gestureController = gestureController,
                 layoutSize = layoutSize,
