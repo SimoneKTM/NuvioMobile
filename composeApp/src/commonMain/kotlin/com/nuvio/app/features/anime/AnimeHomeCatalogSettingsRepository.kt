@@ -6,6 +6,7 @@ import com.nuvio.app.features.home.HomeCatalogDefinition
 import com.nuvio.app.features.home.HomeCatalogSettingsItem
 import com.nuvio.app.features.home.HomeCatalogSettingsUiState
 import com.nuvio.app.features.home.buildHomeCatalogDefinitions
+import com.nuvio.app.features.profiles.ProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,15 +36,8 @@ object AnimeHomeCatalogSettingsRepository {
     private var hideCatalogUnderline = false
 
     fun onProfileChanged() {
-        hasLoaded = false
-        preferences.clear()
-        heroEnabled = true
-        showCatalogType = true
-        hideUnreleasedContent = false
-        hideCatalogUnderline = false
-        definitions = emptyList()
-        collectionDefinitions = emptyList()
-        _uiState.value = HomeCatalogSettingsUiState()
+        clearLocalState()
+        ensureLoaded()
     }
 
     fun clearLocalState() {
@@ -200,7 +194,8 @@ object AnimeHomeCatalogSettingsRepository {
         if (hasLoaded) return
         hasLoaded = true
 
-        val payload = AnimeHomeCatalogSettingsStorage.loadPayload().orEmpty().trim()
+        val profileId = ProfileRepository.activeProfileId
+        val payload = AnimeHomeCatalogSettingsStorage.loadPayload(profileId).orEmpty().trim()
         if (payload.isEmpty()) return
 
         val parsedPayload = runCatching {
@@ -319,6 +314,7 @@ object AnimeHomeCatalogSettingsRepository {
 
     private fun persist() {
         AnimeHomeCatalogSettingsStorage.savePayload(
+            ProfileRepository.activeProfileId,
             json.encodeToString(
                 StoredAnimeHomeCatalogSettingsPayload(
                     heroEnabled = heroEnabled,

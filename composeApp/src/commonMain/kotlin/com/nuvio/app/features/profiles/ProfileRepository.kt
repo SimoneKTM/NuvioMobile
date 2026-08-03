@@ -7,6 +7,11 @@ import com.nuvio.app.core.auth.isAnonymous
 import com.nuvio.app.core.network.SupabaseProvider
 import com.nuvio.app.core.sync.putSyncOriginClientId
 import com.nuvio.app.features.addons.AddonRepository
+import com.nuvio.app.features.anime.AnimeAddonRepository
+import com.nuvio.app.features.anime.AnimeCollectionRepository
+import com.nuvio.app.features.anime.AnimeHomeCatalogSettingsRepository
+import com.nuvio.app.features.anime.AnimePosterCardStyleRepository
+import com.nuvio.app.features.animeprofile.AnimeProfileRepository
 import com.nuvio.app.features.cloudstream.CloudStreamRepository
 import com.nuvio.app.features.collection.CollectionMobileSettingsRepository
 import com.nuvio.app.features.collection.CollectionRepository
@@ -181,6 +186,11 @@ object ProfileRepository {
         CollectionRepository.onProfileChanged()
         CollectionMobileSettingsRepository.onProfileChanged()
         DownloadsRepository.onProfileChanged()
+        AnimeCollectionRepository.onProfileChanged(profileIndex)
+        AnimePosterCardStyleRepository.onProfileChanged(profileIndex)
+        AnimeAddonRepository.onProfileChanged(profileIndex)
+        AnimeHomeCatalogSettingsRepository.onProfileChanged()
+        AnimeProfileRepository.onProfileChanged(profileIndex)
     }
 
     suspend fun pushProfiles(profiles: List<ProfilePushPayload>) {

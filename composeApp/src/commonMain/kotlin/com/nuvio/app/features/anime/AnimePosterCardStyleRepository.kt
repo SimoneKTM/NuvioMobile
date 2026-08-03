@@ -11,6 +11,7 @@ import com.nuvio.app.core.ui.DefaultPosterCardWidthDp
 import com.nuvio.app.core.ui.DefaultPosterCardHeightDp
 import com.nuvio.app.core.ui.DefaultPosterCardCornerRadiusDp
 import com.nuvio.app.core.ui.PosterCardStyleUiState
+import com.nuvio.app.features.profiles.ProfileRepository
 
 @Serializable
 private data class StoredAnimePosterCardStylePreferences(
@@ -31,14 +32,20 @@ object AnimePosterCardStyleRepository {
     val uiState: StateFlow<PosterCardStyleUiState> = _uiState.asStateFlow()
 
     private var hasLoaded = false
+    private var currentProfileId: Int = 1
 
     fun ensureLoaded() {
-        if (hasLoaded) return
-        loadFromDisk()
+        if (!hasLoaded) loadFromDisk(ProfileRepository.activeProfileId)
+    }
+
+    fun onProfileChanged(profileId: Int) {
+        if (profileId == currentProfileId && hasLoaded) return
+        loadFromDisk(profileId)
     }
 
     fun clearLocalState() {
         hasLoaded = false
+        currentProfileId = 1
         _uiState.value = PosterCardStyleUiState()
     }
 
@@ -82,9 +89,10 @@ object AnimePosterCardStyleRepository {
         persist()
     }
 
-    private fun loadFromDisk() {
+    private fun loadFromDisk(profileId: Int) {
+        currentProfileId = profileId
         hasLoaded = true
-        val payload = AnimePosterCardStyleStorage.loadPayload().orEmpty().trim()
+        val payload = AnimePosterCardStyleStorage.loadPayload(profileId).orEmpty().trim()
         if (payload.isEmpty()) {
             _uiState.value = PosterCardStyleUiState()
             return
@@ -110,6 +118,7 @@ object AnimePosterCardStyleRepository {
 
     private fun persist() {
         AnimePosterCardStyleStorage.savePayload(
+            currentProfileId,
             json.encodeToString(
                 StoredAnimePosterCardStylePreferences(
                     widthDp = _uiState.value.widthDp,

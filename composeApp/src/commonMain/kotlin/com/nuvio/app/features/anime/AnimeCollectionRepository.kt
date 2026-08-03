@@ -7,6 +7,7 @@ import com.nuvio.app.features.collection.AvailableCatalog
 import com.nuvio.app.features.collection.Collection
 import com.nuvio.app.features.collection.CollectionRepositoryContract
 import com.nuvio.app.features.collection.ValidationResult
+import com.nuvio.app.features.profiles.ProfileRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,15 +34,21 @@ object AnimeCollectionRepository : CollectionRepositoryContract {
     override val collections: StateFlow<List<Collection>> = _collections.asStateFlow()
 
     private var hasLoaded = false
+    private var currentProfileId: Int = 1
 
     fun clearLocalState() {
         hasLoaded = false
+        currentProfileId = 1
         _collections.value = emptyList()
     }
 
     override fun ensureLoaded() {
-        if (hasLoaded) return
-        loadFromDisk()
+        if (!hasLoaded) loadFromDisk(ProfileRepository.activeProfileId)
+    }
+
+    fun onProfileChanged(profileId: Int) {
+        if (profileId == currentProfileId && hasLoaded) return
+        loadFromDisk(profileId)
     }
 
     override fun getCollection(id: String): Collection? =
@@ -151,9 +158,10 @@ object AnimeCollectionRepository : CollectionRepositoryContract {
         }
     }
 
-    private fun loadFromDisk() {
+    private fun loadFromDisk(profileId: Int) {
+        currentProfileId = profileId
         hasLoaded = true
-        val payload = AnimeCollectionStorage.loadPayload().orEmpty().trim()
+        val payload = AnimeCollectionStorage.loadPayload(profileId).orEmpty().trim()
         if (payload.isEmpty()) {
             _collections.value = emptyList()
             return
@@ -166,6 +174,7 @@ object AnimeCollectionRepository : CollectionRepositoryContract {
 
     private fun persist() {
         AnimeCollectionStorage.savePayload(
+            currentProfileId,
             json.encodeToString(
                 StoredAnimeCollections(
                     collections = _collections.value,

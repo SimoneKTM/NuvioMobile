@@ -5,21 +5,32 @@ import android.content.SharedPreferences
 
 actual object AnimeCollectionStorage {
     private const val preferencesName = "nuvio_anime_collections"
-    private const val payloadKey = "anime_collections_payload"
+    private const val legacyPayloadKey = "anime_collections_payload"
+    private fun payloadKey(profileId: Int) = "anime_collections_payload_$profileId"
 
     private var preferences: SharedPreferences? = null
 
     fun initialize(context: Context) {
         preferences = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
+        migrateLegacyPayloadToProfileOne()
     }
 
-    actual fun loadPayload(): String? =
-        preferences?.getString(payloadKey, null)
+    actual fun loadPayload(profileId: Int): String? =
+        preferences?.getString(payloadKey(profileId), null)
 
-    actual fun savePayload(payload: String) {
+    actual fun savePayload(profileId: Int, payload: String) {
         preferences
             ?.edit()
-            ?.putString(payloadKey, payload)
+            ?.putString(payloadKey(profileId), payload)
             ?.apply()
+    }
+
+    private fun migrateLegacyPayloadToProfileOne() {
+        val prefs = preferences ?: return
+        val legacy = prefs.getString(legacyPayloadKey, null) ?: return
+        if (prefs.getString(payloadKey(1), null) == null) {
+            prefs.edit().putString(payloadKey(1), legacy).apply()
+        }
+        prefs.edit().remove(legacyPayloadKey).apply()
     }
 }

@@ -7,6 +7,7 @@ import com.nuvio.app.features.addons.AddonManifestParser
 import com.nuvio.app.features.addons.AddonsUiState
 import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.addons.httpGetText
+import com.nuvio.app.features.profiles.ProfileRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,14 +25,16 @@ object AnimeAddonRepository {
     val uiState: StateFlow<AddonsUiState> = _uiState.asStateFlow()
 
     private var initialized = false
+    private var currentProfileId: Int = 1
     private val activeRefreshJobs = mutableMapOf<String, Job>()
 
     fun initialize() {
         if (initialized) return
         initialized = true
-        log.d { "initialize() — loading local anime addons" }
+        currentProfileId = ProfileRepository.activeProfileId
+        log.d { "initialize() — loading local anime addons for profile $currentProfileId" }
 
-        val storedUrls = dedupeManifestUrls(AnimeAddonStorage.loadInstalledAddonUrls())
+        val storedUrls = dedupeManifestUrls(AnimeAddonStorage.loadInstalledAddonUrls(currentProfileId))
         val enabledByUrl = loadLocalEnabledStates()
         log.d { "initialize() — local anime addon count: ${storedUrls.size}" }
 
@@ -56,8 +59,17 @@ object AnimeAddonRepository {
         }
     }
 
+    fun onProfileChanged(profileId: Int) {
+        if (profileId == currentProfileId && initialized) return
+        cancelActiveRefreshes()
+        currentProfileId = profileId
+        initialized = false
+        _uiState.value = AddonsUiState()
+    }
+
     fun clearLocalState() {
         cancelActiveRefreshes()
+        currentProfileId = 1
         initialized = false
         _uiState.value = AddonsUiState()
     }
@@ -207,15 +219,17 @@ object AnimeAddonRepository {
 
     private fun persist() {
         AnimeAddonStorage.saveInstalledAddonUrls(
+            currentProfileId,
             dedupeManifestUrls(_uiState.value.addons.map { it.manifestUrl }),
         )
         AnimeAddonStorage.saveAddonEnabledStates(
+            currentProfileId,
             _uiState.value.addons.associate { it.manifestUrl to it.enabled },
         )
     }
 
     private fun loadLocalEnabledStates(): Map<String, Boolean> =
-        AnimeAddonStorage.loadAddonEnabledStates()
+        AnimeAddonStorage.loadAddonEnabledStates(currentProfileId)
             .mapKeys { (url, _) -> ensureManifestSuffix(url) }
 
     private fun cancelActiveRefreshes() {
