@@ -5,7 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -113,11 +111,7 @@ internal fun PlayerScreenRuntime.RenderPlayerRuntimeUi() {
 
     val surfaceTapGesturesModifier =
         if (isLiveTv) {
-            Modifier.pointerInput(playerControlsLocked) {
-                if (playerControlsLocked) {
-                    detectTapGestures { gestureCallbacks.revealLockedOverlay.value() }
-                }
-            }
+            Modifier
         } else {
             Modifier.playerSurfaceTapGestures(
                 layoutSize = layoutSize,
@@ -314,10 +308,6 @@ private fun PlayerScreenRuntime.RenderPlayerControls(displayedPositionMs: Long, 
                 streamTitle = activeStreamTitle,
                 providerName = activeProviderName,
                 metrics = metrics,
-                isLocked = playerControlsLocked,
-                onLockToggle = {
-                    if (playerControlsLocked) unlockPlayerControls() else lockPlayerControls()
-                },
                 onBack = {
                     flushWatchProgress()
                     args.onBack()

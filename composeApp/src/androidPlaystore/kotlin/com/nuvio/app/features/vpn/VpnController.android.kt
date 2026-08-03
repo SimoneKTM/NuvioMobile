@@ -17,6 +17,10 @@ actual object VpnController {
 
     fun initialize(context: Context) {}
 
+    fun bindActivity(activity: Activity) {}
+
+    fun unbindActivity(activity: Activity) {}
+
     fun hasPendingActivation(): Boolean = false
 
     fun permissionIntent(): Intent? = null

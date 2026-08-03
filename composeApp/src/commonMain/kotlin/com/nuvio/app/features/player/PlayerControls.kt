@@ -868,8 +868,6 @@ internal fun LiveTvPlayerControls(
     streamTitle: String,
     providerName: String,
     metrics: PlayerLayoutMetrics,
-    isLocked: Boolean,
-    onLockToggle: () -> Unit,
     onBack: () -> Unit,
     horizontalSafePadding: androidx.compose.ui.unit.Dp,
     onCastClick: (() -> Unit)? = null,
@@ -942,21 +940,6 @@ internal fun LiveTvPlayerControls(
             iconSize = iconSize,
             contentDescription = stringResource(Res.string.compose_player_close),
         )
-        PlayerHeaderIconButton(
-            icon = if (isLocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
-            contentDescription = if (isLocked) {
-                stringResource(Res.string.compose_player_unlock_controls)
-            } else {
-                stringResource(Res.string.compose_player_lock_controls)
-            },
-            buttonSize = buttonSize,
-            iconSize = iconSize,
-            onClick = onLockToggle,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
-                .padding(top = 20.dp, end = 20.dp + buttonSize + 10.dp),
-        )
         if (onCastClick != null) {
             PlayerHeaderIconButton(
                 icon = if (isCastConnected) Icons.Rounded.CastConnected else Icons.Rounded.Cast,
@@ -967,7 +950,7 @@ internal fun LiveTvPlayerControls(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Top))
-                    .padding(top = 20.dp, end = 20.dp + (buttonSize + 10.dp) * 2),
+                    .padding(top = 20.dp, end = 20.dp + buttonSize + 10.dp),
             )
         }
     }
