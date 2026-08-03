@@ -200,6 +200,17 @@ private object AppUpdaterRepository {
     }
 
     private fun chooseBestApkAsset(assets: List<GitHubAssetDto>): GitHubAssetDto? {
+        val preferredExtension = AppUpdaterPlatform.getPreferredAssetExtension()
+            ?.trim()
+            ?.lowercase()
+            ?.takeIf { it.isNotEmpty() }
+        if (preferredExtension != null) {
+            val preferredAssets = assets.filter { asset ->
+                asset.name.endsWith(".$preferredExtension", ignoreCase = true)
+            }
+            if (preferredAssets.isNotEmpty()) return preferredAssets.first()
+        }
+
         val apkAssets = assets.filter { asset ->
             asset.name.endsWith(".apk", ignoreCase = true) ||
                 asset.contentType == "application/vnd.android.package-archive"

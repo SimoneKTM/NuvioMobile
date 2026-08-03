@@ -891,6 +891,9 @@ val prepareWindowsPlayerRuntime = tasks.register<Sync>("prepareWindowsPlayerRunt
         windowsLibmpvRuntimeDir?.exists() == true -> {
             from(windowsLibmpvRuntimeDir) {
                 include("*.dll")
+                include("torrserver.exe")
+                include("wireguard-go.exe")
+                include("wg.exe")
             }
         }
         windowsLibmpvDll?.exists() == true -> {
@@ -919,6 +922,7 @@ abstract class GenerateNativeRuntimeIndexTask : DefaultTask() {
         val files = dir
             .listFiles { file -> file.isFile && file.name != indexFile.get().asFile.name }
             .orEmpty()
+            .filter { it.name.endsWith(".dll", ignoreCase = true) }
             .map { it.name }
             .sorted()
         indexFile.get().asFile.writeText(files.joinToString(separator = "\n", postfix = "\n"))
@@ -1088,6 +1092,7 @@ kotlin {
         }
         val desktopMain by getting {
             kotlin.srcDir(fullPluginSourceDir)
+            kotlin.srcDir(fullCommonSourceDir.resolve("com/nuvio/app/features/trailer"))
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation(libs.kotlinx.coroutines.swing)

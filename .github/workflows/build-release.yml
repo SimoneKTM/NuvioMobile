@@ -263,6 +263,83 @@ jobs:
           $size = (Get-Item $dllPath).Length
           Write-Host "Downloaded: $([math]::Round($size/1MB, 1)) MB"
 
+      - name: Download TorrServer Windows binary
+        shell: pwsh
+        run: |
+          $runtimeDir = "composeApp/src/desktopMain/native/windows/runtime"
+          New-Item -ItemType Directory -Force -Path $runtimeDir | Out-Null
+          $releaseJson = Invoke-RestMethod -Uri "https://releases.yourok.ru/torr/server_release.json"
+          $url = $releaseJson."windows-amd64.exe"
+          if ([string]::IsNullOrEmpty($url)) {
+            Write-Host "ERROR: no windows-amd64.exe URL in server_release.json"
+            exit 1
+          }
+          Write-Host "Downloading TorrServer from: $url"
+          Invoke-WebRequest -Uri $url -OutFile (Join-Path $runtimeDir "torrserver.exe") -UseBasicParsing
+          $size = (Get-Item (Join-Path $runtimeDir "torrserver.exe")).Length
+          Write-Host "Downloaded TorrServer: $([math]::Round($size/1MB, 1)) MB"
+
+      - name: Set up Go for wireguard-go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Build wireguard-go.exe
+        shell: pwsh
+        run: |
+          $runtimeDir = "composeApp/src/desktopMain/native/windows/runtime"
+          New-Item -ItemType Directory -Force -Path $runtimeDir | Out-Null
+          git clone --depth 1 https://github.com/WireGuard/wireguard-go.git "$env:RUNNER_TEMP/wireguard-go"
+          Push-Location "$env:RUNNER_TEMP/wireguard-go"
+          try {
+            go build -o "$env:GITHUB_WORKSPACE/$runtimeDir/wireguard-go.exe" .
+          } finally {
+            Pop-Location
+          }
+          $size = (Get-Item "$env:GITHUB_WORKSPACE/$runtimeDir/wireguard-go.exe").Length
+          Write-Host "Built wireguard-go: $([math]::Round($size/1MB, 1)) MB"
+
+      - name: Download wintun.dll
+        shell: pwsh
+        run: |
+          $runtimeDir = "composeApp/src/desktopMain/native/windows/runtime"
+          New-Item -ItemType Directory -Force -Path $runtimeDir | Out-Null
+          $zip = "$env:RUNNER_TEMP/wintun.zip"
+          Invoke-WebRequest -Uri "https://www.wintun.net/builds/wintun-0.14.1.zip" -OutFile $zip -UseBasicParsing
+          Expand-Archive -Path $zip -DestinationPath "$env:RUNNER_TEMP/wintun" -Force
+          Copy-Item "$env:RUNNER_TEMP/wintun/amd64/wintun.dll" (Join-Path $runtimeDir "wintun.dll") -Force
+          Write-Host "wintun.dll copied"
+
+      - name: Extract wg.exe from WireGuard MSI
+        shell: pwsh
+        run: |
+          $runtimeDir = "composeApp/src/desktopMain/native/windows/runtime"
+          New-Item -ItemType Directory -Force -Path $runtimeDir | Out-Null
+          $msi = "$env:RUNNER_TEMP/wireguard.msi"
+          Invoke-WebRequest -Uri "https://download.wireguard.com/windows-client/wireguard-amd64-1.1.msi" -OutFile $msi -UseBasicParsing
+          $extractDir = "$env:RUNNER_TEMP/wg-extract"
+          New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
+          $extracted = $false
+          try {
+            & msiexec.exe /a $msi /qn TARGETDIR="$extractDir" | Out-Null
+            if ($LASTEXITCODE -eq 0) { $extracted = $true }
+          } catch {
+            $extracted = $false
+          }
+          if (-not $extracted -or -not (Get-ChildItem -Recurse -Path $extractDir -Filter "wg.exe" -ErrorAction SilentlyContinue)) {
+            Write-Host "msiexec extraction failed, trying 7z..."
+            $sevenZip = "C:\Program Files\7-Zip\7z.exe"
+            if (-not (Test-Path $sevenZip)) { Write-Host "7z not found"; exit 1 }
+            & $sevenZip x $msi -o"$extractDir" -y | Out-Null
+          }
+          $wgExe = Get-ChildItem -Recurse -Path $extractDir -Filter "wg.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $wgExe) {
+            Write-Host "ERROR: wg.exe not found in extracted MSI"
+            exit 1
+          }
+          Copy-Item $wgExe.FullName (Join-Path $runtimeDir "wg.exe") -Force
+          Write-Host "wg.exe copied from $($wgExe.FullName)"
+
       - name: Build Windows MSI
         shell: pwsh
         run: |

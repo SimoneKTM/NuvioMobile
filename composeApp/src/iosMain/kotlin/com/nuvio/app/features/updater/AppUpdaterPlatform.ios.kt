@@ -10,6 +10,8 @@ actual object AppUpdaterPlatform {
 
     actual fun getSupportedAbis(): List<String> = emptyList()
 
+    actual fun getPreferredAssetExtension(): String? = "apk"
+
     actual fun getIgnoredTag(): String? = null
 
     actual fun setIgnoredTag(tag: String?) = Unit

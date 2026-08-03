@@ -14,13 +14,18 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.ui.unit.dp
 import com.nuvio.app.features.settings.NuvioAppIconSwitcher
+import com.nuvio.app.features.settings.NetworkSettingsRepository
+import com.nuvio.app.features.settings.DesktopNetworkSettingsStorage
 import com.nuvio.app.features.settings.ThemeSettingsStorage
+import com.nuvio.app.features.settings.globalNetworkSettingsRepository
 import com.nuvio.app.features.player.PlatformPlayerSurface
 import com.nuvio.app.features.player.desktop.DesktopAppFullscreenController
 import com.nuvio.app.features.player.desktop.applyNativeDesktopWindowChrome
 import com.nuvio.app.features.player.desktop.installDesktopAppFullscreenShortcuts
 import com.nuvio.app.features.player.desktop.preloadNativePlayerBridgeAsync
 import com.nuvio.app.features.player.desktop.registerDesktopAppFullscreenToggle
+import com.nuvio.app.features.vpn.VPN_HELPER_ARG
+import com.nuvio.app.features.vpn.runVpnHelperMain
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.app_icon_aurora_preview
 import nuvio.composeapp.generated.resources.app_icon_chrome_preview
@@ -38,8 +43,13 @@ import javax.swing.JComponent
 private val NuvioDesktopNativeBackground = AwtColor(0x0D, 0x0D, 0x0D)
 private const val MacosDarkAquaAppearance = "NSAppearanceNameDarkAqua"
 
-fun main() {
+fun main(args: Array<String>) {
+    if (args.firstOrNull() == VPN_HELPER_ARG) {
+        runVpnHelperMain(args)
+        return
+    }
     configureDesktopChrome()
+    initDesktopNetworkSettings()
     preloadNativePlayerBridgeAsync()
 
     application {
@@ -103,6 +113,10 @@ private fun configureDesktopChrome() {
     if (System.getProperty("os.name").contains("mac", ignoreCase = true)) {
         System.setProperty("apple.awt.application.appearance", MacosDarkAquaAppearance)
     }
+}
+
+private fun initDesktopNetworkSettings() {
+    globalNetworkSettingsRepository = NetworkSettingsRepository(DesktopNetworkSettingsStorage())
 }
 
 @Composable

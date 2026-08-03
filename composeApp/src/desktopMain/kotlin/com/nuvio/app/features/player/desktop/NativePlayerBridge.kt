@@ -36,6 +36,17 @@ internal object NativePlayerBridge {
         eventSink: NativePlayerEventSink,
     ): Long
 
+    external fun createBare(
+        hostViewPtr: Long,
+        sourceUrl: String,
+        headerLines: Array<String>,
+        playWhenReady: Boolean,
+        initialPositionMs: Long,
+        eventSink: NativePlayerEventSink,
+    ): Long
+
+    external fun setMuted(handle: Long, muted: Boolean)
+
     external fun dispose(handle: Long)
     external fun updateControls(handle: Long, controlsJson: String)
     external fun setPaused(handle: Long, paused: Boolean)

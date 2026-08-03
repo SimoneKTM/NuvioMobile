@@ -696,7 +696,8 @@ public:
         const std::string &controlsUrl,
         JavaVM *vm,
         jobject sink,
-        jmethodID method
+        jmethodID method,
+        bool enableWebView = true
     ) {
         if (!host || !IsWindow(host)) {
             throw std::runtime_error("Unable to resolve the AWT host HWND for native playback.");
@@ -706,12 +707,13 @@ public:
         eventSink = sink;
         eventMethod = method;
         hostHwnd = host;
+        useWebView = enableWebView;
 
         auto initState = std::make_shared<InitializationState>();
         auto self = shared_from_this();
         uiThread = std::thread(
-            [self, sourceUrl, headerLines, playWhenReady, initialPositionMs, controlsUrl, initState]() {
-                self->runNativeUiThread(sourceUrl, headerLines, playWhenReady, initialPositionMs, controlsUrl, initState);
+            [self, sourceUrl, headerLines, playWhenReady, initialPositionMs, controlsUrl, enableWebView, initState]() {
+                self->runNativeUiThread(sourceUrl, headerLines, playWhenReady, initialPositionMs, controlsUrl, enableWebView, initState);
             }
         );
 
@@ -805,6 +807,13 @@ public:
         if (!mpv) return;
         int flag = paused ? 1 : 0;
         mpvApi().setProperty(mpv, "pause", MPV_FORMAT_FLAG, &flag);
+    }
+
+    void setMuted(bool muted) {
+        std::lock_guard<std::mutex> lock(mpvMutex);
+        if (!mpv) return;
+        int flag = muted ? 1 : 0;
+        mpvApi().setProperty(mpv, "mute", MPV_FORMAT_FLAG, &flag);
     }
 
     bool isPaused() {
@@ -1010,6 +1019,7 @@ private:
     std::mutex controlsMutex;
     std::string pendingControlsJson;
     double initialStartSeconds = 0.0;
+    bool useWebView = true;
 
 public:
     std::mutex errorMutex;
@@ -1026,11 +1036,12 @@ private:
         bool playWhenReady,
         long long initialPositionMs,
         std::string controlsUrl,
+        bool enableWebView,
         std::shared_ptr<InitializationState> initState
     ) {
         std::string failure;
         try {
-            initializeOnNativeUiThread(sourceUrl, headerLines, playWhenReady, initialPositionMs, controlsUrl);
+            initializeOnNativeUiThread(sourceUrl, headerLines, playWhenReady, initialPositionMs, controlsUrl, enableWebView);
         } catch (const std::exception &error) {
             failure = error.what();
             cleanupUiResources();
@@ -1059,7 +1070,8 @@ private:
         const std::vector<std::string> &headerLines,
         bool playWhenReady,
         long long initialPositionMs,
-        const std::string &controlsUrl
+        const std::string &controlsUrl,
+        bool enableWebView
     ) {
         registerWindowClasses();
         uiThreadId = GetCurrentThreadId();
@@ -1109,7 +1121,9 @@ private:
             throw std::runtime_error("Unable to create native player container window.");
         }
 
-        startWebView(controlsUrl);
+        if (enableWebView) {
+            startWebView(controlsUrl);
+        }
         startMpv(sourceUrl, headerLines, playWhenReady, initialPositionMs);
         layoutNativeSubviews();
         if (!SetTimer(messageHwnd, NUVIO_TIMER_ID, 500, nullptr)) {
@@ -1560,7 +1574,9 @@ private:
             }
             if (event->event_id == MPV_EVENT_END_FILE) {
                 auto *endFile = static_cast<mpv_event_end_file *>(event->data);
-                if (endFile->reason == MPV_END_FILE_REASON_ERROR) {
+                if (endFile->reason == MPV_END_FILE_REASON_EOF) {
+                    sendPlayerEvent("ended", 0.0);
+                } else {
                     std::string errorMsg = mpvApi().errorText(endFile->error);
                     {
                         std::lock_guard<std::mutex> lock(errorMutex);
@@ -1973,6 +1989,69 @@ Java_com_nuvio_app_features_player_desktop_NativePlayerBridge_create(
     auto *holder = new std::shared_ptr<WindowsMpvWebPlayer>(player);
     jlong handle = (jlong)(intptr_t)holder;
     return handle;
+}
+
+extern "C" JNIEXPORT jlong JNICALL
+Java_com_nuvio_app_features_player_desktop_NativePlayerBridge_createBare(
+    JNIEnv *env,
+    jobject,
+    jlong hostViewPtr,
+    jstring sourceUrl,
+    jobjectArray headerLines,
+    jboolean playWhenReady,
+    jlong initialPositionMs,
+    jobject eventSink
+) {
+    HWND hostHwnd = (HWND)(intptr_t)hostViewPtr;
+    std::string sourceUrlText = jstringToUtf8(env, sourceUrl);
+    std::vector<std::string> headerLineValues = jstringArrayToVector(env, headerLines);
+    JavaVM *javaVm = nullptr;
+    env->GetJavaVM(&javaVm);
+
+    jobject eventSinkRef = nullptr;
+    jmethodID eventMethod = nullptr;
+    if (eventSink) {
+        eventSinkRef = env->NewGlobalRef(eventSink);
+        jclass eventSinkClass = env->GetObjectClass(eventSink);
+        eventMethod = env->GetMethodID(eventSinkClass, "onPlayerEvent", "(Ljava/lang/String;D)V");
+        env->DeleteLocalRef(eventSinkClass);
+        if (!eventMethod) {
+            if (eventSinkRef) env->DeleteGlobalRef(eventSinkRef);
+            throwJavaError(env, "Native player event sink is missing onPlayerEvent(String, Double).");
+            return 0;
+        }
+    }
+
+    auto player = std::make_shared<WindowsMpvWebPlayer>();
+    try {
+        player->initialize(
+            hostHwnd,
+            sourceUrlText,
+            headerLineValues,
+            playWhenReady == JNI_TRUE,
+            initialPositionMs,
+            "",
+            javaVm,
+            eventSinkRef,
+            eventMethod,
+            false
+        );
+    } catch (const std::exception &error) {
+        player->shutdown();
+        throwJavaError(env, error.what());
+        return 0;
+    }
+
+    auto *holder = new std::shared_ptr<WindowsMpvWebPlayer>(player);
+    jlong handle = (jlong)(intptr_t)holder;
+    return handle;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_nuvio_app_features_player_desktop_NativePlayerBridge_setMuted(JNIEnv *, jobject, jlong handle, jboolean muted) {
+    auto player = playerFromHandle(handle);
+    if (!player) return;
+    player->setMuted(muted == JNI_TRUE);
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
