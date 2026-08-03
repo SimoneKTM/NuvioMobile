@@ -119,10 +119,19 @@ jobs:
         run: |
           APK_DIR="composeApp/build/outputs/apk"
           find "$APK_DIR" -name "*.apk" | while read apk; do
+            FNAME=$(basename "$apk")
+            case "$FNAME" in
+              *arm64-v8a*) ABI="arm64-v8a";;
+              *armeabi-v7a*) ABI="armeabi-v7a";;
+              *x86_64*) ABI="x86_64";;
+              *x86*) ABI="x86";;
+              *universal*) ABI="universal";;
+              *) ABI="release";;
+            esac
             DIR=$(dirname "$apk")
-            ABI=$(basename "$DIR")
             mv "$apk" "$DIR/NuvioEnhanced-${{ steps.version.outputs.name }}-$ABI.apk"
           done
+          find "$APK_DIR" -name "*.apk" | sort
 
       - name: Upload split APKs as run artifacts
         uses: actions/upload-artifact@v4
