@@ -6,5 +6,5 @@ import platform.Foundation.NSCalendarUnitHour
 
 internal actual fun currentHour(): Int {
     val calendar = NSCalendar.currentCalendar
-    return calendar.component(NSCalendarUnitHour, fromDate = NSDate())
+    return calendar.component(NSCalendarUnitHour, fromDate = NSDate()).toInt()
 }

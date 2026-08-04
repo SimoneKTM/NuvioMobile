@@ -37,6 +37,9 @@ import platform.AVFoundation.AVMediaTypeAudio
 import platform.AVFoundation.AVMediaTypeVideo
 import platform.AVFoundation.AVMutableComposition
 import platform.AVFoundation.AVURLAsset
+import platform.AVFoundation.addMutableTrackWithMediaType
+import platform.AVFoundation.timeRange
+import platform.AVFoundation.tracksWithMediaType
 import platform.CoreMedia.CMTime
 import platform.CoreMedia.CMTimeMakeWithSeconds
 import platform.CoreMedia.CMTimeRangeMake
@@ -60,6 +63,7 @@ import platform.Foundation.NSURLSessionDataTask
 import platform.Foundation.NSURLSessionTask
 import platform.Foundation.NSString
 import platform.Foundation.NSUTF8StringEncoding
+import platform.Foundation.create
 import platform.Foundation.dataTaskWithRequest
 import platform.Foundation.setHTTPMethod
 import platform.Foundation.setValue

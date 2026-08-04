@@ -2,6 +2,8 @@ package com.nuvio.app.features.settings
 
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.UIKit.UIApplication
+import platform.UIKit.setAlternateIconName
+import platform.UIKit.supportsAlternateIcons
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 

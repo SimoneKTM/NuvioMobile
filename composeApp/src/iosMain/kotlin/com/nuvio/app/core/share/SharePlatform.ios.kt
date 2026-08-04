@@ -16,7 +16,6 @@ internal actual object SharePlatform {
             activityItems = activityItems as List<NSObject>,
             applicationActivities = null,
         )
-        controller.setValue(title as Any?, forKey = "subject")
         topMostViewController()?.presentViewController(controller, animated = true, completion = null)
     }
 

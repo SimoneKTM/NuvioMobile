@@ -1,6 +1,7 @@
 package com.nuvio.app.core.network
 
 import kotlin.concurrent.AtomicReference
+import kotlin.concurrent.Volatile
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -23,16 +24,19 @@ actual object CloudflareSolver {
     actual fun getWebViewUserAgent(): String? = webViewUserAgent
 
     actual fun getCookies(host: String): Map<String, String> =
-        savedCookies.get()[host] ?: emptyMap()
+        savedCookies.value[host] ?: emptyMap()
 
     actual fun clear() {
-        savedCookies.set(emptyMap())
+        savedCookies.value = emptyMap()
     }
 
     actual suspend fun solve(url: String): Boolean = withContext(Dispatchers.Main) {
         try {
             val config = WKWebViewConfiguration()
-            val webView = WKWebView(frame = CGRectZero, configuration = config)
+            val webView = WKWebView(
+                frame = platform.CoreGraphics.CGRectMake(0.0, 0.0, 0.0, 0.0),
+                configuration = config,
+            )
 
             getUserAgent(webView)
 
@@ -49,8 +53,10 @@ actual object CloudflareSolver {
                     val cookieString = evaluateJs(webView, "document.cookie") ?: ""
                     val host = extractHost(url)
                     if (cookieString.contains("cf_clearance")) {
-                        savedCookies.getAndUpdate { map ->
-                            map + (host to parseCookieMap(cookieString))
+                        while (true) {
+                            val current = savedCookies.value
+                            val updated = current + (host to parseCookieMap(cookieString))
+                            if (savedCookies.compareAndSet(current, updated)) break
                         }
                         return@withTimeout true
                     }
@@ -62,7 +68,7 @@ actual object CloudflareSolver {
         }
     }
 
-    private fun getUserAgent(webView: WKWebView) {
+    private suspend fun getUserAgent(webView: WKWebView) {
         evaluateJs(webView, "navigator.userAgent")?.let {
             webViewUserAgent = it
         }
@@ -79,8 +85,6 @@ actual object CloudflareSolver {
             }
         }
 }
-
-private val CGRectZero = platform.CoreGraphics.CGRectZero
 
 private fun extractHost(url: String): String =
     url.removePrefix("https://").removePrefix("http://").substringBefore("/").substringBefore(":")
