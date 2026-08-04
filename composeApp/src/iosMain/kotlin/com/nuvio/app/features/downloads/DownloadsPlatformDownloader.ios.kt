@@ -43,7 +43,6 @@ import platform.AVFoundation.tracksWithMediaType
 import platform.CoreMedia.CMTime
 import platform.CoreMedia.CMTimeMakeWithSeconds
 import platform.CoreMedia.CMTimeRangeMake
-import platform.CoreMedia.kCMTimeZero
 import platform.CoreMedia.kCMPersistentTrackID_Invalid
 import platform.Foundation.NSError
 import platform.Foundation.NSDate
@@ -845,7 +844,6 @@ private fun remuxToMp4Ios(
             NSURL.fileURLWithPath(videoPath),
             null,
         )
-        val videoTimeRange = videoAsset.timeRange
         val sourceVideoTrack = (videoAsset.tracksWithMediaType(AVMediaTypeVideo) as? List<AVAssetTrack>)
             ?.firstOrNull()
         if (sourceVideoTrack != null) {
@@ -854,9 +852,9 @@ private fun remuxToMp4Ios(
                 kCMPersistentTrackID_Invalid,
             )
             destVideoTrack?.insertTimeRange(
-                timeRange = videoTimeRange,
+                timeRange = sourceVideoTrack.timeRange,
                 ofTrack = sourceVideoTrack,
-                atTime = kCMTimeZero,
+                atTime = CMTimeMakeWithSeconds(0.0, 600),
                 error = null,
             )
         }
@@ -865,7 +863,6 @@ private fun remuxToMp4Ios(
             NSURL.fileURLWithPath(audioPath),
             null,
         )
-        val audioTimeRange = audioAsset.timeRange
         val sourceAudioTrack = (audioAsset.tracksWithMediaType(AVMediaTypeAudio) as? List<AVAssetTrack>)
             ?.firstOrNull()
         if (sourceAudioTrack != null) {
@@ -874,9 +871,9 @@ private fun remuxToMp4Ios(
                 kCMPersistentTrackID_Invalid,
             )
             destAudioTrack?.insertTimeRange(
-                timeRange = audioTimeRange,
+                timeRange = sourceAudioTrack.timeRange,
                 ofTrack = sourceAudioTrack,
-                atTime = kCMTimeZero,
+                atTime = CMTimeMakeWithSeconds(0.0, 600),
                 error = null,
             )
         }

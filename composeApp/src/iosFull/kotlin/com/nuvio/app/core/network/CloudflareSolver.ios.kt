@@ -58,10 +58,11 @@ actual object CloudflareSolver {
                             val updated = current + (host to parseCookieMap(cookieString))
                             if (savedCookies.compareAndSet(current, updated)) break
                         }
-                        return@withTimeout true
+                        break
                     }
                     delay(500)
                 }
+                true
             }
         } catch (_: Exception) {
             false
