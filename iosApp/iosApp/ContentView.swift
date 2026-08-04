@@ -15,138 +15,6 @@ private enum NuvioComposeHost {
         NuvioPlayerRegistration.register()
     }()
 
-    static let library = vectorIcon(
-        viewport: CGSize(width: 24, height: 24),
-        paths: [
-            "M8.50989,2.00001H15.49C15.7225,1.99995 15.9007,1.99991 16.0565,2.01515C17.1643,2.12352 18.0711,2.78958 18.4556,3.68678H5.54428C5.92879,2.78958 6.83555,2.12352 7.94337,2.01515C8.09917,1.99991 8.27741,1.99995 8.50989,2.00001Z",
-            "M6.31052,4.72312C4.91989,4.72312 3.77963,5.56287 3.3991,6.67691C3.39117,6.70013 3.38356,6.72348 3.37629,6.74693C3.77444,6.62636 4.18881,6.54759 4.60827,6.49382C5.68865,6.35531 7.05399,6.35538 8.64002,6.35547L8.75846,6.35547L15.5321,6.35547C17.1181,6.35538 18.4835,6.35531 19.5639,6.49382C19.9833,6.54759 20.3977,6.62636 20.7958,6.74693C20.7886,6.72348 20.781,6.70013 20.773,6.67691C20.3925,5.56287 19.2522,4.72312 17.8616,4.72312H6.31052Z",
-            "M8.67239,7.54204H15.3276C18.7024,7.54204 20.3898,7.54204 21.3377,8.52887C22.2855,9.5157 22.0625,11.0403 21.6165,14.0896L21.1935,16.9811C20.8437,19.3724 20.6689,20.568 19.7717,21.284C18.8745,22 17.5512,22 14.9046,22H9.09536C6.44881,22 5.12553,22 4.22834,21.284C3.33115,20.568 3.15626,19.3724 2.80648,16.9811L2.38351,14.0896C1.93748,11.0403 1.71447,9.5157 2.66232,8.52887C3.61017,7.54204 5.29758,7.54204 8.67239,7.54204ZM8,18.0001C8,17.5859 8.3731,17.2501 8.83333,17.2501H15.1667C15.6269,17.2501 16,17.5859 16,18.0001C16,18.4144 15.6269,18.7502 15.1667,18.7502H8.83333C8.3731,18.7502 8,18.4144 8,18.0001Z",
-        ]
-    )
-
-    static let liveTv = vectorIcon(
-        viewport: CGSize(width: 24, height: 24),
-        paths: [
-            "M21,17V7C21,5.9 20.1,5 19,5H5C3.9,5 3,5.9 3,7V17C3,18.1 3.9,19 5,19H19C20.1,19 21,18.1 21,17ZM5,7H19V17H5V7Z",
-            "M10,15V9L15,12L10,15Z",
-            "M8,3L12,5L16,3",
-        ]
-    )
-
-    static let profileFallback = vectorIcon(
-        viewport: CGSize(width: 24, height: 24),
-        paths: [
-            "M12,12C14.21,12 16,10.21 16,8C16,5.79 14.21,4 12,4C9.79,4 8,5.79 8,8C8,10.21 9.79,12 12,12ZM12,14C9.33,14 4,15.34 4,18V19C4,19.55 4.45,20 5,20H19C19.55,20 20,19.55 20,19V18C20,15.34 14.67,14 12,14Z",
-        ]
-    )
-
-    static func profileAvatar(
-        name: String?,
-        avatarColor: UIColor?,
-        backgroundColor: UIColor?,
-        avatarImage: UIImage?,
-        selected: Bool,
-        accent: UIColor
-    ) -> UIImage {
-        guard name != nil || avatarColor != nil || avatarImage != nil else {
-            return profileFallback
-        }
-
-        let size = CGSize(width: 28, height: 28)
-        let baseColor = avatarColor ?? UIColor(red: 30.0 / 255.0, green: 136.0 / 255.0, blue: 229.0 / 255.0, alpha: 1)
-        let fillColor = backgroundColor ?? baseColor.withAlphaComponent(0.15)
-        let borderColor = selected ? accent : baseColor.withAlphaComponent(0.5)
-        let initial = name?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .prefix(1)
-            .uppercased() ?? ""
-
-        return UIGraphicsImageRenderer(size: size).image { _ in
-            let rect = CGRect(origin: .zero, size: size).insetBy(dx: 1, dy: 1)
-            fillColor.setFill()
-            UIBezierPath(ovalIn: rect).fill()
-
-            if let avatarImage {
-                UIBezierPath(ovalIn: rect).addClip()
-                drawAspectFill(image: avatarImage, in: rect)
-            } else if !initial.isEmpty {
-                let font = UIFont.systemFont(ofSize: size.height * 0.45, weight: .bold)
-                let attributes: [NSAttributedString.Key: Any] = [
-                    .font: font,
-                    .foregroundColor: baseColor,
-                ]
-                let textSize = initial.size(withAttributes: attributes)
-                initial.draw(
-                    at: CGPoint(
-                        x: rect.midX - textSize.width / 2,
-                        y: rect.midY - textSize.height / 2
-                    ),
-                    withAttributes: attributes
-                )
-            } else {
-                profileFallback
-                    .withTintColor(baseColor, renderingMode: .alwaysOriginal)
-                    .draw(in: rect.insetBy(dx: 5.5, dy: 5.5))
-            }
-
-            borderColor.setStroke()
-            let borderPath = UIBezierPath(ovalIn: rect.insetBy(dx: 0.75, dy: 0.75))
-            borderPath.lineWidth = 1.5
-            borderPath.stroke()
-        }.withRenderingMode(.alwaysOriginal)
-    }
-
-    private static func drawInViewport(
-        context: CGContext,
-        rect: CGRect,
-        viewport: CGSize,
-        draw: () -> Void
-    ) {
-        let scale = min(rect.width / viewport.width, rect.height / viewport.height)
-        let x = rect.midX - viewport.width * scale / 2
-        let y = rect.midY - viewport.height * scale / 2
-        context.saveGState()
-        context.translateBy(x: x, y: y)
-        context.scaleBy(x: scale, y: scale)
-        draw()
-        context.restoreGState()
-    }
-
-    private static func vectorIcon(viewport: CGSize, paths: [String], size: CGSize = CGSize(width: 25, height: 25)) -> UIImage {
-        drawnIcon(size: size) { context, rect in
-            drawInViewport(context: context, rect: rect, viewport: viewport) {
-                context.setFillColor(UIColor.black.cgColor)
-                paths.compactMap { SVGPath(data: $0).cgPath }.forEach { path in
-                    context.addPath(path)
-                    context.fillPath(using: .evenOdd)
-                }
-            }
-        }
-    }
-
-    private static func drawnIcon(
-        size: CGSize = CGSize(width: 25, height: 25),
-        draw: @escaping (CGContext, CGRect) -> Void
-    ) -> UIImage {
-        UIGraphicsImageRenderer(size: size).image { rendererContext in
-            draw(rendererContext.cgContext, CGRect(origin: .zero, size: size))
-        }.withRenderingMode(.alwaysTemplate)
-    }
-
-    private static func drawAspectFill(image: UIImage, in rect: CGRect) {
-        guard image.size.width > 0, image.size.height > 0 else { return }
-        let scale = max(rect.width / image.size.width, rect.height / image.size.height)
-        let drawSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-        image.draw(
-            in: CGRect(
-                x: rect.midX - drawSize.width / 2,
-                y: rect.midY - drawSize.height / 2,
-                width: drawSize.width,
-                height: drawSize.height
-            )
-        )
-    }
-
     static func wrap(
         _ contentController: UIViewController,
         disablesInteractiveContentPopGesture: Bool = false,
@@ -188,6 +56,7 @@ final class RootComposeViewController: UIViewController, UITabBarDelegate {
             case .home: return "NuvioNativeTabTitleHome"
             case .search: return "NuvioNativeTabTitleSearch"
             case .library: return "NuvioNativeTabTitleLibrary"
+            case .liveTv: return "NuvioNativeTabTitleLiveTv"
             case .settings: return "NuvioNativeTabTitleProfile"
             }
         }
@@ -208,11 +77,11 @@ final class RootComposeViewController: UIViewController, UITabBarDelegate {
 
         var iconImage: UIImage {
             switch self {
-            case .home: return NuvioNativeTabIcon.home
-            case .search: return NuvioNativeTabIcon.search
-            case .library: return NuvioNativeTabIcon.library
-            case .liveTv: return NuvioNativeTabIcon.liveTv
-            case .settings: return NuvioNativeTabIcon.profileFallback
+            case .liveTv:
+                return (UIImage(systemName: "tv") ?? UIImage()).withRenderingMode(.alwaysTemplate)
+            case .home, .search, .library, .settings:
+                guard let appTab = NuvioAppTab.from(kotlinName: rawValue) else { return UIImage() }
+                return NuvioNativeTabIcon.image(for: appTab)
             }
         }
 

@@ -191,14 +191,6 @@ final class MPVPlayerBridgeImpl: NSObject, NuvioPlayerBridge {
     func getPlaybackSpeed() -> Float { playerVC?.currentSpeed ?? 1.0 }
     func getErrorMessage() -> String { playerVC?.currentErrorMessage ?? "" }
 
-    func updateNowPlayingMetadata(title: String, subtitle: String?, artworkUrl: String?) {
-        playerVC?.updateNowPlaying(title: title, subtitle: subtitle, artworkUrl: artworkUrl)
-    }
-
-    func clearNowPlayingInfo() {
-        playerVC?.clearNowPlaying()
-    }
-
     func destroy() {
         playerVC?.destroyPlayer()
         playerVC = nil
