@@ -44,6 +44,7 @@ interface NuvioPlayerBridge {
     fun configureAudioOutput(audioOutput: String)
     fun setPlaybackSpeed(speed: Float)
     fun setMuted(muted: Boolean)
+    fun setVolumeBoost(boostDb: Float)
     fun setResizeMode(mode: Int) // 0=Fit, 1=Fill, 2=Zoom
     fun syncVideoSurfaceLayout(width: Double, height: Double)
     fun getAudioTrackCount(): Int
@@ -81,8 +82,6 @@ interface NuvioPlayerBridge {
     fun getBufferedMs(): Long
     fun getPlaybackSpeed(): Float
     fun getErrorMessage(): String
-    fun updateNowPlayingMetadata(title: String, subtitle: String?, artworkUrl: String?)
-    fun clearNowPlayingInfo()
     fun destroy()
 }
 

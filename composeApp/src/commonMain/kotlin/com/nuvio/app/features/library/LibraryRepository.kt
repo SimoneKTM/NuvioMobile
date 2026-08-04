@@ -20,6 +20,7 @@ import com.nuvio.app.features.mal.MalAuthRepository
 import com.nuvio.app.features.mal.MalLibraryRepository
 import com.nuvio.app.features.mal.MalLibraryItem
 import com.nuvio.app.features.mal.MalSettingsRepository
+import com.nuvio.app.core.util.toOneDecimalString
 import com.nuvio.app.features.anilist.AniListAuthRepository
 import com.nuvio.app.features.anilist.AniListLibraryRepository
 import com.nuvio.app.features.anilist.AniListLibraryItem
@@ -855,7 +856,7 @@ object LibraryRepository {
             poster = posterUrl,
             description = synopsis,
             releaseInfo = numEpisodes?.let { "$it episodes" },
-            imdbRating = meanScore?.let { "%.1f".format(it) },
+            imdbRating = meanScore?.let { it.toOneDecimalString() },
             genres = genres,
             posterShape = PosterShape.Poster,
             savedAtEpochMs = updatedAtEpochMs ?: now,
@@ -902,7 +903,7 @@ object LibraryRepository {
             poster = posterUrl,
             description = synopsis,
             releaseInfo = progressInfo ?: totalEpisodes?.let { "$it episodes" },
-            imdbRating = rating?.let { "%.1f".format(it) },
+            imdbRating = rating?.let { it.toOneDecimalString() },
             posterShape = PosterShape.Poster,
             savedAtEpochMs = now,
             startDate = startDate,

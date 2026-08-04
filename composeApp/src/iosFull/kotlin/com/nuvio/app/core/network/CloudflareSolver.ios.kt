@@ -1,5 +1,7 @@
 package com.nuvio.app.core.network
 
+import kotlin.concurrent.AtomicReference
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -11,20 +13,20 @@ import platform.WebKit.WKWebView
 import platform.WebKit.WKWebViewConfiguration
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
-import java.util.concurrent.ConcurrentHashMap
 
+@OptIn(ExperimentalForeignApi::class)
 actual object CloudflareSolver {
-    private val savedCookies = ConcurrentHashMap<String, Map<String, String>>()
+    private val savedCookies = AtomicReference<Map<String, Map<String, String>>>(emptyMap())
     @Volatile
     private var webViewUserAgent: String? = null
 
     actual fun getWebViewUserAgent(): String? = webViewUserAgent
 
     actual fun getCookies(host: String): Map<String, String> =
-        savedCookies[host] ?: emptyMap()
+        savedCookies.get()[host] ?: emptyMap()
 
     actual fun clear() {
-        savedCookies.clear()
+        savedCookies.set(emptyMap())
     }
 
     actual suspend fun solve(url: String): Boolean = withContext(Dispatchers.Main) {
@@ -47,7 +49,9 @@ actual object CloudflareSolver {
                     val cookieString = evaluateJs(webView, "document.cookie") ?: ""
                     val host = extractHost(url)
                     if (cookieString.contains("cf_clearance")) {
-                        savedCookies[host] = parseCookieMap(cookieString)
+                        savedCookies.getAndUpdate { map ->
+                            map + (host to parseCookieMap(cookieString))
+                        }
                         return@withTimeout true
                     }
                     delay(500)

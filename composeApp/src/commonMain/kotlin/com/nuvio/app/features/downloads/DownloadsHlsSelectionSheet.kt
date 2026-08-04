@@ -12,6 +12,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import com.nuvio.app.core.ui.rememberNuvioBottomSheetState
+import com.nuvio.app.core.util.toOneDecimalString
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -327,7 +328,7 @@ fun DownloadsHlsSelectionSheet(
 private fun formatBandwidth(bandwidth: Long): String {
     if (bandwidth <= 0L) return ""
     val mbps = bandwidth.toDouble() / 1_000_000.0
-    return "${"%.1f".format(mbps).trimEnd('0').trimEnd('.')} Mbps"
+    return "${mbps.toOneDecimalString().trimEnd('0').trimEnd('.')} Mbps"
 }
 
 private fun friendlyCodec(codecs: String): String {

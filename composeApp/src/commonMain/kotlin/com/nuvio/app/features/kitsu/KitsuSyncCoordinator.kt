@@ -1,6 +1,7 @@
 package com.nuvio.app.features.kitsu
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.features.trakt.TraktPlatformClock
 import com.nuvio.app.features.watchprogress.WatchProgressClock
 import com.nuvio.app.features.watchprogress.WatchProgressEntry
 import com.nuvio.app.features.watched.WatchedRepository
@@ -193,8 +194,6 @@ object KitsuSyncCoordinator {
 
     private fun parseKitsuDate(dateString: String?): Long {
         if (dateString.isNullOrBlank()) return 0L
-        return runCatching {
-            java.time.Instant.parse(dateString).toEpochMilli()
-        }.getOrNull() ?: 0L
+        return TraktPlatformClock.parseIsoDateTimeToEpochMs(dateString) ?: 0L
     }
 }

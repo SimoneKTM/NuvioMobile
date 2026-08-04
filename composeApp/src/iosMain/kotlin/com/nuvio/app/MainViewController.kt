@@ -41,7 +41,9 @@ fun MainViewController(
             onReplace = onReplace,
             onActivate = { tab -> onActivate(tab.name) },
             onAppReady = onAppReady,
-            onTabTitles = onTabTitles,
+            onTabTitles = { home, _, search, library, profile ->
+                onTabTitles(home, search, library, profile)
+            },
             nativeProfileSwitcherController = nativeProfileSwitcherController,
         )
     }

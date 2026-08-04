@@ -57,6 +57,7 @@ import com.nuvio.app.features.cloudstream.CloudStreamInstallResult
 import com.nuvio.app.features.cloudstream.CloudStreamPlatformSupport
 import com.nuvio.app.features.cloudstream.CloudStreamPluginItem
 import com.nuvio.app.features.cloudstream.CloudStreamRepository
+import com.nuvio.app.features.player.DeviceLanguagePreferences
 import com.nuvio.app.features.settings.AppLanguage
 import com.nuvio.app.features.settings.ThemeSettingsRepository
 import com.nuvio.app.features.streams.StreamSourcePreferencesRepository
@@ -817,13 +818,10 @@ private class CloudStreamSettingsCopy private constructor(
 
 private fun resolveEffectiveLanguage(language: AppLanguage): AppLanguage {
     if (language != AppLanguage.DEVICE) return language
-    return try {
-        val code = java.util.Locale.getDefault().language
-        val resolved = AppLanguage.fromCode(code)
-        if (resolved == AppLanguage.DEVICE) AppLanguage.ENGLISH else resolved
-    } catch (_: Exception) {
-        AppLanguage.ENGLISH
-    }
+    val code = DeviceLanguagePreferences.preferredLanguageCodes().firstOrNull()
+    if (code == null) return AppLanguage.ENGLISH
+    val resolved = AppLanguage.fromCode(code)
+    return if (resolved == AppLanguage.DEVICE) AppLanguage.ENGLISH else resolved
 }
 
 private fun String.localizedCloudStreamFailure(copy: CloudStreamSettingsCopy): String =

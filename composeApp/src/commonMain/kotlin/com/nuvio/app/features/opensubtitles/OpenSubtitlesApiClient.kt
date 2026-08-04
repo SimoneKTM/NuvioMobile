@@ -3,6 +3,7 @@ package com.nuvio.app.features.opensubtitles
 import com.nuvio.app.core.logging.InAppLogger
 import com.nuvio.app.features.addons.httpGetTextWithHeaders
 import com.nuvio.app.features.addons.httpPostJsonWithHeaders
+import io.ktor.http.encodeURLParameter
 import kotlinx.serialization.json.Json
 
 object OpenSubtitlesApiClient {
@@ -72,7 +73,7 @@ object OpenSubtitlesApiClient {
         languages: List<String>,
         page: Int = 1,
     ): OpenSubtitlesSearchResponse {
-        val queryParams = mutableListOf("query=${java.net.URLEncoder.encode(query, "UTF-8")}")
+        val queryParams = mutableListOf("query=${query.encodeURLParameter()}")
         if (type != null) {
             val normalizedType = if (type.equals("tv", ignoreCase = true)) "episode" else "movie"
             queryParams.add("type=$normalizedType")

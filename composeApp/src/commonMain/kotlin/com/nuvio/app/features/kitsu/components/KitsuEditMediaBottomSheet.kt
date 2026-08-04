@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nuvio.app.core.ui.NuvioModalBottomSheet
+import com.nuvio.app.core.util.toOneDecimalString
 import com.nuvio.app.features.kitsu.KitsuLibraryItem
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -221,7 +222,7 @@ fun KitsuEditMediaBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Score", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = textPrimary))
-                Text("${"%.1f".format(score)} / 5", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium, color = textMuted))
+                Text("${score.toOneDecimalString()} / 5", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium, color = textMuted))
             }
             Spacer(Modifier.height(12.dp))
 

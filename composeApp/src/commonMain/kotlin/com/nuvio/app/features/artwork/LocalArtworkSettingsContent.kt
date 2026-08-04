@@ -40,7 +40,7 @@ fun LocalArtworkSettingsContent(
 ) {
     LaunchedEffect(Unit) {
         withContext(Dispatchers.Default) { delay(300) }
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.Default) {
             LocalArtworkRepository.initialize()
         }
     }
@@ -178,7 +178,7 @@ fun LocalArtworkSettingsContent(
                                 }
                                 androidx.compose.material3.TextButton(
                                     onClick = {
-                                        scope.launch(Dispatchers.IO) {
+                                        scope.launch(Dispatchers.Default) {
                                             LocalArtworkRepository.clearArtworkForVideo(videoId, mediaType)
                                         }
                                     },

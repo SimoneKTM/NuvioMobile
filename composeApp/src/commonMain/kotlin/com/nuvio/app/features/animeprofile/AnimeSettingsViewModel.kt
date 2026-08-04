@@ -32,36 +32,36 @@ class AnimeSettingsViewModel(
     private fun avviaInizializzazioneSicura() {
         _uiState.value = AnimeSettingsUiState.Loading
 
-        Thread {
+        viewModelScope.launch(Dispatchers.Default) {
             try {
                 log.d { "Avvio inizializzazione in thread nativo..." }
 
                 val plugins = animePluginRegistry.getAvailableAnimePluginsFromSandbox()
 
-                viewModelScope.launch(Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     _uiState.value = AnimeSettingsUiState.Success(plugins)
                     log.d { "Caricamento completato: ${plugins.size} plugins" }
                 }
             } catch (e: Exception) {
                 log.e(e) { "Errore inizializzazione sandbox: ${e.message}" }
-                viewModelScope.launch(Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
                     _uiState.value = AnimeSettingsUiState.Error(
-                        e.localizedMessage ?: "Errore interno Sandbox",
+                        e.message ?: "Errore interno Sandbox",
                     )
                 }
             }
-        }.start()
+        }
     }
 
     fun togglePlugin(pluginId: String, isEnabled: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
             try {
                 animePluginRegistry.updatePluginStatusInSandbox(pluginId, isEnabled)
                 loadAnimePlugins()
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     _uiState.value = AnimeSettingsUiState.Error(
-                        e.localizedMessage ?: "Errore aggiornamento plugin",
+                        e.message ?: "Errore aggiornamento plugin",
                     )
                 }
             }

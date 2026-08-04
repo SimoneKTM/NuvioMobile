@@ -31,6 +31,7 @@ import platform.AVFoundation.AVAssetExportSession
 import platform.AVFoundation.AVAssetExportSessionStatusCompleted
 import platform.AVFoundation.AVAssetExportSessionStatusFailed
 import platform.AVFoundation.AVAssetExportPresetPassthrough
+import platform.AVFoundation.AVAssetTrack
 import platform.AVFoundation.AVFileTypeMPEG4
 import platform.AVFoundation.AVMediaTypeAudio
 import platform.AVFoundation.AVMediaTypeVideo
@@ -183,7 +184,7 @@ internal actual object DownloadsPlatformDownloader {
 
                 val localFileUri = NSURL.fileURLWithPath(destinationPath).absoluteString ?: "file://$destinationPath"
                 val finalSize = fileSizeOrNull(destinationPath)
-                onSuccess(localFileUri, totalBytes ?: finalSize)
+                onSuccess(localFileUri, totalBytes ?: finalSize, null)
             } catch (_: CancellationException) {
                 handle.cancelNativeTask()
             } catch (error: Throwable) {
@@ -246,7 +247,7 @@ internal actual object DownloadsPlatformDownloader {
 
             val task = NSURLSession.sharedSession.dataTaskWithRequest(request) { data, _, error ->
                 if (error == null && data != null) {
-                    result = NSString.create(data, NSUTF8StringEncoding) as? String
+                    result = NSString.create(data = data, encoding = NSUTF8StringEncoding) as? String
                 }
                 dispatch_semaphore_signal(semaphore)
             }
@@ -290,6 +291,10 @@ private class IosDownloadsTaskHandle(
         session?.invalidateAndCancel()
         task = null
         session = null
+    }
+
+    fun ensureActive() {
+        if (job.isCancelled) throw CancellationException("Download cancelled")
     }
 }
 
@@ -694,9 +699,25 @@ private suspend fun performHlsDownloadIos(
         "Audio track not found"
     } else null
     if (remuxedUri != null) {
-        onSuccess(remuxedUri, videoOutcome.totalBytes, HlsCompanionOutcome(null, subtitleUri, companionWarning))
+        onSuccess(
+            remuxedUri,
+            videoOutcome.totalBytes,
+            HlsCompanionOutcome(
+                audioLocalFileUri = null,
+                subtitleLocalFileUri = subtitleUri,
+                warningMessage = companionWarning,
+            ),
+        )
     } else {
-        onSuccess(videoUri, videoOutcome.totalBytes, HlsCompanionOutcome(audioUri, subtitleUri, companionWarning))
+        onSuccess(
+            videoUri,
+            videoOutcome.totalBytes,
+            HlsCompanionOutcome(
+                audioLocalFileUri = audioUri,
+                subtitleLocalFileUri = subtitleUri,
+                warningMessage = companionWarning,
+            ),
+        )
     }
 }
 
@@ -724,7 +745,7 @@ private suspend fun downloadSingleHlsTrackIos(
             appendBytes = { bytes -> writeAllToFile(outputFile, bytes) },
             decryptAes128Cbc = ::aes128CbcDecryptIos,
             onProgress = onProgress,
-            ensureActive = { coroutineContext.ensureActive() },
+            ensureActive = { handle.ensureActive() },
         )
 
         fflush(outputFile)
@@ -814,54 +835,46 @@ private fun remuxToMp4Ios(
     outputPath: String,
 ): Boolean {
     return try {
-        val composition = AVMutableComposition.mutableComposition()
+        val composition = AVMutableComposition()
 
         val videoAsset = AVURLAsset.URLAssetWithURL(
             NSURL.fileURLWithPath(videoPath),
             null,
         )
-        val videoTimeRange = CMTimeRangeMake(
-            kCMTimeZero,
-            videoAsset.duration,
-        )
-        val sourceVideoTracks = videoAsset.tracksWithMediaType(AVMediaTypeVideo)
-        if (sourceVideoTracks.isNotEmpty() && sourceVideoTracks.first() != null) {
+        val videoTimeRange = videoAsset.timeRange
+        val sourceVideoTrack = (videoAsset.tracksWithMediaType(AVMediaTypeVideo) as? List<AVAssetTrack>)
+            ?.firstOrNull()
+        if (sourceVideoTrack != null) {
             val destVideoTrack = composition.addMutableTrackWithMediaType(
                 AVMediaTypeVideo,
                 kCMPersistentTrackID_Invalid,
             )
-            if (destVideoTrack != null) {
-                destVideoTrack.insertTimeRange(
-                    videoTimeRange,
-                    ofTrack = sourceVideoTracks.first(),
-                    atTime = kCMTimeZero,
-                    error = null,
-                )
-            }
+            destVideoTrack?.insertTimeRange(
+                timeRange = videoTimeRange,
+                ofTrack = sourceVideoTrack,
+                atTime = kCMTimeZero,
+                error = null,
+            )
         }
 
         val audioAsset = AVURLAsset.URLAssetWithURL(
             NSURL.fileURLWithPath(audioPath),
             null,
         )
-        val audioTimeRange = CMTimeRangeMake(
-            kCMTimeZero,
-            audioAsset.duration,
-        )
-        val sourceAudioTracks = audioAsset.tracksWithMediaType(AVMediaTypeAudio)
-        if (sourceAudioTracks.isNotEmpty() && sourceAudioTracks.first() != null) {
+        val audioTimeRange = audioAsset.timeRange
+        val sourceAudioTrack = (audioAsset.tracksWithMediaType(AVMediaTypeAudio) as? List<AVAssetTrack>)
+            ?.firstOrNull()
+        if (sourceAudioTrack != null) {
             val destAudioTrack = composition.addMutableTrackWithMediaType(
                 AVMediaTypeAudio,
                 kCMPersistentTrackID_Invalid,
             )
-            if (destAudioTrack != null) {
-                destAudioTrack.insertTimeRange(
-                    audioTimeRange,
-                    ofTrack = sourceAudioTracks.first(),
-                    atTime = kCMTimeZero,
-                    error = null,
-                )
-            }
+            destAudioTrack?.insertTimeRange(
+                timeRange = audioTimeRange,
+                ofTrack = sourceAudioTrack,
+                atTime = kCMTimeZero,
+                error = null,
+            )
         }
 
         val exportSession = AVAssetExportSession.exportSessionWithAsset(

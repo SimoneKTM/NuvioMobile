@@ -1,5 +1,6 @@
 package com.nuvio.app.features.vpn
 
+import com.nuvio.app.features.streams.epochMs
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,7 +41,7 @@ object VpnSettingsRepository {
         val parsed = WireGuardConfigParser.parse(trimmed) ?: return false
         val current = _uiState.value
         val profile = VpnProfile(
-            id = "vpn-${System.currentTimeMillis()}-${current.profiles.size}",
+            id = "vpn-${epochMs()}-${current.profiles.size}",
             label = label.trim().ifBlank { parsed.serverHost },
             serverName = parsed.serverHost,
             configText = trimmed,

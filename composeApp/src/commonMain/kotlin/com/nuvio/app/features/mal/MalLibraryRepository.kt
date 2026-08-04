@@ -1,6 +1,7 @@
 package com.nuvio.app.features.mal
 
 import co.touchlab.kermit.Logger
+import com.nuvio.app.features.trakt.TraktPlatformClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -205,9 +206,7 @@ object MalLibraryRepository {
         }
 
     private fun parseMalDateTime(dateTime: String): Long? {
-        return runCatching {
-            java.time.Instant.parse(dateTime).toEpochMilli()
-        }.getOrNull()
+        return TraktPlatformClock.parseIsoDateTimeToEpochMs(dateTime)
     }
 
     private fun parseMalDateToEpochMs(dateStr: String): Long? {

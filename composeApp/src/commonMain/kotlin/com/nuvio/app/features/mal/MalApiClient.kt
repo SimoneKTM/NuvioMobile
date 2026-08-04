@@ -2,6 +2,7 @@ package com.nuvio.app.features.mal
 
 import com.nuvio.app.features.addons.httpGetTextWithHeaders
 import com.nuvio.app.features.addons.httpRequestRaw
+import io.ktor.http.encodeURLParameter
 import kotlinx.serialization.json.Json
 
 object MalApiClient {
@@ -31,7 +32,7 @@ object MalApiClient {
         offset: Int = 0,
         fields: String = "id,title,main_picture,synopsis,mean,rank,popularity,num_episodes,status,media_type,genres",
     ): MalSearchResponse {
-        val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
+        val encodedQuery = query.encodeURLParameter()
         val url = "$BASE_URL/anime?q=$encodedQuery&limit=$limit&offset=$offset&fields=$fields"
         val response = httpGetTextWithHeaders(url, publicHeaders(clientId))
         return json.decodeFromString<MalSearchResponse>(response)

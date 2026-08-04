@@ -103,6 +103,7 @@ final class MPVPlayerBridgeImpl: NSObject, NuvioPlayerBridge {
     }
     func setPlaybackSpeed(speed: Float) { playerVC?.setSpeed(speed) }
     func setMuted(muted: Bool) { playerVC?.setMuted(muted) }
+    func setVolumeBoost(boostDb: Float) { playerVC?.setVolumeBoost(boostDb) }
     func setResizeMode(mode: Int32) { playerVC?.setResize(Int(mode)) }
     func syncVideoSurfaceLayout(width: Double, height: Double) {
         playerVC?.syncVideoSurfaceLayout(size: CGSize(width: width, height: height))
@@ -708,6 +709,12 @@ final class MPVPlayerViewController: UIViewController {
     func setMuted(_ muted: Bool) {
         guard mpv != nil else { return }
         setFlag("mute", muted)
+    }
+
+    func setVolumeBoost(_ boostDb: Float) {
+        guard mpv != nil else { return }
+        var gain = Double(boostDb)
+        mpv_set_property(mpv, "volume-gain", MPV_FORMAT_DOUBLE, &gain)
     }
 
     func setResize(_ mode: Int) {

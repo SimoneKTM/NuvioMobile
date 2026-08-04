@@ -16,7 +16,7 @@ class InAppLogWriter : LogWriter() {
         val fullMessage = buildString {
             append(message)
             if (throwable != null) {
-                val cause = throwable.message ?: throwable.javaClass.simpleName
+                val cause = throwable.message ?: throwable::class.simpleName ?: "Throwable"
                 if (cause.isNotBlank()) {
                     append(" | ")
                     append(cause)

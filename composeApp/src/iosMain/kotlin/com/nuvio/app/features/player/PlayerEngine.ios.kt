@@ -274,18 +274,6 @@ actual fun PlatformPlayerSurface(
                     subPos = style.toMpvSubtitlePosition(),
                 )
             }
-
-            override fun updateNowPlayingMetadata(info: PlayerNowPlayingInfo) {
-                bridge.updateNowPlayingMetadata(
-                    info.title,
-                    info.subtitle,
-                    info.artworkUrl,
-                )
-            }
-
-            override fun clearNowPlayingInfo() {
-                bridge.clearNowPlayingInfo()
-            }
         }
     }
 
