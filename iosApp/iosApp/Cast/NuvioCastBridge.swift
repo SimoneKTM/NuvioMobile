@@ -1,14 +1,19 @@
 import Foundation
+#if canImport(GoogleCast)
 import GoogleCast
+#endif
 import ComposeApp
 
 enum NuvioCastRegistration {
-    private static var didInitContext = false
-
     static func register() {
+        #if canImport(GoogleCast)
         initializeCastContextIfNeeded()
         NuvioCastBridgeFactory.shared.registerFactory(creator: NuvioCastBridgeCreatorImpl())
+        #endif
     }
+
+    #if canImport(GoogleCast)
+    private static var didInitContext = false
 
     static func initializeCastContextIfNeeded() {
         guard !didInitContext else { return }
@@ -18,7 +23,10 @@ enum NuvioCastRegistration {
         GCKCastContext.setSharedInstanceWith(options)
         didInitContext = true
     }
+    #endif
 }
+
+#if canImport(GoogleCast)
 
 final class NuvioCastBridgeCreatorImpl: NSObject, NuvioCastBridgeCreator {
     func createBridge() -> any NuvioCastBridge {
@@ -241,3 +249,5 @@ extension NuvioCastBridgeImpl: GCKRemoteMediaClientListener {
         notifyChanged()
     }
 }
+
+#endif
