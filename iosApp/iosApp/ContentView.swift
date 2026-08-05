@@ -540,74 +540,6 @@ final class NativeTabIconStore: ObservableObject {
 
 @available(iOS 16.0, *)
 @MainActor
-final class NativeProfileTabInteractionCoordinator: NSObject, UIGestureRecognizerDelegate {
-    var onLongPress: (() -> Void)?
-    private(set) var isHandlingLongPress = false
-    private(set) var suppressesProfileSelection = false
-    private weak var tabBar: UITabBar?
-    private var resetWorkItem: DispatchWorkItem?
-    private lazy var recognizer: UILongPressGestureRecognizer = {
-        let recognizer = UILongPressGestureRecognizer(
-            target: self,
-            action: #selector(handleLongPress(_:))
-        )
-        recognizer.minimumPressDuration = 0.45
-        recognizer.cancelsTouchesInView = true
-        recognizer.delegate = self
-        return recognizer
-    }()
-
-    func attach(to tabBar: UITabBar) {
-        guard self.tabBar !== tabBar else { return }
-        self.tabBar?.removeGestureRecognizer(recognizer)
-        tabBar.addGestureRecognizer(recognizer)
-        self.tabBar = tabBar
-    }
-
-    func gestureRecognizer(
-        _ gestureRecognizer: UIGestureRecognizer,
-        shouldReceive touch: UITouch
-    ) -> Bool {
-        guard gestureRecognizer === recognizer,
-              let tabBar,
-              let profileItem = tabBar.items?.last else {
-            return false
-        }
-        guard #available(iOS 17.0, *),
-              let profileFrame = profileItem.frame(in: tabBar) else { return false }
-        return profileFrame.contains(touch.location(in: tabBar))
-    }
-
-    func gestureRecognizer(
-        _ gestureRecognizer: UIGestureRecognizer,
-        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
-    ) -> Bool {
-        gestureRecognizer === recognizer || otherGestureRecognizer === recognizer
-    }
-
-    @objc private func handleLongPress(_ recognizer: UILongPressGestureRecognizer) {
-        switch recognizer.state {
-        case .began:
-            resetWorkItem?.cancel()
-            isHandlingLongPress = true
-            suppressesProfileSelection = true
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            onLongPress?()
-        case .ended, .cancelled, .failed:
-            let workItem = DispatchWorkItem { [weak self] in
-                self?.isHandlingLongPress = false
-                self?.suppressesProfileSelection = false
-            }
-            resetWorkItem = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.75, execute: workItem)
-        default:
-            break
-        }
-    }
-}
-
-@available(iOS 16.0, *)
-@MainActor
 final class AppNavigationCoordinator: ObservableObject {
     @Published var selectedTab: NuvioAppTab = .home
     @Published private(set) var isAppReady = false
@@ -621,14 +553,6 @@ final class AppNavigationCoordinator: ObservableObject {
     let liveTvCoordinator = TabNavigationCoordinator()
     let settingsCoordinator = TabNavigationCoordinator()
     let profileSwitcherController = NativeProfileSwitcherController()
-    let profileTabInteraction = NativeProfileTabInteractionCoordinator()
-
-    init() {
-        profileTabInteraction.onLongPress = { [weak self] in
-            guard let self, self.isAppReady else { return }
-            self.isProfileSwitcherPresented = true
-        }
-    }
 
     private var allCoordinators: [TabNavigationCoordinator] {
         [
@@ -654,6 +578,8 @@ final class AppNavigationCoordinator: ObservableObject {
 
     func activateTab(named tabName: String) {
         guard let tab = NuvioAppTab.from(kotlinName: tabName) else { return }
+        // On iPhone the Profile tab lives outside the tab bar (top-left avatar).
+        if tab == .settings && UIDevice.current.userInterfaceIdiom != .pad { return }
         if tab == .home || isAppReady {
             selectedTab = tab
         }
@@ -709,9 +635,15 @@ final class AppNavigationCoordinator: ObservableObject {
             AppKt.disposeRoute(route: route)
             return
         }
-        let targetTab = NuvioAppTab.from(kotlinName: route.preferredTabName)
-            ?? tab(for: origin)
-            ?? selectedTab
+        let preferredTab = NuvioAppTab.from(kotlinName: route.preferredTabName)
+        // The Profile tab no longer exists in the tab bar: settings destinations
+        // render inside the tab that requested them instead of switching stacks.
+        let targetTab: NuvioAppTab
+        if preferredTab == .settings {
+            targetTab = tab(for: origin) ?? selectedTab
+        } else {
+            targetTab = preferredTab ?? tab(for: origin) ?? selectedTab
+        }
         let target = coordinator(for: targetTab)
         selectedTab = targetTab
         target.push(route, launchSingleTop: launchSingleTop)
@@ -773,12 +705,7 @@ struct NativeNavComposeView: UIViewControllerRepresentable {
             },
             nativeProfileSwitcherController: appCoordinator.profileSwitcherController
         )
-        return NuvioComposeHost.wrap(
-            controller,
-            onTabBarAvailable: { tabBar in
-                appCoordinator.profileTabInteraction.attach(to: tabBar)
-            }
-        )
+        return NuvioComposeHost.wrap(controller)
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
@@ -826,6 +753,26 @@ struct TabContentView: View {
     let usesTabletFloatingTabBar: Bool
     @ObservedObject var coordinator: TabNavigationCoordinator
     @ObservedObject var appCoordinator: AppNavigationCoordinator
+    @ObservedObject var iconStore: NativeTabIconStore
+
+    private var showsProfileAvatar: Bool {
+        appCoordinator.isAppReady &&
+            coordinator.path.isEmpty &&
+            (tab == .home || tab == .anime)
+    }
+
+    private func openProfileSettings() {
+        guard !appCoordinator.isProfileSwitcherPresented else { return }
+        coordinator.push(
+            SettingsPageRoute(pageName: "Root", title: appCoordinator.title(for: .settings)),
+            launchSingleTop: false
+        )
+    }
+
+    private func presentProfileSwitcher() {
+        guard appCoordinator.isAppReady, !appCoordinator.isProfileSwitcherPresented else { return }
+        appCoordinator.isProfileSwitcherPresented = true
+    }
 
     var body: some View {
         NavigationStack(
@@ -861,6 +808,25 @@ struct TabContentView: View {
                 }
             }
         }
+        .overlay(alignment: .topLeading) {
+            if showsProfileAvatar {
+                GeometryReader { proxy in
+                    ProfileAvatarButton(
+                        iconStore: iconStore,
+                        isProfileSwitcherPresented: $appCoordinator.isProfileSwitcherPresented,
+                        profileSwitcherController: appCoordinator.profileSwitcherController,
+                        onTap: openProfileSettings,
+                        onLongPress: presentProfileSwitcher,
+                        onManageProfiles: appCoordinator.openProfileManagement
+                    )
+                    .position(
+                        x: profileAvatarSize / 2 + profileAvatarLeadingPadding,
+                        y: proxy.safeAreaInsets.top + profileAvatarSize / 2 + profileAvatarTopPadding
+                    )
+                }
+                .allowsHitTesting(false)
+            }
+        }
         // Tab-bar visibility is a preference emitted by the active navigation
         // stack. Applying it here keeps the authentication/profile gate truly
         // full-screen on iOS 26, where a modifier on TabView itself is ignored.
@@ -870,6 +836,56 @@ struct TabContentView: View {
                 : Visibility.hidden,
             for: .tabBar
         )
+    }
+}
+
+private let profileAvatarSize: CGFloat = 34
+private let profileAvatarTopPadding: CGFloat = 10
+private let profileAvatarLeadingPadding: CGFloat = 16
+
+@available(iOS 16.0, *)
+private struct ProfileAvatarButton: View {
+    @ObservedObject var iconStore: NativeTabIconStore
+    @Binding var isProfileSwitcherPresented: Bool
+    let profileSwitcherController: NativeProfileSwitcherController
+    let onTap: () -> Void
+    let onLongPress: () -> Void
+    let onManageProfiles: () -> Void
+
+    private var avatar: some View {
+        Image(uiImage: iconStore.image(for: .settings, selected: false))
+            .resizable()
+            .scaledToFill()
+            .frame(width: profileAvatarSize, height: profileAvatarSize)
+            .clipShape(Circle())
+            .overlay {
+                Circle().stroke(.white.opacity(0.28), lineWidth: 1.5)
+            }
+            .shadow(color: .black.opacity(0.45), radius: 6, y: 2)
+            .contentShape(Circle())
+            .allowsHitTesting(true)
+            .accessibilityLabel("Profile")
+            .onTapGesture(perform: onTap)
+            .onLongPressGesture(minimumDuration: 0.45, perform: onLongPress)
+    }
+
+    @ViewBuilder
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            avatar
+                .popover(
+                    isPresented: $isProfileSwitcherPresented,
+                    attachmentAnchor: .rect(.bounds),
+                    arrowEdge: .bottom
+                ) {
+                    NativeProfileSwitcherView(
+                        controller: profileSwitcherController,
+                        onManageProfiles: onManageProfiles
+                    )
+                }
+        } else {
+            avatar
+        }
     }
 }
 
@@ -1290,13 +1306,6 @@ struct NativeNavContentView: View {
         Binding(
             get: { appCoordinator.selectedTab },
             set: { newTab in
-                if newTab == .settings &&
-                    (
-                        appCoordinator.profileTabInteraction.suppressesProfileSelection ||
-                            appCoordinator.isProfileSwitcherPresented
-                    ) {
-                    return
-                }
                 if newTab == appCoordinator.selectedTab {
                     NativeTabBridgeKt.nativeTabSelect(tabName: newTab.rawValue)
                     return
@@ -1309,7 +1318,10 @@ struct NativeNavContentView: View {
     }
 
     private var visibleTabs: [NuvioAppTab] {
-        NuvioAppTab.allCases.filter(visibilityStore.isVisible)
+        let isPad = UIDevice.current.userInterfaceIdiom == .pad
+        return NuvioAppTab.allCases.filter { tab in
+            (isPad || tab != .settings) && visibilityStore.isVisible(tab)
+        }
     }
 
     private var legacyTabs: some View {
@@ -1320,7 +1332,8 @@ struct NativeNavContentView: View {
                     usesNativeTabBar: usesNativeTabBar,
                     usesTabletFloatingTabBar: usesTabletFloatingTabBar,
                     coordinator: appCoordinator.coordinator(for: tab),
-                    appCoordinator: appCoordinator
+                    appCoordinator: appCoordinator,
+                    iconStore: iconStore
                 )
                 .tabItem {
                     Label {
@@ -1348,65 +1361,29 @@ struct NativeNavContentView: View {
     private var nativeTabs: some View {
         TabView(selection: tabSelection) {
             ForEach(visibleTabs, id: \.self) { tab in
-                if tab == .settings {
-                    Tab(value: tab) {
-                        TabContentView(
-                            tab: tab,
-                            usesNativeTabBar: usesNativeTabBar,
-                            usesTabletFloatingTabBar: usesTabletFloatingTabBar,
-                            coordinator: appCoordinator.coordinator(for: tab),
-                            appCoordinator: appCoordinator
+                Tab(value: tab) {
+                    TabContentView(
+                        tab: tab,
+                        usesNativeTabBar: usesNativeTabBar,
+                        usesTabletFloatingTabBar: usesTabletFloatingTabBar,
+                        coordinator: appCoordinator.coordinator(for: tab),
+                        appCoordinator: appCoordinator,
+                        iconStore: iconStore
+                    )
+                } label: {
+                    Label {
+                        Text(appCoordinator.title(for: tab))
+                    } icon: {
+                        Image(
+                            uiImage: iconStore.image(
+                                for: tab,
+                                selected: appCoordinator.selectedTab == tab
+                            )
                         )
-                    } label: {
-                        Label {
-                            Text(appCoordinator.title(for: tab))
-                        } icon: {
-                            Image(
-                                uiImage: iconStore.image(
-                                    for: tab,
-                                    selected: appCoordinator.selectedTab == tab
-                                )
-                            )
-                            .id(
-                                "\(tab.rawValue)-\(iconStore.revision)-" +
-                                    "\(appCoordinator.selectedTab == tab)"
-                            )
-                        }
-                    }
-                    .popover(
-                        isPresented: $appCoordinator.isProfileSwitcherPresented,
-                        attachmentAnchor: .rect(.bounds),
-                        arrowEdge: .bottom
-                    ) {
-                        NativeProfileSwitcherView(
-                            controller: appCoordinator.profileSwitcherController,
-                            onManageProfiles: appCoordinator.openProfileManagement
+                        .id(
+                            "\(tab.rawValue)-\(iconStore.revision)-" +
+                                "\(appCoordinator.selectedTab == tab)"
                         )
-                    }
-                } else {
-                    Tab(value: tab) {
-                        TabContentView(
-                            tab: tab,
-                            usesNativeTabBar: usesNativeTabBar,
-                            usesTabletFloatingTabBar: usesTabletFloatingTabBar,
-                            coordinator: appCoordinator.coordinator(for: tab),
-                            appCoordinator: appCoordinator
-                        )
-                    } label: {
-                        Label {
-                            Text(appCoordinator.title(for: tab))
-                        } icon: {
-                            Image(
-                                uiImage: iconStore.image(
-                                    for: tab,
-                                    selected: appCoordinator.selectedTab == tab
-                                )
-                            )
-                            .id(
-                                "\(tab.rawValue)-\(iconStore.revision)-" +
-                                    "\(appCoordinator.selectedTab == tab)"
-                            )
-                        }
                     }
                 }
             }

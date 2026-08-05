@@ -264,22 +264,82 @@ final class MPVPlayerViewController: UIViewController {
     private var mpv: OpaquePointer?
     private var cachedNowPlayingMetadata: CachedNowPlayingMetadata?
     private lazy var nowPlayingController = PlayerNowPlayingController(owner: self)
-    private lazy var eventQueue = DispatchQueue(label: "mpv-events", qos: .userInitiated)
+    private lazy var mpvQueue = DispatchQueue(label: "mpv-control", qos: .userInitiated)
     private var recentPlaybackLogs: [String] = []
     private var activeRequestHeaders: [String: String] = [:]
 
+    // mpv property reads never touch the main thread: Kotlin polls the bridge
+    // every 250ms from the Compose main dispatcher, and mpv_get_property takes
+    // the core lock, which would stall the whole UI while mpv is busy. All reads
+    // run on `mpvQueue` and publish into a lock-protected snapshot.
+    private let stateLock = NSLock()
+    private struct PlaybackStateSnapshot {
+        var isLoading = true
+        var isPlaying = false
+        var isEnded = false
+        var durationMs: Int64 = 0
+        var positionMs: Int64 = 0
+        var bufferedMs: Int64 = 0
+        var speed: Float = 1.0
+    }
+    private var stateSnapshot = PlaybackStateSnapshot()
+    private var cachedAudioTracks: [TrackInfo] = []
+    private var cachedSubtitleTracks: [TrackInfo] = []
+
+    private func publishSnapshot(_ update: (inout PlaybackStateSnapshot) -> Void) {
+        stateLock.lock()
+        update(&stateSnapshot)
+        stateLock.unlock()
+    }
+
     // Cached track lists
-    var audioTracks: [TrackInfo] = []
-    var subtitleTracks: [TrackInfo] = []
+    var audioTracks: [TrackInfo] {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return cachedAudioTracks
+    }
+    var subtitleTracks: [TrackInfo] {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return cachedSubtitleTracks
+    }
 
     // State (polled from Kotlin every 250ms)
-    var isPlayerLoading: Bool = true
-    var isPlayerPlaying: Bool = false
-    var isPlayerEnded: Bool = false
-    var durationMs: Int64 = 0
-    var positionMs: Int64 = 0
-    var bufferedMs: Int64 = 0
-    var currentSpeed: Float = 1.0
+    var isPlayerLoading: Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return stateSnapshot.isLoading
+    }
+    var isPlayerPlaying: Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return stateSnapshot.isPlaying
+    }
+    var isPlayerEnded: Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return stateSnapshot.isEnded
+    }
+    var durationMs: Int64 {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return stateSnapshot.durationMs
+    }
+    var positionMs: Int64 {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return stateSnapshot.positionMs
+    }
+    var bufferedMs: Int64 {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return stateSnapshot.bufferedMs
+    }
+    var currentSpeed: Float {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        return stateSnapshot.speed
+    }
 
     var currentErrorMessage: String {
         errorStateLock.lock()
@@ -571,8 +631,7 @@ final class MPVPlayerViewController: UIViewController {
         let sanitizedHeaders = sanitizeRequestHeaders(request.requestHeaders)
         activeRequestHeaders = sanitizedHeaders
         applyRequestHeaders(sanitizedHeaders)
-        isPlayerLoading = true
-        isPlayerEnded = false
+        publishSnapshot { $0.isLoading = true; $0.isEnded = false }
         command("loadfile", args: [request.urlString, "replace"])
         if let audioUrl = request.audioUrl, !audioUrl.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
@@ -612,14 +671,14 @@ final class MPVPlayerViewController: UIViewController {
         guard mpv != nil else { return }
         publishNowPlayingForPlaybackSession()
         setFlag("pause", false)
-        isPlayerPlaying = true
+        publishSnapshot { $0.isPlaying = true }
         syncNowPlayingPlaybackState(isPlaying: true)
     }
 
     func pausePlayback() {
         guard mpv != nil else { return }
         setFlag("pause", true)
-        isPlayerPlaying = false
+        publishSnapshot { $0.isPlaying = false }
         syncNowPlayingPlaybackState(isPlaying: false)
     }
 
@@ -847,7 +906,11 @@ final class MPVPlayerViewController: UIViewController {
         deactivateAudioSession()
         guard let ctx = mpv else { return }
         mpv = nil  // nil first so event loop stops reading
-        mpv_terminate_destroy(ctx)
+        // Terminate on the serial mpv queue: no mpv_wait_event or property
+        // read can still be in flight while the context is torn down.
+        mpvQueue.async {
+            mpv_terminate_destroy(ctx)
+        }
     }
 
     func updateNowPlaying(title: String, subtitle: String?, artworkUrl: String?) {
@@ -884,8 +947,17 @@ final class MPVPlayerViewController: UIViewController {
 
     /// Lightweight state refresh — called by Kotlin polling (every 250ms).
     /// Only reads cheap scalar properties; does NOT re-enumerate tracks.
+    /// The mpv reads run on `mpvQueue` so they never stall the caller
+    /// (Kotlin polls from the Compose main dispatcher).
     func refreshPlaybackState() {
         guard mpv != nil else { return }
+        mpvQueue.async { [weak self] in
+            self?.readPlaybackStateFromMpv()
+        }
+    }
+
+    private func readPlaybackStateFromMpv() {
+        guard let self, self.mpv != nil else { return }
         let duration = getDouble("duration")
         let position = getDouble("time-pos")
         let cached = getDouble("demuxer-cache-time")
@@ -896,17 +968,24 @@ final class MPVPlayerViewController: UIViewController {
         let seeking = getFlag("seeking")
         let bufferingCache = getFlag("paused-for-cache")
 
-        isPlayerLoading = (idle && !paused && !eofReached) || seeking || bufferingCache
-        isPlayerPlaying = !paused && !idle && !eofReached
-        isPlayerEnded = eofReached
-        durationMs = Int64(duration * 1000)
-        positionMs = Int64(max(position, 0) * 1000)
-        bufferedMs = Int64(max(position + cached, 0) * 1000)
-        currentSpeed = Float(speed > 0 ? speed : 1.0)
+        let snapshot = PlaybackStateSnapshot(
+            isLoading: (idle && !paused && !eofReached) || seeking || bufferingCache,
+            isPlaying: !paused && !idle && !eofReached,
+            isEnded: eofReached,
+            durationMs: Int64(duration * 1000),
+            positionMs: Int64(max(position, 0) * 1000),
+            bufferedMs: Int64(max(position + cached, 0) * 1000),
+            speed: Float(speed > 0 ? speed : 1.0)
+        )
+        publishSnapshot { current in
+            current = snapshot
+        }
 
-        let shouldPublishNowPlayingState = !isPlayerLoading || isPlayerPlaying || durationMs > 0 || positionMs > 0
+        let shouldPublishNowPlayingState = !snapshot.isLoading || snapshot.isPlaying || snapshot.durationMs > 0 || snapshot.positionMs > 0
         if shouldPublishNowPlayingState {
-            syncNowPlayingPlaybackState(isPlaying: isPlayerPlaying)
+            DispatchQueue.main.async { [weak self] in
+                self?.syncNowPlayingPlaybackState(isPlaying: snapshot.isPlaying)
+            }
         }
     }
 
@@ -921,8 +1000,11 @@ final class MPVPlayerViewController: UIViewController {
 
     /// Full state + track refresh — called from MPV event loop on property changes.
     func updateState() {
-        refreshPlaybackState()
-        refreshTracks()
+        mpvQueue.async { [weak self] in
+            guard let self else { return }
+            self.readPlaybackStateFromMpv()
+            self.refreshTracks()
+        }
     }
 
     private func refreshTracks() {
@@ -962,8 +1044,10 @@ final class MPVPlayerViewController: UIViewController {
                 subIdx += 1
             }
         }
-        audioTracks = audio
-        subtitleTracks = subs
+        stateLock.lock()
+        cachedAudioTracks = audio
+        cachedSubtitleTracks = subs
+        stateLock.unlock()
     }
 
     func updateNowPlayingMetadata(
@@ -1135,7 +1219,7 @@ final class MPVPlayerViewController: UIViewController {
     // MARK: - Event Loop
 
     private func readEvents() {
-        eventQueue.async { [weak self] in
+        mpvQueue.async { [weak self] in
             guard let self, let mpv = self.mpv else { return }
 
             while true {
@@ -1149,7 +1233,7 @@ final class MPVPlayerViewController: UIViewController {
                 case MPV_EVENT_FILE_LOADED:
                     DispatchQueue.main.async {
                         self.clearPlaybackError()
-                        self.isPlayerLoading = false
+                        self.publishSnapshot { $0.isLoading = false }
                         self.updateState()
                         self.publishNowPlayingForPlaybackSession()
                         self.logCurrentAudioOutput()
