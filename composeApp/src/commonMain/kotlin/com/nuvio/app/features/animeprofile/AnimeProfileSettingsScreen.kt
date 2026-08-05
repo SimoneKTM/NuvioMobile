@@ -38,6 +38,11 @@ import kotlinx.coroutines.delay
 import com.nuvio.app.core.ui.NuvioLoadingIndicator
 import com.nuvio.app.core.ui.NuvioSectionLabel
 import com.nuvio.app.core.ui.NuvioSurfaceCard
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.action_retry
+import nuvio.composeapp.generated.resources.anime_settings_load_failed
+import nuvio.composeapp.generated.resources.anime_settings_section_label
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun AnimeProfileSettingsPageContent(
@@ -67,7 +72,7 @@ fun AnimeProfileSettingsPageContent(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Failed to load Anime settings",
+                        stringResource(Res.string.anime_settings_load_failed),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -79,7 +84,7 @@ fun AnimeProfileSettingsPageContent(
                     )
                     Spacer(Modifier.height(16.dp))
                     TextButton(onClick = { viewModel.loadAnimePlugins() }) {
-                        Text("Retry")
+                        Text(stringResource(Res.string.action_retry))
                     }
                 }
             }
@@ -125,7 +130,7 @@ private fun AnimePluginsListContent(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        NuvioSectionLabel("Anime Profile Settings")
+        NuvioSectionLabel(stringResource(Res.string.anime_settings_section_label))
 
         plugins.forEach { plugin ->
             if (plugin.id == "anime_profile_toggle") {

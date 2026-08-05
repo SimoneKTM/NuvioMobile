@@ -61,7 +61,7 @@ actual object P2pStreamingEngine {
             Log.d(TAG, "Starting stream: $magnetLink")
 
             val hash = api.addTorrent(magnetLink)
-                ?: throw P2pStreamingException("Failed to add torrent")
+                ?: throw P2pStreamingException(localizedP2pAddTorrentFailed())
             if (!attachTorrentIfCurrent(generation, hash)) {
                 api.dropTorrent(hash)
                 throw CancellationException("P2P stream start was cancelled")

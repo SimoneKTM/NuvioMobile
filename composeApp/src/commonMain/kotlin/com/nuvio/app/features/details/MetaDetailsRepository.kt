@@ -272,7 +272,7 @@ object MetaDetailsRepository {
                     onFailure = { error ->
                         log.w(error) { "CloudStream detail load failed provider=${route.providerId}" }
                         _uiState.value = MetaDetailsUiState(
-                            errorMessage = error.message ?: "CloudStream detail could not be loaded",
+                            errorMessage = error.message ?: getString(Res.string.meta_cloudstream_load_failed),
                         )
                         activeRequestKey = null
                     },

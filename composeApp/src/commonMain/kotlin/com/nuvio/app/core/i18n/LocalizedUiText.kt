@@ -8,6 +8,7 @@ import nuvio.composeapp.generated.resources.action_play
 import nuvio.composeapp.generated.resources.action_play_episode
 import nuvio.composeapp.generated.resources.action_resume
 import nuvio.composeapp.generated.resources.action_resume_episode
+import nuvio.composeapp.generated.resources.cloudstream_desktop_unsupported
 import nuvio.composeapp.generated.resources.compose_player_episode_code_episode_only
 import nuvio.composeapp.generated.resources.compose_player_episode_code_full
 import nuvio.composeapp.generated.resources.compose_player_no_subtitle_lines_found
@@ -38,13 +39,34 @@ import nuvio.composeapp.generated.resources.date_month_short_may
 import nuvio.composeapp.generated.resources.date_month_short_nov
 import nuvio.composeapp.generated.resources.date_month_short_oct
 import nuvio.composeapp.generated.resources.date_month_short_sep
+import nuvio.composeapp.generated.resources.downloads_cancelled
+import nuvio.composeapp.generated.resources.downloads_cannot_access_location
+import nuvio.composeapp.generated.resources.downloads_failed_create_file
+import nuvio.composeapp.generated.resources.downloads_failed_open_stream
+import nuvio.composeapp.generated.resources.downloads_failed_open_stream_generic
+import nuvio.composeapp.generated.resources.downloads_hls_unsupported_desktop
+import nuvio.composeapp.generated.resources.generic_unknown_error
+import nuvio.composeapp.generated.resources.live_tv_read_m3u_failed
+import nuvio.composeapp.generated.resources.live_tv_present_picker_failed
+import nuvio.composeapp.generated.resources.live_tv_resolve_m3u_failed
 import nuvio.composeapp.generated.resources.media_anime
 import nuvio.composeapp.generated.resources.media_channels
 import nuvio.composeapp.generated.resources.media_movie
 import nuvio.composeapp.generated.resources.media_movies
 import nuvio.composeapp.generated.resources.media_series
 import nuvio.composeapp.generated.resources.media_tv
+import nuvio.composeapp.generated.resources.nowplaying_channel_description
+import nuvio.composeapp.generated.resources.nowplaying_channel_name
+import nuvio.composeapp.generated.resources.nowplaying_forward_10s
+import nuvio.composeapp.generated.resources.nowplaying_forward_short
+import nuvio.composeapp.generated.resources.nowplaying_pause
+import nuvio.composeapp.generated.resources.nowplaying_play
+import nuvio.composeapp.generated.resources.nowplaying_rewind_10s
+import nuvio.composeapp.generated.resources.nowplaying_rewind_short
+import nuvio.composeapp.generated.resources.p2p_add_torrent_failed
 import nuvio.composeapp.generated.resources.p2p_error_unknown
+import nuvio.composeapp.generated.resources.plugins_error_prefix
+import nuvio.composeapp.generated.resources.plugins_provider_settings
 import nuvio.composeapp.generated.resources.settings_stream_badge_enter_url
 import nuvio.composeapp.generated.resources.settings_stream_badge_import_failed
 import nuvio.composeapp.generated.resources.settings_stream_badge_import_limit
@@ -202,6 +224,72 @@ fun localizedBadgeImportLimit(limit: Int): String =
 
 fun localizedP2pUnknownTorrentError(): String =
     resourceString("Unknown torrent error") { getString(Res.string.p2p_error_unknown) }
+
+fun localizedLiveTvReadM3uFailed(): String =
+    resourceString("Failed to read M3U file.") { getString(Res.string.live_tv_read_m3u_failed) }
+
+fun localizedLiveTvPresentPickerFailed(): String =
+    resourceString("Unable to present file picker.") { getString(Res.string.live_tv_present_picker_failed) }
+
+fun localizedLiveTvResolveM3uFailed(): String =
+    resourceString("Unable to resolve selected M3U file path.") { getString(Res.string.live_tv_resolve_m3u_failed) }
+
+fun localizedP2pAddTorrentFailed(): String =
+    resourceString("Failed to add torrent") { getString(Res.string.p2p_add_torrent_failed) }
+
+fun localizedCloudStreamDesktopUnsupported(): String =
+    resourceString("CloudStream is not supported on desktop") { getString(Res.string.cloudstream_desktop_unsupported) }
+
+fun localizedHlsUnsupportedDesktop(): String =
+    resourceString("HLS download not supported on desktop yet.") { getString(Res.string.downloads_hls_unsupported_desktop) }
+
+fun localizedDownloadCancelled(): String =
+    resourceString("Download cancelled") { getString(Res.string.downloads_cancelled) }
+
+fun localizedDownloadFailedCreateFile(fileName: String): String =
+    resourceString("Failed to create file $fileName") { getString(Res.string.downloads_failed_create_file, fileName) }
+
+fun localizedDownloadFailedOpenStream(fileName: String): String =
+    resourceString("Failed to open output stream for $fileName") { getString(Res.string.downloads_failed_open_stream, fileName) }
+
+fun localizedDownloadFailedOpenStreamGeneric(): String =
+    resourceString("Failed to open output stream") { getString(Res.string.downloads_failed_open_stream_generic) }
+
+fun localizedDownloadCannotAccessLocation(): String =
+    resourceString("Cannot access custom download location") { getString(Res.string.downloads_cannot_access_location) }
+
+fun localizedUnknownError(): String =
+    resourceString("Unknown error") { getString(Res.string.generic_unknown_error) }
+
+fun localizedErrorPrefix(message: String): String =
+    resourceString("Error: $message") { getString(Res.string.plugins_error_prefix, message) }
+
+fun localizedProviderSettings(): String =
+    resourceString("Provider settings") { getString(Res.string.plugins_provider_settings) }
+
+fun localizedNowPlayingChannelName(): String =
+    resourceString("Playback") { getString(Res.string.nowplaying_channel_name) }
+
+fun localizedNowPlayingChannelDescription(): String =
+    resourceString("Media playback controls") { getString(Res.string.nowplaying_channel_description) }
+
+fun localizedNowPlayingPause(): String =
+    resourceString("Pause") { getString(Res.string.nowplaying_pause) }
+
+fun localizedNowPlayingPlay(): String =
+    resourceString("Play") { getString(Res.string.nowplaying_play) }
+
+fun localizedNowPlayingRewind10s(): String =
+    resourceString("Rewind 10 seconds") { getString(Res.string.nowplaying_rewind_10s) }
+
+fun localizedNowPlayingForward10s(): String =
+    resourceString("Forward 10 seconds") { getString(Res.string.nowplaying_forward_10s) }
+
+fun localizedNowPlayingRewindShort(): String =
+    resourceString("Rewind 10s") { getString(Res.string.nowplaying_rewind_short) }
+
+fun localizedNowPlayingForwardShort(): String =
+    resourceString("Forward 10s") { getString(Res.string.nowplaying_forward_short) }
 
 fun localizedByteUnit(unit: String): String =
     when (unit) {

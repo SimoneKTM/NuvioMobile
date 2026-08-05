@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.sp
 import com.nuvio.app.core.ui.NuvioModalBottomSheet
 import com.nuvio.app.core.util.toOneDecimalString
 import com.nuvio.app.features.kitsu.KitsuLibraryItem
+import nuvio.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,12 +114,12 @@ fun KitsuEditMediaBottomSheet(
                         .clickable(onClick = onDismissRequest),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Rounded.Close, "Close", tint = textPrimary, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Rounded.Close, stringResource(Res.string.action_close), tint = textPrimary, modifier = Modifier.size(20.dp))
                 }
             }
 
             Text(
-                text = "Edit Media Entry",
+                text = stringResource(Res.string.tracker_edit_media_title),
                 style = MaterialTheme.typography.headlineMedium.copy(fontSize = 28.sp, fontWeight = FontWeight.Bold, color = textPrimary)
             )
             Spacer(Modifier.height(4.dp))
@@ -162,7 +164,7 @@ fun KitsuEditMediaBottomSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Progress", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = textPrimary))
+                Text(stringResource(Res.string.tracker_edit_progress), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = textPrimary))
                 Text(
                     "$progress / ${item.totalEpisodes ?: "??"}",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium, color = textMuted)
@@ -178,7 +180,7 @@ fun KitsuEditMediaBottomSheet(
                 Box(
                     modifier = Modifier.size(56.dp).background(cardBg, RoundedCornerShape(12.dp)).clip(RoundedCornerShape(12.dp)).clickable { if (progress > 0) progress-- },
                     contentAlignment = Alignment.Center
-                ) { Icon(Icons.Rounded.Remove, "Decrease Progress", tint = textPrimary, modifier = Modifier.size(24.dp)) }
+                ) { Icon(Icons.Rounded.Remove, stringResource(Res.string.tracker_edit_progress_decrease), tint = textPrimary, modifier = Modifier.size(24.dp)) }
 
                 Box(
                     modifier = Modifier.weight(1f).height(56.dp).background(cardBg, RoundedCornerShape(12.dp)).clip(RoundedCornerShape(12.dp)).clickable { isEditingProgress = true; progressInputText = progress.toString() },
@@ -211,7 +213,7 @@ fun KitsuEditMediaBottomSheet(
                 Box(
                     modifier = Modifier.size(56.dp).background(cardBg, RoundedCornerShape(12.dp)).clip(RoundedCornerShape(12.dp)).clickable { val max = item.totalEpisodes ?: Int.MAX_VALUE; if (progress < max) progress++ },
                     contentAlignment = Alignment.Center
-                ) { Icon(Icons.Rounded.Add, "Increase Progress", tint = textPrimary, modifier = Modifier.size(24.dp)) }
+                ) { Icon(Icons.Rounded.Add, stringResource(Res.string.tracker_edit_progress_increase), tint = textPrimary, modifier = Modifier.size(24.dp)) }
             }
 
             Spacer(Modifier.height(32.dp))
@@ -221,7 +223,7 @@ fun KitsuEditMediaBottomSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Score", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = textPrimary))
+                Text(stringResource(Res.string.tracker_edit_score), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = textPrimary))
                 Text("${score.toOneDecimalString()} / 5", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium, color = textMuted))
             }
             Spacer(Modifier.height(12.dp))
@@ -246,7 +248,7 @@ fun KitsuEditMediaBottomSheet(
                     colors = ButtonDefaults.buttonColors(containerColor = cardBg, contentColor = redText),
                     shape = RoundedCornerShape(18.dp),
                     modifier = Modifier.weight(1f).height(54.dp)
-                ) { Text("Delete", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = redText)) }
+                ) { Text(stringResource(Res.string.action_delete), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = redText)) }
 
                 Button(
                     onClick = {
@@ -256,7 +258,7 @@ fun KitsuEditMediaBottomSheet(
                     colors = ButtonDefaults.buttonColors(containerColor = lavender, contentColor = Color(0xFF17171D)),
                     shape = RoundedCornerShape(18.dp),
                     modifier = Modifier.weight(1f).height(54.dp)
-                ) { Text("Save Changes", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Color(0xFF17171D))) }
+                ) { Text(stringResource(Res.string.action_save_changes), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Color(0xFF17171D))) }
             }
         }
     }

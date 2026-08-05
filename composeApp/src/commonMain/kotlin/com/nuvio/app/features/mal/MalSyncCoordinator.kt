@@ -16,6 +16,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.sync_completed_successfully
+import nuvio.composeapp.generated.resources.sync_failed
+import nuvio.composeapp.generated.resources.sync_progress_mal
+import nuvio.composeapp.generated.resources.sync_unknown_error
+import org.jetbrains.compose.resources.getString
 
 object MalSyncCoordinator {
     private val log = Logger.withTag("MalSync")
@@ -109,7 +115,7 @@ object MalSyncCoordinator {
             if (!isAuth || !settings.enableSync) return
 
             _isSyncing.value = true
-            _syncMessage.value = "Synchronizing MyAnimeList..."
+            _syncMessage.value = getString(Res.string.sync_progress_mal)
 
             try {
                 MalLibraryRepository.refreshNow()
@@ -150,10 +156,10 @@ object MalSyncCoordinator {
 
                 MalSettingsRepository.updateLastSyncTimestamp(WatchProgressClock.nowEpochMs())
                 MalLibraryRepository.refreshNow()
-                _syncMessage.value = "Synchronization completed successfully."
+                _syncMessage.value = getString(Res.string.sync_completed_successfully)
             } catch (e: Exception) {
                 log.e(e) { "Error during MAL sync" }
-                _syncMessage.value = "Sync failed: ${e.message ?: "Unknown error"}"
+                _syncMessage.value = getString(Res.string.sync_failed, e.message ?: getString(Res.string.sync_unknown_error))
             } finally {
                 _isSyncing.value = false
             }

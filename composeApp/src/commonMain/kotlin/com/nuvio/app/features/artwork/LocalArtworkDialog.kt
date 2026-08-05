@@ -40,6 +40,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import nuvio.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun LocalArtworkDialog(
@@ -61,12 +63,12 @@ fun LocalArtworkDialog(
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Customize Artwork")
+            Text(stringResource(Res.string.artwork_customize_title))
         },
         text = {
             Column(modifier = modifier.fillMaxWidth()) {
                 Text(
-                    "Select artwork type to customize:",
+                    stringResource(Res.string.artwork_select_type_prompt),
                     style = MaterialTheme.typography.bodyMedium,
                 )
 
@@ -90,7 +92,7 @@ fun LocalArtworkDialog(
                 val currentArtwork = existingArtwork.find { it.artworkType == selectedType }
                 if (currentArtwork != null) {
                     Text(
-                        "Current ${selectedType.value}:",
+                        stringResource(Res.string.artwork_current_type, selectedType.value),
                         style = MaterialTheme.typography.labelLarge,
                     )
                     Spacer(Modifier.height(8.dp))
@@ -123,12 +125,12 @@ fun LocalArtworkDialog(
                                 modifier = Modifier.size(18.dp),
                             )
                             Spacer(Modifier.width(4.dp))
-                            Text("Remove")
+                            Text(stringResource(Res.string.action_remove))
                         }
                     }
                 } else {
                     Text(
-                        "No custom ${selectedType.value} set",
+                        stringResource(Res.string.artwork_no_custom_set, selectedType.value),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -157,13 +159,13 @@ fun LocalArtworkDialog(
                         modifier = Modifier.size(20.dp),
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Choose from Gallery")
+                    Text(stringResource(Res.string.artwork_choose_from_gallery))
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Done")
+                Text(stringResource(Res.string.action_done))
             }
         },
     )
@@ -177,12 +179,12 @@ private fun ArtworkTypeChip(
     onClick: () -> Unit,
 ) {
     val (icon, label) = when (type) {
-        ArtworkType.POSTER -> Icons.Rounded.Image to "Poster"
-        ArtworkType.BACKGROUND -> Icons.Rounded.Panorama to "Background"
-        ArtworkType.LOGO -> Icons.Rounded.PhotoLibrary to "Logo"
-        ArtworkType.THUMBNAIL -> Icons.Rounded.Movie to "Thumbnail"
-        ArtworkType.CLEARART -> Icons.Rounded.Movie to "Clear Art"
-        ArtworkType.BANNER -> Icons.Rounded.Panorama to "Banner"
+        ArtworkType.POSTER -> Icons.Rounded.Image to stringResource(Res.string.artwork_type_poster)
+        ArtworkType.BACKGROUND -> Icons.Rounded.Panorama to stringResource(Res.string.artwork_type_background)
+        ArtworkType.LOGO -> Icons.Rounded.PhotoLibrary to stringResource(Res.string.artwork_type_logo)
+        ArtworkType.THUMBNAIL -> Icons.Rounded.Movie to stringResource(Res.string.artwork_type_thumbnail)
+        ArtworkType.CLEARART -> Icons.Rounded.Movie to stringResource(Res.string.artwork_type_clearart)
+        ArtworkType.BANNER -> Icons.Rounded.Panorama to stringResource(Res.string.artwork_type_banner)
     }
 
     Card(
@@ -213,7 +215,7 @@ private fun ArtworkTypeChip(
                 Spacer(Modifier.width(4.dp))
                 Icon(
                     Icons.Rounded.AddPhotoAlternate,
-                    contentDescription = "Has custom artwork",
+                    contentDescription = stringResource(Res.string.artwork_has_custom),
                     modifier = Modifier.size(12.dp),
                     tint = MaterialTheme.colorScheme.primary,
                 )

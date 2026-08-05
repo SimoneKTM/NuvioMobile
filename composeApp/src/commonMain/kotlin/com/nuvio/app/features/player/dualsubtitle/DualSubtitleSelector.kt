@@ -24,6 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nuvio.app.features.player.AddonSubtitle
+import nuvio.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * UI section for selecting the secondary subtitle in the Subtitle Modal.
@@ -51,12 +53,12 @@ fun DualSubtitleSection(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Dual Subtitles",
+                    text = stringResource(Res.string.dualsubtitle_title),
                     style = MaterialTheme.typography.titleSmall,
                     color = Color.White,
                 )
                 Text(
-                    text = "Show a second subtitle language simultaneously",
+                    text = stringResource(Res.string.dualsubtitle_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.6f),
                     fontSize = 11.sp,
@@ -69,7 +71,7 @@ fun DualSubtitleSection(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Disable dual subtitles",
+                        contentDescription = stringResource(Res.string.dualsubtitle_disable),
                         tint = Color.White.copy(alpha = 0.7f),
                     )
                 }
@@ -93,7 +95,7 @@ fun DualSubtitleSection(
                         modifier = Modifier.size(16.dp),
                     )
                     Text(
-                        text = "Secondary: ${secondary.display}",
+                        text = stringResource(Res.string.dualsubtitle_secondary, secondary.display),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFFFFD700),
                         modifier = Modifier.padding(start = 8.dp),
@@ -105,7 +107,11 @@ fun DualSubtitleSection(
         // Subtitle list for secondary selection
         if (addonSubtitles.isNotEmpty()) {
             Text(
-                text = if (state.enabled) "Change secondary subtitle:" else "Select secondary subtitle:",
+                text = if (state.enabled) {
+                    stringResource(Res.string.dualsubtitle_change)
+                } else {
+                    stringResource(Res.string.dualsubtitle_select)
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.5f),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),

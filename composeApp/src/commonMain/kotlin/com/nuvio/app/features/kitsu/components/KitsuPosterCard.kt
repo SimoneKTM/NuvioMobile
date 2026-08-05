@@ -29,6 +29,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.nuvio.app.features.kitsu.KitsuLibraryItem
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.action_edit
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun KitsuPosterCard(
@@ -85,7 +88,7 @@ fun KitsuPosterCard(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Edit,
-                    contentDescription = "Edit",
+                    contentDescription = stringResource(Res.string.action_edit),
                     tint = Color.White,
                     modifier = Modifier.size(16.dp)
                 )

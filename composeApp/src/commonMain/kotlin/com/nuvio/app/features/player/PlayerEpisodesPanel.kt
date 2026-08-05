@@ -463,7 +463,11 @@ private fun EpisodeRow(
         ) {
             Icon(
                 imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                contentDescription = if (expanded) "Collapse" else "Expand",
+                contentDescription = if (expanded) {
+                    stringResource(Res.string.action_collapse)
+                } else {
+                    stringResource(Res.string.action_expand)
+                },
                 tint = tokens.colors.textMuted,
                 modifier = Modifier.size(18.dp),
             )

@@ -66,12 +66,12 @@ final class RootComposeViewController: UIViewController, UITabBarDelegate {
 
         var fallbackTitle: String {
             switch self {
-            case .home: return "Home"
-            case .anime: return "Anime"
-            case .search: return "Search"
-            case .library: return "Library"
-            case .liveTv: return "Live TV"
-            case .settings: return "Profile"
+            case .home: return String(localized: "Home")
+            case .anime: return String(localized: "Anime")
+            case .search: return String(localized: "Search")
+            case .library: return String(localized: "Library")
+            case .liveTv: return String(localized: "Live TV")
+            case .settings: return String(localized: "Profile")
             }
         }
 
@@ -864,7 +864,7 @@ private struct ProfileAvatarButton: View {
             .shadow(color: .black.opacity(0.45), radius: 6, y: 2)
             .contentShape(Circle())
             .allowsHitTesting(true)
-            .accessibilityLabel("Profile")
+            .accessibilityLabel(String(localized: "Profile"))
             .onTapGesture(perform: onTap)
             .onLongPressGesture(minimumDuration: 0.45, perform: onLongPress)
     }
@@ -1065,9 +1065,9 @@ private final class NativeProfileSwitcherViewModel: ObservableObject {
                 } else if let message = result.message, !message.isEmpty {
                     self.errorMessage = message
                 } else if result.retryAfterSeconds > 0 {
-                    self.errorMessage = "Try again in \(result.retryAfterSeconds) seconds."
+                    self.errorMessage = String(localized: "Try again in \(result.retryAfterSeconds) seconds.")
                 } else {
-                    self.errorMessage = "Incorrect PIN."
+                    self.errorMessage = String(localized: "Incorrect PIN.")
                 }
             }
         }
@@ -1129,7 +1129,7 @@ private struct NativeProfileSwitcherView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Switch Profile")
+            Text(String(localized: "Switch Profile"))
                 .font(.headline)
 
             if model.isLoaded {
@@ -1171,7 +1171,7 @@ private struct NativeProfileSwitcherView: View {
                                         .font(.system(size: 19, weight: .semibold))
                                         .frame(width: 52, height: 52)
                                         .background(.secondary.opacity(0.12), in: Circle())
-                                    Text("Add")
+                                    Text(String(localized: "Add"))
                                         .font(.caption)
                                         .frame(width: 64)
                                 }
@@ -1187,10 +1187,10 @@ private struct NativeProfileSwitcherView: View {
 
             if let lockedProfile = model.lockedProfile {
                 Divider()
-                Text("Enter PIN for \(lockedProfile.name)")
+                Text(String(localized: "Enter PIN for \(lockedProfile.name)"))
                     .font(.subheadline.weight(.semibold))
 
-                SecureField("4-digit PIN", text: Binding(
+                SecureField(String(localized: "4-digit PIN"), text: Binding(
                     get: { model.pin },
                     set: model.updatePin
                 ))
@@ -1210,9 +1210,9 @@ private struct NativeProfileSwitcherView: View {
                 }
 
                 HStack {
-                    Button("Cancel", action: model.cancelUnlock)
+                    Button(String(localized: "Cancel"), action: model.cancelUnlock)
                     Spacer()
-                    Button("Unlock") {
+                    Button(String(localized: "Unlock")) {
                         model.unlock(onComplete: dismiss.callAsFunction)
                     }
                     .disabled(model.pin.count != 4 || model.isSubmitting)

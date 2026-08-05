@@ -16,6 +16,15 @@ import com.nuvio.app.features.kitsu.KitsuLibraryUiState
 import com.nuvio.app.features.kitsu.KitsuSectionSettings
 import com.nuvio.app.features.kitsu.KitsuSortBy
 import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.action_retry
+import nuvio.composeapp.generated.resources.kitsu_library_empty_message
+import nuvio.composeapp.generated.resources.kitsu_library_not_connected_message
+import nuvio.composeapp.generated.resources.kitsu_library_offline_message
+import nuvio.composeapp.generated.resources.library_connect_now
+import nuvio.composeapp.generated.resources.library_kitsu_not_connected
+import nuvio.composeapp.generated.resources.library_refresh_now
+import nuvio.composeapp.generated.resources.library_you_are_offline
+import nuvio.composeapp.generated.resources.library_your_lists_empty
 import nuvio.composeapp.generated.resources.settings_kitsu_attribution_body
 import nuvio.composeapp.generated.resources.settings_kitsu_attribution_title
 import org.jetbrains.compose.resources.stringResource
@@ -49,9 +58,9 @@ fun LazyListScope.kitsuLibraryContent(
             item {
                 HomeEmptyStateCard(
                     modifier = Modifier.padding(horizontal = 16.dp),
-                    title = "Kitsu Not Connected",
-                    message = "Connect your Kitsu account in Settings to view your anime shelves here.",
-                    actionLabel = "Connect Now",
+                    title = stringResource(Res.string.library_kitsu_not_connected),
+                    message = stringResource(Res.string.kitsu_library_not_connected_message),
+                    actionLabel = stringResource(Res.string.library_connect_now),
                     onActionClick = onConnectKitsuClick
                 )
             }
@@ -61,9 +70,9 @@ fun LazyListScope.kitsuLibraryContent(
             item {
                 HomeEmptyStateCard(
                     modifier = Modifier.padding(horizontal = 16.dp),
-                    title = "You are Offline",
-                    message = "Internet connection is required to view your Kitsu library shelves.",
-                    actionLabel = "Retry",
+                    title = stringResource(Res.string.library_you_are_offline),
+                    message = stringResource(Res.string.kitsu_library_offline_message),
+                    actionLabel = stringResource(Res.string.action_retry),
                     onActionClick = onRefresh
                 )
             }
@@ -123,9 +132,9 @@ fun LazyListScope.kitsuLibraryContent(
                 item {
                     HomeEmptyStateCard(
                         modifier = Modifier.padding(horizontal = 16.dp),
-                        title = "Your Lists are Empty",
-                        message = "Start watching or planning anime on Kitsu to see them show up here.",
-                        actionLabel = "Refresh Now",
+                        title = stringResource(Res.string.library_your_lists_empty),
+                        message = stringResource(Res.string.kitsu_library_empty_message),
+                        actionLabel = stringResource(Res.string.library_refresh_now),
                         onActionClick = onRefresh
                     )
                 }

@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import com.nuvio.app.features.streams.StreamSubtitle
 import kotlinx.serialization.Serializable
 import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.player_android_renderer_gpu_desc
+import nuvio.composeapp.generated.resources.player_android_renderer_gpu_next_desc
 import nuvio.composeapp.generated.resources.player_ios_hardware_decoder_off
 import nuvio.composeapp.generated.resources.player_ios_preset_compatibility_desc
 import nuvio.composeapp.generated.resources.player_ios_preset_compatibility_label
@@ -203,6 +205,12 @@ fun IosVideoOutputPreset.localizedDescription(): String = when (this) {
     IosVideoOutputPreset.SdrToneMapped -> stringResource(Res.string.player_ios_preset_sdr_tone_mapped_desc)
     IosVideoOutputPreset.Compatibility -> stringResource(Res.string.player_ios_preset_compatibility_desc)
     IosVideoOutputPreset.Custom -> stringResource(Res.string.player_ios_preset_custom_desc)
+}
+
+@Composable
+fun AndroidLibmpvVideoOutput.localizedDescription(): String = when (this) {
+    AndroidLibmpvVideoOutput.GpuNext -> stringResource(Res.string.player_android_renderer_gpu_next_desc)
+    AndroidLibmpvVideoOutput.Gpu -> stringResource(Res.string.player_android_renderer_gpu_desc)
 }
 
 @Composable

@@ -3,6 +3,9 @@ package com.nuvio.app.features.livetv
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import com.nuvio.app.core.i18n.localizedLiveTvPresentPickerFailed
+import com.nuvio.app.core.i18n.localizedLiveTvReadM3uFailed
+import com.nuvio.app.core.i18n.localizedLiveTvResolveM3uFailed
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSURL
 import platform.UIKit.UIApplication
@@ -22,7 +25,7 @@ internal actual fun rememberLiveTvPlaylistFilePicker(
     return LiveTvPlaylistFilePicker(canPickFiles = true) {
         val presenter = topViewController()
         if (presenter == null) {
-            onError("Unable to present file picker.")
+            onError(localizedLiveTvPresentPickerFailed())
             return@LiveTvPlaylistFilePicker
         }
 
@@ -41,13 +44,13 @@ internal actual fun rememberLiveTvPlaylistFilePicker(
                 try {
                     val path = url.path
                     if (path.isNullOrBlank()) {
-                        onError("Unable to resolve selected M3U file path.")
+                        onError(localizedLiveTvResolveM3uFailed())
                     } else {
                         val content = readUtf8File(path)
                         onPlaylistLoaded(url.lastPathComponent, content)
                     }
                 } catch (error: Throwable) {
-                    onError(error.message ?: "Failed to read M3U file.")
+                    onError(error.message ?: localizedLiveTvReadM3uFailed())
                 } finally {
                     if (didStartAccess) {
                         url.stopAccessingSecurityScopedResource()

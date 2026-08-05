@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.artwork_no_image_selected
+import org.jetbrains.compose.resources.getString
 
 object LocalArtworkRepository {
     private val log = Logger.withTag("LocalArtworkRepository")
@@ -99,7 +102,7 @@ object LocalArtworkRepository {
                 if (platformPath != null) {
                     ArtworkPickResult(wasSuccessful = true, localPath = platformPath)
                 } else {
-                    ArtworkPickResult(wasSuccessful = false, errorMessage = "No image selected")
+                    ArtworkPickResult(wasSuccessful = false, errorMessage = getString(Res.string.artwork_no_image_selected))
                 }
             } catch (e: Exception) {
                 log.e(e) { "Failed to pick artwork" }

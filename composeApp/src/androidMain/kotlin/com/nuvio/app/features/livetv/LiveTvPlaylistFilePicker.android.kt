@@ -23,7 +23,7 @@ internal actual fun rememberLiveTvPlaylistFilePicker(
                 .orEmpty()
             onPlaylistLoaded(uri.displayName(context), content)
         }.onFailure { error ->
-            onError(error.message ?: "Failed to read M3U file.")
+            onError(error.message ?: localizedLiveTvReadM3uFailed())
         }
     }
 

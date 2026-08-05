@@ -16,6 +16,9 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.mal_library_load_failed
+import org.jetbrains.compose.resources.getString
 
 object MalLibraryRepository {
     private const val LIST_FETCH_LIMIT = 1000
@@ -106,7 +109,7 @@ object MalLibraryRepository {
                 _uiState.value = MalLibraryUiState(
                     hasLoaded = true,
                     isLoading = false,
-                    errorMessage = e.message?.takeIf { it.isNotBlank() } ?: "Failed to load MAL library",
+                    errorMessage = e.message?.takeIf { it.isNotBlank() } ?: getString(Res.string.mal_library_load_failed),
                 )
             }
         }
@@ -124,7 +127,7 @@ object MalLibraryRepository {
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 hasLoaded = true,
-                errorMessage = error.message?.takeIf { it.isNotBlank() } ?: "Failed to load MAL library",
+                errorMessage = error.message?.takeIf { it.isNotBlank() } ?: getString(Res.string.mal_library_load_failed),
             )
             return
         }

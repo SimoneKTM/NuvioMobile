@@ -59,6 +59,8 @@ import coil3.compose.AsyncImage
 import com.nuvio.app.features.addons.ManagedAddon
 import com.nuvio.app.features.anilist.AniListLibraryMenuPrefs
 import com.nuvio.app.features.anilist.AniListSortBy
+import nuvio.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 // ÔöÇÔöÇ Colour palette ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 private val PopupSurface   = Color(0xFF1A1A22)
@@ -154,7 +156,7 @@ fun AniListLibraryActionMenu(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Tune,
-                    contentDescription = "Library options",
+                    contentDescription = stringResource(Res.string.anilist_library_options),
                     tint = Lavender,
                     modifier = Modifier.size(22.dp)
                 )
@@ -274,7 +276,11 @@ private fun MenuSegmentedSelector(
                         ) { onTabSelected(tab) }
                 ) {
                     Text(
-                        text = if (tab == MenuTab.SORT) "Sort" else "Open By",
+                        text = if (tab == MenuTab.SORT) {
+                            stringResource(Res.string.anilist_menu_sort)
+                        } else {
+                            stringResource(Res.string.anilist_menu_open_by)
+                        },
                         style = MaterialTheme.typography.labelLarge.copy(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
@@ -300,10 +306,10 @@ private fun SortContent(
     onToggleDirection: () -> Unit,
 ) {
     val options = listOf(
-        SortOption("Last Updated", AniListSortBy.LAST_UPDATED, Icons.Rounded.Tune),
-        SortOption("Score",        AniListSortBy.SCORE,        Icons.Rounded.Tune),
-        SortOption("Title",        AniListSortBy.TITLE,        Icons.Rounded.Tune),
-        SortOption("Release Date", AniListSortBy.RELEASE_DATE, Icons.Rounded.Tune),
+        SortOption(stringResource(Res.string.anilist_sort_last_updated), AniListSortBy.LAST_UPDATED, Icons.Rounded.Tune),
+        SortOption(stringResource(Res.string.anilist_sort_score),        AniListSortBy.SCORE,        Icons.Rounded.Tune),
+        SortOption(stringResource(Res.string.anilist_sort_title),        AniListSortBy.TITLE,        Icons.Rounded.Tune),
+        SortOption(stringResource(Res.string.anilist_sort_release_date), AniListSortBy.RELEASE_DATE, Icons.Rounded.Tune),
     )
 
     Column {
@@ -314,7 +320,7 @@ private fun SortContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Sort By",
+                text = stringResource(Res.string.anilist_sort_by),
                 style = MaterialTheme.typography.titleSmall.copy(
                     fontWeight = FontWeight.Bold,
                     color = PrimaryText
@@ -336,7 +342,11 @@ private fun SortContent(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = if (prefs.sortAscending) "Ascending" else "Descending",
+                        text = if (prefs.sortAscending) {
+                            stringResource(Res.string.anilist_sort_ascending)
+                        } else {
+                            stringResource(Res.string.anilist_sort_descending)
+                        },
                         style = MaterialTheme.typography.labelMedium.copy(
                             color = Lavender,
                             fontWeight = FontWeight.SemiBold
@@ -403,7 +413,7 @@ private fun OpenByContent(
 ) {
     Column {
         Text(
-            text = "Open By",
+            text = stringResource(Res.string.anilist_menu_open_by),
             style = MaterialTheme.typography.titleSmall.copy(
                 fontWeight = FontWeight.Bold,
                 color = PrimaryText
@@ -414,7 +424,7 @@ private fun OpenByContent(
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             // "None" row ÔÇö default (title search)
             OpenByRow(
-                name = "None (Search by Title)",
+                name = stringResource(Res.string.anilist_open_by_none),
                 logoUrl = null,
                 isSelected = selectedUrl == null,
                 onClick = { onSelected(null) }

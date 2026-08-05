@@ -14,6 +14,9 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.anilist_library_refresh_failed
+import org.jetbrains.compose.resources.getString
 
 object AniListLibraryRepository {
     private val log = Logger.withTag("AniListLibrary")
@@ -125,7 +128,7 @@ object AniListLibraryRepository {
                 log.e { "Failed to refresh AniList library: ${e.message}" }
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = e.message ?: "Failed to refresh library collections."
+                    errorMessage = e.message ?: getString(Res.string.anilist_library_refresh_failed)
                 )
             }
         }

@@ -20,6 +20,12 @@ import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import com.nuvio.app.R
+import com.nuvio.app.core.i18n.localizedNowPlayingChannelDescription
+import com.nuvio.app.core.i18n.localizedNowPlayingChannelName
+import com.nuvio.app.core.i18n.localizedNowPlayingForward10s
+import com.nuvio.app.core.i18n.localizedNowPlayingPause
+import com.nuvio.app.core.i18n.localizedNowPlayingPlay
+import com.nuvio.app.core.i18n.localizedNowPlayingRewind10s
 import java.io.ByteArrayOutputStream
 import java.lang.ref.WeakReference
 import java.net.HttpURLConnection
@@ -408,10 +414,10 @@ private fun createNotificationChannel(context: Context) {
     val manager = context.getSystemService(NotificationManager::class.java) ?: return
     val channel = NotificationChannel(
         NOW_PLAYING_CHANNEL_ID,
-        "Playback",
+        localizedNowPlayingChannelName(),
         NotificationManager.IMPORTANCE_LOW,
     ).apply {
-        description = "Media playback controls"
+        description = localizedNowPlayingChannelDescription()
         setSound(null, null)
         enableVibration(false)
         setShowBadge(false)
@@ -437,13 +443,13 @@ private fun buildNotification(
     val playPauseAction = if (snapshot.isPlaying) {
         Notification.Action.Builder(
             android.R.drawable.ic_media_pause,
-            "Pause",
+            localizedNowPlayingPause(),
             buildActionIntent(context, ACTION_PAUSE, 2),
         ).build()
     } else {
         Notification.Action.Builder(
             android.R.drawable.ic_media_play,
-            "Play",
+            localizedNowPlayingPlay(),
             buildActionIntent(context, ACTION_PLAY, 2),
         ).build()
     }
@@ -462,7 +468,7 @@ private fun buildNotification(
         .addAction(
             Notification.Action.Builder(
                 android.R.drawable.ic_media_rew,
-                "Rewind 10 seconds",
+                localizedNowPlayingRewind10s(),
                 buildActionIntent(context, ACTION_REWIND, 1),
             ).build(),
         )
@@ -470,7 +476,7 @@ private fun buildNotification(
         .addAction(
             Notification.Action.Builder(
                 android.R.drawable.ic_media_ff,
-                "Forward 10 seconds",
+                localizedNowPlayingForward10s(),
                 buildActionIntent(context, ACTION_FAST_FORWARD, 3),
             ).build(),
         )

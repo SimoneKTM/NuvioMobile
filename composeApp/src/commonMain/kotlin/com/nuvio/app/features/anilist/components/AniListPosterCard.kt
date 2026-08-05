@@ -33,6 +33,9 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.ui.graphics.Color
 import com.nuvio.app.core.ui.NuvioPosterShape
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.anilist_edit_entry
+import org.jetbrains.compose.resources.stringResource
 import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.rememberPosterCardStyleUiState
 import com.nuvio.app.features.anilist.AniListLibraryItem
@@ -136,7 +139,7 @@ fun AniListPosterCard(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Edit,
-                        contentDescription = "Edit Entry",
+                        contentDescription = stringResource(Res.string.anilist_edit_entry),
                         tint = Color.White,
                         modifier = Modifier.size(14.dp)
                     )

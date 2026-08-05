@@ -13,6 +13,12 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.auth_denied_by_user
+import nuvio.composeapp.generated.resources.kitsu_auth_exchange_failed
+import nuvio.composeapp.generated.resources.kitsu_auth_invalid_callback_url
+import nuvio.composeapp.generated.resources.kitsu_auth_no_code
+import org.jetbrains.compose.resources.getString
 
 object KitsuAuthRepository {
     private val log = Logger.withTag("KitsuAuth")
@@ -90,13 +96,13 @@ object KitsuAuthRepository {
                 .getOrNull()
 
             if (parsedUrl == null) {
-                publish(isLoading = false, errorMessage = "Invalid callback URL received.")
+                publish(isLoading = false, errorMessage = getString(Res.string.kitsu_auth_invalid_callback_url))
                 return@launch
             }
 
             val error = parsedUrl.parameters["error"]
             if (!error.isNullOrBlank()) {
-                val errorDesc = parsedUrl.parameters["error_description"] ?: "Authorization denied by user."
+                val errorDesc = parsedUrl.parameters["error_description"] ?: getString(Res.string.auth_denied_by_user)
                 publish(isLoading = false, errorMessage = errorDesc)
                 return@launch
             }
@@ -118,12 +124,12 @@ object KitsuAuthRepository {
                         expiresInSeconds = tokenResult.expiresIn
                     )
                 } else {
-                    publish(isLoading = false, errorMessage = "Failed to exchange authorization code.")
+                    publish(isLoading = false, errorMessage = getString(Res.string.kitsu_auth_exchange_failed))
                 }
                 return@launch
             }
 
-            publish(isLoading = false, errorMessage = "No authorization code found in callback.")
+            publish(isLoading = false, errorMessage = getString(Res.string.kitsu_auth_no_code))
         }
     }
 

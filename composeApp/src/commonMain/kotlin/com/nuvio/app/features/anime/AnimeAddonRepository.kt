@@ -17,6 +17,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.addon_already_installed
+import nuvio.composeapp.generated.resources.addon_invalid_url
+import nuvio.composeapp.generated.resources.addon_load_manifest_failed
+import org.jetbrains.compose.resources.getString
 
 object AnimeAddonRepository {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -79,11 +84,11 @@ object AnimeAddonRepository {
         val manifestUrl = try {
             normalizeManifestUrl(rawUrl)
         } catch (error: IllegalArgumentException) {
-            return AddAddonResult.Error(error.message ?: "Invalid URL")
+            return AddAddonResult.Error(error.message ?: getString(Res.string.addon_invalid_url))
         }
 
         if (_uiState.value.addons.any { it.manifestUrl == manifestUrl }) {
-            return AddAddonResult.Error("Addon already installed")
+            return AddAddonResult.Error(getString(Res.string.addon_already_installed))
         }
 
         val manifest = try {
@@ -95,7 +100,7 @@ object AnimeAddonRepository {
                 )
             }
         } catch (error: Throwable) {
-            return AddAddonResult.Error(error.message ?: "Failed to load manifest")
+            return AddAddonResult.Error(error.message ?: getString(Res.string.addon_load_manifest_failed))
         }
 
         _uiState.value = _uiState.value.copy(

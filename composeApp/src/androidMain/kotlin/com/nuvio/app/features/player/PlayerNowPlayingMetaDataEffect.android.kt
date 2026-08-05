@@ -29,6 +29,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.nuvio.app.R
+import com.nuvio.app.core.i18n.localizedNowPlayingChannelName
+import com.nuvio.app.core.i18n.localizedNowPlayingForwardShort
+import com.nuvio.app.core.i18n.localizedNowPlayingPause
+import com.nuvio.app.core.i18n.localizedNowPlayingPlay
+import com.nuvio.app.core.i18n.localizedNowPlayingRewindShort
 import com.nuvio.app.core.ui.formatEpisodeCode
 import com.nuvio.app.core.ui.rememberEpisodeCodeFormat
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +43,6 @@ import java.net.URL
 
 private const val TAG = "NuvioNowPlaying"
 private const val CHANNEL_ID = "nuvio_playback"
-private const val CHANNEL_NAME = "Playback"
 private const val NOTIFICATION_ID = 7103
 private const val SEEK_INTERVAL_MS = 10_000L
 
@@ -373,7 +377,7 @@ private object AndroidNowPlayingNotification {
             notificationManager.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_ID,
-                    CHANNEL_NAME,
+                    localizedNowPlayingChannelName(),
                     NotificationManager.IMPORTANCE_LOW,
                 ).apply {
                     setShowBadge(false)
@@ -392,13 +396,13 @@ private object AndroidNowPlayingNotification {
         val playPauseAction = if (isPlaying) {
             Notification.Action(
                 android.R.drawable.ic_media_pause,
-                "Pause",
+                localizedNowPlayingPause(),
                 actionIntent(context, ACTION_PAUSE),
             )
         } else {
             Notification.Action(
                 android.R.drawable.ic_media_play,
-                "Play",
+                localizedNowPlayingPlay(),
                 actionIntent(context, ACTION_PLAY),
             )
         }
@@ -415,7 +419,7 @@ private object AndroidNowPlayingNotification {
             .addAction(
                 Notification.Action(
                     android.R.drawable.ic_media_rew,
-                    "Rewind 10s",
+                    localizedNowPlayingRewindShort(),
                     actionIntent(context, ACTION_REWIND),
                 ),
             )
@@ -423,7 +427,7 @@ private object AndroidNowPlayingNotification {
             .addAction(
                 Notification.Action(
                     android.R.drawable.ic_media_ff,
-                    "Forward 10s",
+                    localizedNowPlayingForwardShort(),
                     actionIntent(context, ACTION_FORWARD),
                 ),
             )

@@ -184,7 +184,7 @@ actual suspend fun httpPostJsonWithHeaders(
             accept(ContentType.Application.Json)
             header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
             headers.forEach { (key, value) ->
-                header(key, value)
+                header(key, value, append = false)
             }
             applyCustomUserAgent(headers)
             setBody(body)

@@ -1,5 +1,8 @@
 package com.nuvio.app.features.downloads
 
+import com.nuvio.app.core.i18n.localizedDownloadCancelled
+import com.nuvio.app.core.i18n.localizedHlsUnsupportedDesktop
+import com.nuvio.app.core.i18n.localizedUnknownError
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URI
@@ -21,7 +24,7 @@ internal actual object DownloadsPlatformDownloader {
         onWarning: ((message: String) -> Unit)?,
     ): DownloadsTaskHandle {
         if (request.isHlsStream) {
-            onFailure("HLS download not supported on desktop yet.")
+            onFailure(localizedHlsUnsupportedDesktop())
             return DesktopDownloadsTaskHandle(Thread.currentThread())
         }
 
@@ -42,7 +45,7 @@ internal actual object DownloadsPlatformDownloader {
                         var downloaded: Long = 0L
                         while (input.read(buffer).also { bytesRead = it } != -1) {
                             if (Thread.currentThread().isInterrupted) {
-                                onFailure("Download cancelled")
+                                onFailure(localizedDownloadCancelled())
                                 return@thread
                             }
                             output.write(buffer, 0, bytesRead)
@@ -54,7 +57,7 @@ internal actual object DownloadsPlatformDownloader {
                 onSuccess(destFile.toURI().toString(), totalBytes, null)
             } catch (e: Exception) {
                 if (!Thread.currentThread().isInterrupted) {
-                    onFailure(e.message ?: "Unknown error")
+                    onFailure(e.message ?: localizedUnknownError())
                 }
             }
         }

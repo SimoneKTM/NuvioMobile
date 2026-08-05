@@ -34,6 +34,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import nuvio.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,7 +130,7 @@ fun AniListEditMediaBottomSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Close",
+                        contentDescription = stringResource(Res.string.action_close),
                         tint = textPrimary,
                         modifier = Modifier.size(20.dp)
                     )
@@ -137,7 +139,7 @@ fun AniListEditMediaBottomSheet(
 
             // Header Section
             Text(
-                text = "Edit Media Entry",
+                text = stringResource(Res.string.tracker_edit_media_title),
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
@@ -204,7 +206,7 @@ fun AniListEditMediaBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Progress",
+                    text = stringResource(Res.string.tracker_edit_progress),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = textPrimary
@@ -237,7 +239,7 @@ fun AniListEditMediaBottomSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Remove,
-                        contentDescription = "Decrease Progress",
+                        contentDescription = stringResource(Res.string.tracker_edit_progress_decrease),
                         tint = textPrimary,
                         modifier = Modifier.size(24.dp)
                     )
@@ -318,7 +320,7 @@ fun AniListEditMediaBottomSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Add,
-                        contentDescription = "Increase Progress",
+                        contentDescription = stringResource(Res.string.tracker_edit_progress_increase),
                         tint = textPrimary,
                         modifier = Modifier.size(24.dp)
                     )
@@ -334,7 +336,7 @@ fun AniListEditMediaBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Score",
+                    text = stringResource(Res.string.tracker_edit_score),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = textPrimary
@@ -386,7 +388,7 @@ fun AniListEditMediaBottomSheet(
                         .height(54.dp)
                 ) {
                     Text(
-                        text = "Delete",
+                        text = stringResource(Res.string.action_delete),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = redText
@@ -414,7 +416,7 @@ fun AniListEditMediaBottomSheet(
                         .height(54.dp)
                 ) {
                     Text(
-                        text = "Save Changes",
+                        text = stringResource(Res.string.action_save_changes),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF17171D)

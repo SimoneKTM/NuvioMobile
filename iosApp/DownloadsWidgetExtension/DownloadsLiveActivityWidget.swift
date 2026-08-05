@@ -91,10 +91,10 @@ struct DownloadsLiveActivityWidget: Widget {
 
     private func statusLabel(_ status: String) -> String {
         switch status.lowercased() {
-        case "downloading": return "Downloading"
-        case "paused": return "Paused"
-        case "failed": return "Failed"
-        default: return "Active"
+        case "downloading": return String(localized: "Downloading")
+        case "paused": return String(localized: "Paused")
+        case "failed": return String(localized: "Failed")
+        default: return String(localized: "Active")
         }
     }
 
@@ -172,10 +172,10 @@ private struct DownloadActivityLockScreenView: View {
 
     private func statusLabel(_ status: String) -> String {
         switch status.lowercased() {
-        case "downloading": return "Downloading"
-        case "paused": return "Paused"
-        case "failed": return "Failed"
-        default: return "Active"
+        case "downloading": return String(localized: "Downloading")
+        case "paused": return String(localized: "Paused")
+        case "failed": return String(localized: "Failed")
+        default: return String(localized: "Active")
         }
     }
 

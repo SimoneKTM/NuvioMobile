@@ -46,6 +46,7 @@ import com.nuvio.app.core.ui.NuvioSectionLabel
 import com.nuvio.app.core.ui.NuvioSurfaceCard
 import com.nuvio.app.features.tmdb.TmdbSettingsRepository
 import com.nuvio.app.features.plugins.runtime.PluginRuntime
+import com.nuvio.app.core.i18n.localizedErrorPrefix
 import kotlinx.coroutines.launch
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.plugins_badge_disabled
@@ -80,6 +81,7 @@ import nuvio.composeapp.generated.resources.plugins_section_add_repo
 import nuvio.composeapp.generated.resources.plugins_section_installed_repos
 import nuvio.composeapp.generated.resources.plugins_section_overview
 import nuvio.composeapp.generated.resources.plugins_section_providers
+import nuvio.composeapp.generated.resources.plugins_provider_settings
 import nuvio.composeapp.generated.resources.plugins_test_error_title
 import nuvio.composeapp.generated.resources.plugins_test_failed
 import nuvio.composeapp.generated.resources.plugins_test_results_count
@@ -267,7 +269,7 @@ fun PluginsSettingsPageContent(
                                 }
                             }
                         } catch (e: Exception) {
-                            message = "Error: ${e.message}"
+                            message = localizedErrorPrefix(e.message.orEmpty())
                         } finally {
                             isAdding = false
                         }
@@ -448,7 +450,7 @@ fun PluginsSettingsPageContent(
                                 }) {
                                     Icon(
                                         imageVector = Icons.Rounded.Settings,
-                                        contentDescription = "Provider settings",
+                                        contentDescription = stringResource(Res.string.plugins_provider_settings),
                                         tint = MaterialTheme.colorScheme.primary,
                                     )
                                 }

@@ -24,6 +24,8 @@ import com.nuvio.app.features.anilist.AniListLibraryItem
 import com.nuvio.app.features.anilist.AniListSortBy
 import com.nuvio.app.features.home.components.BouncingDots
 import com.nuvio.app.features.home.components.HomeEmptyStateCard
+import nuvio.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 fun LazyListScope.aniListLibraryContent(
     uiState: AniListLibraryUiState,
@@ -54,9 +56,9 @@ fun LazyListScope.aniListLibraryContent(
             item {
                 HomeEmptyStateCard(
                     modifier = Modifier.padding(horizontal = 16.dp),
-                    title = "AniList Not Connected",
-                    message = "Connect your AniList account in Settings to view your custom anime shelves here.",
-                    actionLabel = "Connect Now",
+                    title = stringResource(Res.string.library_anilist_not_connected),
+                    message = stringResource(Res.string.anilist_library_not_connected_message),
+                    actionLabel = stringResource(Res.string.library_connect_now),
                     onActionClick = onConnectAniListClick
                 )
             }
@@ -66,9 +68,9 @@ fun LazyListScope.aniListLibraryContent(
             item {
                 HomeEmptyStateCard(
                     modifier = Modifier.padding(horizontal = 16.dp),
-                    title = "You are Offline",
-                    message = "Internet connection is required to view your AniList library shelves.",
-                    actionLabel = "Retry",
+                    title = stringResource(Res.string.library_you_are_offline),
+                    message = stringResource(Res.string.anilist_library_offline_message),
+                    actionLabel = stringResource(Res.string.action_retry),
                     onActionClick = onRefresh
                 )
             }
@@ -124,9 +126,9 @@ fun LazyListScope.aniListLibraryContent(
                 item {
                     HomeEmptyStateCard(
                         modifier = Modifier.padding(horizontal = 16.dp),
-                        title = "Your Lists are Empty",
-                        message = "Start watching or planning anime on AniList to see them show up here.",
-                        actionLabel = "Refresh Now",
+                        title = stringResource(Res.string.library_your_lists_empty),
+                        message = stringResource(Res.string.anilist_library_empty_message),
+                        actionLabel = stringResource(Res.string.library_refresh_now),
                         onActionClick = onRefresh
                     )
                 }

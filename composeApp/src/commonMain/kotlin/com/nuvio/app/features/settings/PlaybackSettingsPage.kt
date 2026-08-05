@@ -56,6 +56,7 @@ import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.enabledAddons
 import com.nuvio.app.features.player.AddonSubtitleStartupMode
 import com.nuvio.app.features.player.AndroidLibmpvVideoOutput
+import com.nuvio.app.features.player.localizedDescription
 import com.nuvio.app.features.player.AndroidPlaybackEngine
 import com.nuvio.app.features.player.AudioLanguageOption
 import com.nuvio.app.features.player.AvailableLanguageOptions
@@ -1459,7 +1460,7 @@ private fun PlaybackSettingsSection(
             options = AndroidLibmpvVideoOutput.entries,
             selected = androidLibmpvVideoOutput,
             label = { it.label },
-            description = { it.description },
+            description = { it.localizedDescription() },
             onSelect = {
                 PlayerSettingsRepository.setAndroidLibmpvVideoOutput(it)
                 showLibmpvVideoOutputDialog = false

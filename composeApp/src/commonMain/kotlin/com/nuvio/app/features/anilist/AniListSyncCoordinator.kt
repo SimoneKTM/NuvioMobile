@@ -22,6 +22,12 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.sync_completed_successfully
+import nuvio.composeapp.generated.resources.sync_failed
+import nuvio.composeapp.generated.resources.sync_progress_anilist
+import nuvio.composeapp.generated.resources.sync_unknown_error
+import org.jetbrains.compose.resources.getString
 
 object AniListSyncCoordinator {
     private val log = Logger.withTag("AniListSync")
@@ -202,7 +208,7 @@ object AniListSyncCoordinator {
                 for (item in itemsToProcess) {
                     processedCount++
                     if (itemsToProcess.size > 3) {
-                        _syncMessage.value = "Synchronizing AniList ($processedCount/${itemsToProcess.size})..."
+                        _syncMessage.value = getString(Res.string.sync_progress_anilist, processedCount, itemsToProcess.size)
                     }
                     val imdbId = resolveImdbId(item.id) ?: continue
                     val localMatch = localEntries.find { it.parentMetaId == imdbId }
@@ -260,10 +266,10 @@ object AniListSyncCoordinator {
                 // Refresh library sections after sync completes to pull latest list states
                 AniListLibraryRepository.refreshNow()
 
-                _syncMessage.value = "Synchronization completed successfully."
+                _syncMessage.value = getString(Res.string.sync_completed_successfully)
             } catch (e: Exception) {
                 log.e(e) { "Error during AniList sync" }
-                _syncMessage.value = "Sync failed: ${e.message ?: "Unknown error"}"
+                _syncMessage.value = getString(Res.string.sync_failed, e.message ?: getString(Res.string.sync_unknown_error))
             } finally {
                 _isSyncing.value = false
             }

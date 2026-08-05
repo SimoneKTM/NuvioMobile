@@ -3,6 +3,10 @@ package com.nuvio.app.features.player
 import co.touchlab.kermit.Logger
 import com.nuvio.app.features.addons.httpGetText
 import com.nuvio.app.features.addons.httpGetTextWithHeaders
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.player_quality_inspect_failed
+import nuvio.composeapp.generated.resources.player_quality_prepare_failed
+import org.jetbrains.compose.resources.getString
 
 internal const val PlayerQualityAutoId = "auto"
 
@@ -125,7 +129,7 @@ internal object PlayerQualityResolver {
             log.w(error) { "Failed to fetch HLS master playlist for quality detection" }
         }.getOrNull() ?: return PlayerQualitySelectionState(
             sourceUrl = normalizedUrl,
-            errorMessage = "Unable to inspect HLS quality variants.",
+            errorMessage = getString(Res.string.player_quality_inspect_failed),
         )
 
         if (!playlistText.contains("#EXT-X-STREAM-INF", ignoreCase = true)) {
@@ -151,7 +155,7 @@ internal object PlayerQualityResolver {
         if (variants.isEmpty()) {
             return PlayerQualitySelectionState(
                 sourceUrl = normalizedUrl,
-                errorMessage = "Unable to prepare HLS quality variants.",
+                errorMessage = getString(Res.string.player_quality_prepare_failed),
             )
         }
 

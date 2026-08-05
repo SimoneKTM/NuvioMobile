@@ -797,7 +797,7 @@ private fun EpisodeHorizontalCard(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.ExpandMore,
-                            contentDescription = "Expand",
+                            contentDescription = stringResource(Res.string.action_expand),
                             tint = Color.White.copy(alpha = 0.6f),
                             modifier = Modifier.size(18.dp),
                         )
@@ -882,7 +882,7 @@ private fun EpisodeHorizontalCard(
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.ExpandLess,
-                                    contentDescription = "Collapse",
+                                    contentDescription = stringResource(Res.string.action_collapse),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                                     modifier = Modifier.size(18.dp),
                                 )
@@ -1208,7 +1208,11 @@ private fun EpisodeListCard(
                 ) {
                     Icon(
                         imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                        contentDescription = if (expanded) "Collapse" else "Expand",
+                        contentDescription = if (expanded) {
+                            stringResource(Res.string.action_collapse)
+                        } else {
+                            stringResource(Res.string.action_expand)
+                        },
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         modifier = Modifier.size(20.dp),
                     )

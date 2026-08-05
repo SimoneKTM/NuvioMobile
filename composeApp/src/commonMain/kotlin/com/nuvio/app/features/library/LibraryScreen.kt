@@ -363,7 +363,7 @@ fun LibraryScreen(
                                     isTraktSource -> stringResource(Res.string.library_trakt_load_failed)
                                     isMalSource -> stringResource(Res.string.library_mal_load_failed)
                                     isAniListSource -> stringResource(Res.string.library_anilist_load_failed)
-                                    isKitsuSource -> "Failed to load Kitsu library"
+                                    isKitsuSource -> stringResource(Res.string.library_kitsu_load_failed)
                                     else -> stringResource(Res.string.library_load_failed)
                                 },
                                 message = uiState.errorMessage.orEmpty(),
@@ -389,14 +389,14 @@ fun LibraryScreen(
                                     isTraktSource -> stringResource(Res.string.library_trakt_empty_title)
                                     isMalSource -> stringResource(Res.string.library_mal_empty_title)
                                     isAniListSource -> stringResource(Res.string.library_anilist_empty_title)
-                                    isKitsuSource -> "Your Kitsu Library is Empty"
+                                    isKitsuSource -> stringResource(Res.string.library_kitsu_empty_title)
                                     else -> stringResource(Res.string.library_empty_title)
                                 },
                                 message = when {
                                     isTraktSource -> stringResource(Res.string.library_trakt_empty_message)
                                     isMalSource -> stringResource(Res.string.library_mal_empty_message)
                                     isAniListSource -> stringResource(Res.string.library_anilist_empty_message)
-                                    isKitsuSource -> "Start watching or planning anime on Kitsu to see them here."
+                                    isKitsuSource -> stringResource(Res.string.library_kitsu_empty_message)
                                     else -> stringResource(Res.string.library_empty_message)
                                 },
                             )

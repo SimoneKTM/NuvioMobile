@@ -1093,7 +1093,7 @@ fun MetaDetailsScreen(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             ) {
-                                Icon(Icons.Rounded.AutoAwesome, contentDescription = "AI Assistant")
+                                Icon(Icons.Rounded.AutoAwesome, contentDescription = stringResource(Res.string.ai_assistant))
                             }
                         }
 

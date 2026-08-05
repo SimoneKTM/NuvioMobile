@@ -1,12 +1,20 @@
 package com.nuvio.app.features.animeprofile
 
 import com.nuvio.app.features.plugins.PluginRepository
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.anime_plugin_anilist_desc
+import nuvio.composeapp.generated.resources.anime_plugin_kitsu_desc
+import nuvio.composeapp.generated.resources.anime_plugin_mal_desc
+import nuvio.composeapp.generated.resources.anime_plugin_profile_desc
+import nuvio.composeapp.generated.resources.anime_plugin_providers
+import nuvio.composeapp.generated.resources.anime_plugin_tmdb_desc
+import org.jetbrains.compose.resources.getString
 
 class AnimePluginRegistry(
     private val animeProfileRepository: AnimeProfileRepository = AnimeProfileRepository,
     private val pluginRepository: PluginRepository = PluginRepository,
 ) {
-    fun getAvailableAnimePluginsFromSandbox(): List<AnimePluginItem> {
+    suspend fun getAvailableAnimePluginsFromSandbox(): List<AnimePluginItem> {
         animeProfileRepository.initialize()
         pluginRepository.initialize()
 
@@ -18,7 +26,7 @@ class AnimePluginRegistry(
             AnimePluginItem(
                 id = "anime_profile_toggle",
                 name = "Anime Profile",
-                description = "Separate profile for anime with custom catalogs, addons, plugins, and metadata",
+                description = getString(Res.string.anime_plugin_profile_desc),
                 isEnabled = config.enabled,
                 hasConfiguration = false,
             ),
@@ -31,28 +39,28 @@ class AnimePluginRegistry(
                 AnimePluginItem(
                     id = "tmdb_metadata",
                     name = "TMDB Metadata",
-                    description = "Use TMDB for anime metadata",
+                    description = getString(Res.string.anime_plugin_tmdb_desc),
                     isEnabled = config.tmdbConfig.enabled,
                     hasConfiguration = true,
                 ),
                 AnimePluginItem(
                     id = "anilist_metadata",
                     name = "AniList Metadata",
-                    description = "Use AniList for anime metadata and library",
+                    description = getString(Res.string.anime_plugin_anilist_desc),
                     isEnabled = config.useAnilistMetadata,
                     hasConfiguration = false,
                 ),
                 AnimePluginItem(
                     id = "mal_metadata",
                     name = "MyAnimeList Metadata",
-                    description = "Use MAL for anime metadata",
+                    description = getString(Res.string.anime_plugin_mal_desc),
                     isEnabled = config.useMalMetadata,
                     hasConfiguration = false,
                 ),
                 AnimePluginItem(
                     id = "kitsu_metadata",
                     name = "Kitsu Metadata",
-                    description = "Use Kitsu for anime metadata",
+                    description = getString(Res.string.anime_plugin_kitsu_desc),
                     isEnabled = config.useKitsuMetadata,
                     hasConfiguration = false,
                 ),
@@ -66,7 +74,7 @@ class AnimePluginRegistry(
                 AnimePluginItem(
                     id = "plugin_repo:${repo.manifestUrl}",
                     name = repo.name,
-                    description = "${repo.scraperCount} providers",
+                    description = getString(Res.string.anime_plugin_providers, repo.scraperCount),
                     isEnabled = enabledPluginRepos.isEmpty() || enabledPluginRepos.contains(repo.manifestUrl),
                     hasConfiguration = false,
                 ),

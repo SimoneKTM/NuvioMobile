@@ -9,6 +9,10 @@ import android.media.MediaMuxer
 import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.documentfile.provider.DocumentFile
+import com.nuvio.app.core.i18n.localizedDownloadCannotAccessLocation
+import com.nuvio.app.core.i18n.localizedDownloadFailedCreateFile
+import com.nuvio.app.core.i18n.localizedDownloadFailedOpenStream
+import com.nuvio.app.core.i18n.localizedDownloadFailedOpenStreamGeneric
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -388,9 +392,9 @@ private class DocumentDownloadTarget(
     override fun delete(): Boolean = getDoc()?.delete() ?: false
     override fun openOutputStream(append: Boolean): OutputStream {
         val doc = getDoc() ?: tree.createFile("application/octet-stream", fileName)
-            ?: error("Failed to create file $fileName")
+            ?: error(localizedDownloadFailedCreateFile(fileName))
         return context.contentResolver.openOutputStream(doc.uri, if (append) "wa" else "w")
-            ?: error("Failed to open output stream for $fileName")
+            ?: error(localizedDownloadFailedOpenStream(fileName))
     }
     override fun toUriString(): String = getDoc()?.uri?.toString() ?: ""
     override fun renameTo(other: DownloadTarget): Boolean {
@@ -419,7 +423,7 @@ private class DocumentSingleTarget(
     override fun delete(): Boolean = doc.delete()
     override fun openOutputStream(append: Boolean): OutputStream =
         context.contentResolver.openOutputStream(doc.uri, if (append) "wa" else "w")
-            ?: error("Failed to open output stream")
+            ?: error(localizedDownloadFailedOpenStreamGeneric())
     override fun toUriString(): String = doc.uri.toString()
     override fun renameTo(other: DownloadTarget): Boolean = false
     override fun copyTo(other: DownloadTarget) {
@@ -693,7 +697,7 @@ private fun createHlsTargets(
 ): Pair<DownloadTarget, DownloadTarget> {
     return if (customLocationUri != null && customLocationUri.scheme == "content") {
         val tree = DocumentFile.fromTreeUri(context, customLocationUri)
-            ?: error("Cannot access custom download location")
+            ?: error(localizedDownloadCannotAccessLocation())
         val dest = DocumentDownloadTarget(context, tree, fileName)
         val temp = DocumentDownloadTarget(context, tree, "$fileName.part")
         dest to temp

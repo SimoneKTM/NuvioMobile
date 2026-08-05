@@ -19,6 +19,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import com.nuvio.app.core.i18n.localizedDownloadCancelled
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.download_failed
 import nuvio.composeapp.generated.resources.downloads_error_finalize_file_failed
@@ -297,7 +298,7 @@ private class IosDownloadsTaskHandle(
     }
 
     fun ensureActive() {
-        if (job.isCancelled) throw CancellationException("Download cancelled")
+        if (job.isCancelled) throw CancellationException(localizedDownloadCancelled())
     }
 }
 

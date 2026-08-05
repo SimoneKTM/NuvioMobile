@@ -19,6 +19,7 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.auth_denied_by_user
 import nuvio.composeapp.generated.resources.compose_settings_page_anilist
 
 object AniListAuthRepository {
@@ -91,7 +92,7 @@ object AniListAuthRepository {
 
             val error = parsedUrl.parameters["error"]
             if (!error.isNullOrBlank()) {
-                val errorDesc = parsedUrl.parameters["error_description"] ?: "Authorization denied by user."
+                val errorDesc = parsedUrl.parameters["error_description"] ?: getString(Res.string.auth_denied_by_user)
                 publish(isLoading = false, errorMessage = errorDesc)
                 return@launch
             }

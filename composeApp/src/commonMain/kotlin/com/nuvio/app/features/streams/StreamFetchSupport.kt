@@ -27,6 +27,11 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.streams_cloudstream_episode_not_found
+import nuvio.composeapp.generated.resources.streams_cloudstream_no_result
+import nuvio.composeapp.generated.resources.streams_cloudstream_provider_timed_out
+import nuvio.composeapp.generated.resources.streams_cloudstream_title_unavailable
+import nuvio.composeapp.generated.resources.streams_no_links_found
 import nuvio.composeapp.generated.resources.streams_plugin_repository_fallback
 import org.jetbrains.compose.resources.getString
 
@@ -141,7 +146,7 @@ internal suspend fun resolveCloudStreamProviderStreams(
     val searchRequest = request?.takeIf { it.title.isNotBlank() }
         ?: return providerGroup.toCloudStreamGroup(
             streams = emptyList(),
-            error = "CloudStream search title is unavailable",
+            error = getString(Res.string.streams_cloudstream_title_unavailable),
         )
 
     val allStreams = mutableListOf<StreamItem>()
@@ -169,7 +174,7 @@ internal suspend fun resolveCloudStreamProviderStreams(
     return providerGroup.toCloudStreamGroup(
         streams = allStreams,
         error = if (allStreams.isEmpty()) {
-            "No links found"
+            getString(Res.string.streams_no_links_found)
         } else {
             null
         },
@@ -205,7 +210,7 @@ private suspend fun resolveSingleCloudStreamProvider(
 
                 val linkData = loaded.linkDataForCloudStreamRequest(searchRequest)
                 if (linkData == null) {
-                    lastError = IllegalStateException("CloudStream episode not found")
+                    lastError = IllegalStateException(getString(Res.string.streams_cloudstream_episode_not_found))
                     return null
                 }
 
@@ -220,7 +225,7 @@ private suspend fun resolveSingleCloudStreamProvider(
                     sources = sources,
                 ).takeIf { streams -> streams.isNotEmpty() }
                     ?: run {
-                        lastError = IllegalStateException("No links found")
+                        lastError = IllegalStateException(getString(Res.string.streams_no_links_found))
                         null
                     }
             }
@@ -284,13 +289,13 @@ private suspend fun resolveSingleCloudStreamProvider(
                 }
             }
 
-            throw lastError ?: IllegalStateException("No verified CloudStream search result found")
+            throw lastError ?: IllegalStateException(getString(Res.string.streams_cloudstream_no_result))
         }
     }
     val resolved = try {
         withTimeoutOrNull(CLOUDSTREAM_PROVIDER_STREAM_TIMEOUT_MS) {
             providerTask.await()
-        } ?: Result.failure(IllegalStateException("CloudStream provider timed out"))
+        } ?: Result.failure(IllegalStateException(getString(Res.string.streams_cloudstream_provider_timed_out)))
     } finally {
         if (!providerTask.isCompleted) providerTask.cancel()
     }

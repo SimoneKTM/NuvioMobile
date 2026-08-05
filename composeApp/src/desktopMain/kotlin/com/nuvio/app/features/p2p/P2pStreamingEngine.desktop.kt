@@ -1,5 +1,6 @@
 package com.nuvio.app.features.p2p
 
+import com.nuvio.app.core.i18n.localizedP2pAddTorrentFailed
 import com.nuvio.app.core.i18n.localizedP2pUnknownTorrentError
 import com.nuvio.app.core.logging.InAppLogger
 import com.nuvio.app.core.storage.DesktopStorage
@@ -56,7 +57,7 @@ actual object P2pStreamingEngine {
             InAppLogger.info("P2P", "Starting stream: $magnetLink")
 
             val hash = api.addTorrent(magnetLink)
-                ?: throw P2pStreamingException("Failed to add torrent")
+                ?: throw P2pStreamingException(localizedP2pAddTorrentFailed())
             if (!attachTorrentIfCurrent(generation, hash)) {
                 api.dropTorrent(hash)
                 throw CancellationException("P2P stream start was cancelled")

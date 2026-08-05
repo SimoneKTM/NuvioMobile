@@ -255,7 +255,7 @@ object StreamsRepository {
                                         addonId = providerAddonId,
                                         streams = streams,
                                         isLoading = false,
-                                        error = if (streams.isEmpty()) "No links found" else null,
+                                        error = if (streams.isEmpty()) getString(Res.string.streams_no_links_found) else null,
                                     ),
                                 ),
                                 activeAddonIds = setOf(providerAddonId),
@@ -273,7 +273,7 @@ object StreamsRepository {
                                         addonId = providerAddonId,
                                         streams = emptyList(),
                                         isLoading = false,
-                                        error = error.message ?: "CloudStream link resolution failed",
+                                        error = error.message ?: getString(Res.string.streams_cloudstream_resolution_failed),
                                     ),
                                 ),
                                 activeAddonIds = setOf(providerAddonId),
@@ -766,7 +766,7 @@ object StreamsRepository {
 
             if (receivedTasks < totalTasks) {
                 log.w { "Stream loading timed out after $receivedTasks / $totalTasks provider tasks" }
-                stopPendingGroups(errorMessage = "Timed out")
+                stopPendingGroups(errorMessage = getString(Res.string.streams_timed_out))
             }
 
             for (availabilityJob in debridAvailabilityJobs) {

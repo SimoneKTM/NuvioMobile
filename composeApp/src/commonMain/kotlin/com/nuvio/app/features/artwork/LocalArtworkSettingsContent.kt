@@ -33,6 +33,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import nuvio.composeapp.generated.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun LocalArtworkSettingsContent(
@@ -55,7 +57,7 @@ fun LocalArtworkSettingsContent(
         item {
             Spacer(Modifier.height(8.dp))
 
-            NuvioSectionLabel("Local Artwork")
+            NuvioSectionLabel(stringResource(Res.string.artwork_section_local_artwork))
 
             Spacer(Modifier.height(8.dp))
 
@@ -74,11 +76,11 @@ fun LocalArtworkSettingsContent(
                         Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "Custom Artwork Storage",
+                                stringResource(Res.string.artwork_storage_title),
                                 style = MaterialTheme.typography.bodyLarge,
                             )
                             Text(
-                                "Manage locally stored posters, backgrounds, and logos",
+                                stringResource(Res.string.artwork_storage_description),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -88,43 +90,43 @@ fun LocalArtworkSettingsContent(
                     Spacer(Modifier.height(8.dp))
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        NuvioInfoBadge(text = "$totalArtwork artworks")
-                        NuvioInfoBadge(text = "$totalVideos videos")
+                        NuvioInfoBadge(text = stringResource(Res.string.artwork_count_badge, totalArtwork))
+                        NuvioInfoBadge(text = stringResource(Res.string.artwork_videos_badge, totalVideos))
                     }
                 }
             }
 
             Spacer(Modifier.height(16.dp))
 
-            NuvioSectionLabel("How to use")
+            NuvioSectionLabel(stringResource(Res.string.artwork_how_to_use))
 
             Spacer(Modifier.height(8.dp))
 
             NuvioSurfaceCard {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        "To customize artwork for a movie, TV show, or anime:",
+                        stringResource(Res.string.artwork_how_to_use_intro),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "1. Open the detail page for any content",
+                        stringResource(Res.string.artwork_step_1),
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Text(
-                        "2. Tap the artwork button (usually near the poster)",
+                        stringResource(Res.string.artwork_step_2),
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Text(
-                        "3. Select artwork type: Poster, Background, Logo, etc.",
+                        stringResource(Res.string.artwork_step_3),
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Text(
-                        "4. Choose an image from your device gallery",
+                        stringResource(Res.string.artwork_step_4),
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Text(
-                        "5. The custom artwork will be used across the app",
+                        stringResource(Res.string.artwork_step_5),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -132,7 +134,7 @@ fun LocalArtworkSettingsContent(
 
             Spacer(Modifier.height(16.dp))
 
-            NuvioSectionLabel("Supported Artwork Types")
+            NuvioSectionLabel(stringResource(Res.string.artwork_supported_types))
 
             Spacer(Modifier.height(8.dp))
 
@@ -144,7 +146,7 @@ fun LocalArtworkSettingsContent(
             Spacer(Modifier.height(16.dp))
 
             if (totalArtwork > 0) {
-                NuvioSectionLabel("Manage All Artwork")
+                NuvioSectionLabel(stringResource(Res.string.artwork_manage_all))
 
                 Spacer(Modifier.height(8.dp))
 
@@ -171,7 +173,7 @@ fun LocalArtworkSettingsContent(
                                         maxLines = 1,
                                     )
                                     Text(
-                                        "$mediaType - ${artworks.size} artworks",
+                                        stringResource(Res.string.artwork_count_line, mediaType, artworks.size),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -185,12 +187,12 @@ fun LocalArtworkSettingsContent(
                                 ) {
                                     Icon(
                                         Icons.Rounded.Delete,
-                                        contentDescription = "Clear",
+                                        contentDescription = stringResource(Res.string.action_clear),
                                         modifier = Modifier.size(18.dp),
                                         tint = MaterialTheme.colorScheme.error,
                                     )
                                     Spacer(Modifier.width(4.dp))
-                                    Text("Clear", color = MaterialTheme.colorScheme.error)
+                                    Text(stringResource(Res.string.action_clear), color = MaterialTheme.colorScheme.error)
                                 }
                             }
                         }
@@ -207,12 +209,12 @@ private fun ArtworkTypeInfoRow(
     type: ArtworkType,
 ) {
     val description = when (type) {
-        ArtworkType.POSTER -> "Main poster image displayed in catalogs and search"
-        ArtworkType.BACKGROUND -> "Background/backdrop image shown on detail pages"
-        ArtworkType.LOGO -> "Logo overlay shown on hero sections"
-        ArtworkType.THUMBNAIL -> "Thumbnail image for episodes and continue watching"
-        ArtworkType.CLEARART -> "Clear artwork without background"
-        ArtworkType.BANNER -> "Banner image for wide layouts"
+        ArtworkType.POSTER -> stringResource(Res.string.artwork_type_poster_desc)
+        ArtworkType.BACKGROUND -> stringResource(Res.string.artwork_type_background_desc)
+        ArtworkType.LOGO -> stringResource(Res.string.artwork_type_logo_desc)
+        ArtworkType.THUMBNAIL -> stringResource(Res.string.artwork_type_thumbnail_desc)
+        ArtworkType.CLEARART -> stringResource(Res.string.artwork_type_clearart_desc)
+        ArtworkType.BANNER -> stringResource(Res.string.artwork_type_banner_desc)
     }
 
     Row(
