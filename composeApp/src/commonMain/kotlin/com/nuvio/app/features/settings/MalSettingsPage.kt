@@ -27,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -342,6 +343,50 @@ private fun MalConnectionCard(isTablet: Boolean) {
                     },
                 ) {
                     Text(stringResource(Res.string.settings_mal_connect))
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                var showManualToken by remember { mutableStateOf(false) }
+                var manualToken by remember { mutableStateOf("") }
+                OutlinedButton(
+                    onClick = { showManualToken = !showManualToken },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Usa token manuale")
+                }
+                if (showManualToken) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Incolla il token di accesso MAL (o il JSON con access_token e refresh_token) ottenuto dal flusso OAuth nel browser.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = manualToken,
+                        onValueChange = { manualToken = it },
+                        label = { Text("Token MAL") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = { MalAuthRepository.onManualTokenEntered(manualToken) },
+                        enabled = manualToken.isNotBlank() && !authUiState.isLoading,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        if (authUiState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp,
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Connessione...")
+                        } else {
+                            Text("Collega")
+                        }
+                    }
                 }
             }
         }

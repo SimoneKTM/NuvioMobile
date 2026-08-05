@@ -243,6 +243,9 @@ fun SearchScreen(
         val discoverColumns = remember(maxWidth) {
             discoverColumnCountForWidth(maxWidth)
         }
+        val searchResultColumns = remember(maxWidth) {
+            searchResultColumnCountForWidth(maxWidth)
+        }
         val homeSectionPadding = remember(maxWidth) {
             homeSectionHorizontalPaddingForWidth(maxWidth.value)
         }
@@ -401,10 +404,10 @@ fun SearchScreen(
                                 )
                             }
                         } else {
-                            items(allItems.chunked(discoverColumns)) { rowItems ->
+                            items(allItems.chunked(searchResultColumns)) { rowItems ->
                                 DiscoverGridRow(
                                     items = rowItems,
-                                    columns = discoverColumns,
+                                    columns = searchResultColumns,
                                     modifier = Modifier.padding(horizontal = 16.dp),
                                     watchedKeys = watchedUiState.watchedKeys,
                                     fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
@@ -434,11 +437,20 @@ fun SearchScreen(
 
 private fun discoverColumnCountForWidth(screenWidth: Dp): Int =
     when {
-        screenWidth >= 1400.dp -> 10
-        screenWidth >= 1200.dp -> 9
-        screenWidth >= 1000.dp -> 8
-        screenWidth >= 840.dp -> 7
-        else -> 6
+        screenWidth >= 1400.dp -> 8
+        screenWidth >= 1200.dp -> 7
+        screenWidth >= 1000.dp -> 6
+        screenWidth >= 840.dp -> 5
+        else -> 3
+    }
+
+private fun searchResultColumnCountForWidth(screenWidth: Dp): Int =
+    when {
+        screenWidth >= 1400.dp -> 8
+        screenWidth >= 1200.dp -> 7
+        screenWidth >= 1000.dp -> 6
+        screenWidth >= 840.dp -> 5
+        else -> 4
     }
 
 @Composable

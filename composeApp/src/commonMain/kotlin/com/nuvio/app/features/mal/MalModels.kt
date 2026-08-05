@@ -15,7 +15,7 @@ data class MalAuthState(
     val pendingAuthorizationStartedAtMillis: Long? = null,
 ) {
     val isAuthenticated: Boolean
-        get() = !accessToken.isNullOrBlank() && !refreshToken.isNullOrBlank()
+        get() = !accessToken.isNullOrBlank()
 }
 
 enum class MalConnectionMode {

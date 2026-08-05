@@ -94,6 +94,13 @@ object MalAuthRepository {
         return buildAuthorizationUrl(state, codeVerifierValue)
     }
 
+    fun onManualTokenEntered(token: String) {
+        ensureLoaded()
+        scope.launch {
+            completeManualToken(token)
+        }
+    }
+
     fun pendingAuthorizationUrl(): String? {
         ensureLoaded()
         val state = authState.pendingAuthorizationState ?: return null
@@ -317,6 +324,70 @@ object MalAuthRepository {
         )
     }
 
+    private suspend fun completeManualToken(token: String) {
+        val trimmed = token.trim()
+        if (trimmed.isBlank()) {
+            publish(errorMessage = "Inserisci un token valido")
+            return
+        }
+        publish(isLoading = true, errorMessage = null)
+
+        val parsedJson = runCatching {
+            json.decodeFromString<MalTokenResponse>(trimmed)
+        }.getOrNull()
+        val accessToken = parsedJson?.accessToken?.takeIf { it.isNotBlank() } ?: trimmed
+        val refreshToken = parsedJson?.refreshToken?.takeIf { it.isNotBlank() }
+
+        val response = runCatching {
+            httpGetTextWithHeaders(
+                url = "$API_BASE_URL/users/@me",
+                headers = mapOf("Authorization" to "Bearer $accessToken"),
+            )
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+            log.w { "Failed to validate manual MAL token: ${e.message}" }
+        }.getOrNull()
+
+        val username = response?.let { body ->
+            runCatching { json.decodeFromString<MalUserResponse>(body) }.getOrNull()?.name
+        }
+
+        if (username == null) {
+            publish(
+                isLoading = false,
+                errorMessage = "Token non valido o scaduto",
+            )
+            return
+        }
+
+        clearPendingAuthorization()
+        authState = authState.copy(
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+            tokenType = parsedJson?.tokenType,
+            createdAt = nowEpochMs() / 1_000L,
+            expiresIn = parsedJson?.expiresIn,
+            username = username,
+            pendingAuthorizationState = null,
+            pendingAuthorizationStartedAtMillis = null,
+        )
+        persist()
+        TraktSettingsRepository.setLibrarySourceMode(LibrarySourceMode.MAL)
+        scope.launch {
+            runCatching {
+                MalLibraryRepository.refreshNow()
+                MalSyncCoordinator.syncNow()
+            }.onFailure {
+                log.e { "Initial MAL sync after manual login failed: ${it.message}" }
+            }
+        }
+        publish(
+            isLoading = false,
+            statusMessage = "Connesso a MyAnimeList",
+            errorMessage = null,
+        )
+    }
+
     private suspend fun disconnect() {
         publish(isLoading = true, errorMessage = null)
 
@@ -330,7 +401,10 @@ object MalAuthRepository {
     }
 
     suspend fun refreshTokenIfNeeded(force: Boolean = false): Boolean {
-        val refreshToken = authState.refreshToken?.takeIf { it.isNotBlank() } ?: return false
+        val refreshToken = authState.refreshToken?.takeIf { it.isNotBlank() }
+        if (refreshToken == null) {
+            return !isTokenExpiredOrExpiring(authState)
+        }
 
         if (!force && !isTokenExpiredOrExpiring(authState)) {
             return true
@@ -449,8 +523,8 @@ object MalAuthRepository {
     }
 
     private fun isTokenExpiredOrExpiring(state: MalAuthState): Boolean {
-        val createdAt = state.createdAt ?: return true
-        val expiresIn = state.expiresIn ?: return true
+        val createdAt = state.createdAt ?: return false
+        val expiresIn = state.expiresIn ?: return false
         val expiresAtSeconds = createdAt + expiresIn
         val nowSeconds = nowEpochMs() / 1_000L
         return nowSeconds >= (expiresAtSeconds - 60)
