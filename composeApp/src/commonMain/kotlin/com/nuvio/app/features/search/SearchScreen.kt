@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,15 +44,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nuvio.app.core.network.NetworkCondition
 import com.nuvio.app.core.network.NetworkStatusRepository
+import com.nuvio.app.core.ui.NuvioInfoBadge
 import com.nuvio.app.core.ui.NuvioInputField
 import com.nuvio.app.core.ui.NuvioScreen
 import com.nuvio.app.core.ui.NuvioNetworkOfflineCard
 import com.nuvio.app.core.ui.NuvioScreenHeader
+import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.core.ui.nuvioConsumePointerEvents
 import com.nuvio.app.core.ui.withDuplicateSafeLazyKeys
 import com.nuvio.app.features.addons.AddonRepository
 import com.nuvio.app.features.addons.enabledAddons
 import com.nuvio.app.features.anime.AnimeAddonRepository
+import com.nuvio.app.features.catalog.CatalogTarget
+import com.nuvio.app.features.cloudstream.CloudStreamPluginItem
 import com.nuvio.app.features.cloudstream.CloudStreamRepository
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
 import com.nuvio.app.features.home.MetaPreview
@@ -380,11 +386,19 @@ fun SearchScreen(
                     }
 
                     else -> {
-                        val allItems = uiState.sections
+                        val cloudStreamItems = uiState.sections
+                            .filter { it.target is CatalogTarget.CloudStream }
+                            .flatMap { it.items }
+                            .distinctBy { "${it.type}:${it.id}" }
+                        val normalItems = uiState.sections
+                            .filterNot { it.target is CatalogTarget.CloudStream }
                             .flatMap { it.items }
                             .distinctBy { "${it.type}:${it.id}" }
                             .sortedWith(compareByDescending<MetaPreview> { it.popularity }.thenByDescending { it.releaseInfo?.take(4)?.toIntOrNull() })
-                        if (allItems.isEmpty() && !uiState.isLoading) {
+                        val activeCloudStreamNames = cloudStreamUiState.plugins
+                            .filter(CloudStreamPluginItem::isRunnable)
+                            .map { it.metadata.name }
+                        if (normalItems.isEmpty() && cloudStreamItems.isEmpty() && !uiState.isLoading) {
                             item {
                                 SearchEmptyStateCard(
                                     reason = uiState.emptyStateReason,
@@ -404,16 +418,37 @@ fun SearchScreen(
                                 )
                             }
                         } else {
-                            items(allItems.chunked(searchResultColumns)) { rowItems ->
-                                DiscoverGridRow(
-                                    items = rowItems,
-                                    columns = searchResultColumns,
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                    watchedKeys = watchedUiState.watchedKeys,
-                                    fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
-                                    onPosterClick = onPosterClick,
-                                    onPosterLongClick = onPosterLongClick,
-                                )
+                            if (normalItems.isNotEmpty()) {
+                                items(normalItems.chunked(searchResultColumns)) { rowItems ->
+                                    DiscoverGridRow(
+                                        items = rowItems,
+                                        columns = searchResultColumns,
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        watchedKeys = watchedUiState.watchedKeys,
+                                        fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                                        onPosterClick = onPosterClick,
+                                        onPosterLongClick = onPosterLongClick,
+                                    )
+                                }
+                            }
+                            if (cloudStreamItems.isNotEmpty()) {
+                                item(key = "cloudstream_active_badges") {
+                                    CloudStreamActiveBadges(
+                                        pluginNames = activeCloudStreamNames,
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                                    )
+                                }
+                                items(cloudStreamItems.chunked(searchResultColumns)) { rowItems ->
+                                    DiscoverGridRow(
+                                        items = rowItems,
+                                        columns = searchResultColumns,
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        watchedKeys = watchedUiState.watchedKeys,
+                                        fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
+                                        onPosterClick = onPosterClick,
+                                        onPosterLongClick = onPosterLongClick,
+                                    )
+                                }
                             }
                             if (uiState.isLoading) {
                                 item(key = "search_loading_more") {
@@ -452,6 +487,29 @@ private fun searchResultColumnCountForWidth(screenWidth: Dp): Int =
         screenWidth >= 840.dp -> 5
         else -> 4
     }
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CloudStreamActiveBadges(
+    pluginNames: List<String>,
+    modifier: Modifier = Modifier,
+) {
+    val tokens = MaterialTheme.nuvio
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        NuvioInfoBadge(
+            text = "CLOUDSTREAM ATTIVI",
+            backgroundColor = tokens.colors.accent,
+            contentColor = tokens.colors.onAccent,
+        )
+        pluginNames.forEach { name ->
+            NuvioInfoBadge(text = name.uppercase())
+        }
+    }
+}
 
 @Composable
 private fun SearchEmptyStateCard(

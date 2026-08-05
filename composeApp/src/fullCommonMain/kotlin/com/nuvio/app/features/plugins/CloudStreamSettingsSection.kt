@@ -496,11 +496,7 @@ private class CloudStreamSettingsCopy private constructor(
     private val isTurkish get() = language == AppLanguage.TURKISH
     private val isItalian get() = language == AppLanguage.ITALIAN
 
-    val sectionTitle: String = when {
-        isTurkish -> "CloudStream repository ve eklentileri"
-        isItalian -> "Repository e plugin CloudStream"
-        else -> "CloudStream repositories and plugins"
-    }
+    val sectionTitle: String = "CLOUDSTREAM"
     val sectionDescription: String = when {
         isTurkish -> "Standart .cs3 paketleri indirilen üçüncü taraf kodudur. Android full sürümü bu paketleri CloudStream çalışma zamanı ile çalıştırabilir; iOS yalnızca uygulamaya derlenmiş uyumluluk adaptörlerini kullanabilir. Yalnızca güvendiğiniz depoları ve eklentileri kurun."
         isItalian -> "I pacchetti .cs3 standard sono codice di terze parti scaricato. Le build Android full possono eseguirli con il runtime CloudStream integrato; iOS può utilizzare solo gli adattatori di compatibilità compilati nell'app. Installa solo repository e plugin di cui ti fidi."
