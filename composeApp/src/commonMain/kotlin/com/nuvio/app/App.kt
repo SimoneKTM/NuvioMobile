@@ -495,7 +495,7 @@ fun App(
     onReplace: ((AppRoute) -> Unit)? = null,
     onActivate: ((AppScreenTab) -> Unit)? = null,
     onAppReady: ((Boolean) -> Unit)? = null,
-    onTabTitles: ((home: String, anime: String, search: String, library: String, profile: String) -> Unit)? = null,
+    onTabTitles: ((home: String, anime: String, search: String, library: String, liveTv: String, profile: String) -> Unit)? = null,
     nativeProfileSwitcherController: NativeProfileSwitcherController? = null,
 ) {
     setSingletonImageLoaderFactory { context ->
@@ -839,7 +839,7 @@ private fun MainAppContent(
     onGoBack: (() -> Unit)? = null,
     onReplace: ((AppRoute) -> Unit)? = null,
     onActivate: ((AppScreenTab) -> Unit)? = null,
-    onTabTitles: ((home: String, anime: String, search: String, library: String, profile: String) -> Unit)? = null,
+    onTabTitles: ((home: String, anime: String, search: String, library: String, liveTv: String, profile: String) -> Unit)? = null,
     nativeProfileSwitcherController: NativeProfileSwitcherController? = null,
     onRootContentReady: ((Boolean) -> Unit)? = null,
     onSwitchProfile: () -> Unit = {},
@@ -927,6 +927,11 @@ private fun MainAppContent(
                 selectedTab = AppScreenTab.Home
             }
         }
+        LaunchedEffect(animeProfileState.config.showInNavigation, useNativeNavigation) {
+            if (useNativeNavigation) {
+                NativeTabBridge.publishAnimeTabVisible(animeProfileState.config.showInNavigation)
+            }
+        }
         val openPosterActions: (PosterActionTarget) -> Unit = { target ->
             hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
             focusManager.clearFocus(force = true)
@@ -972,6 +977,7 @@ private fun MainAppContent(
     val nativeTabAnimeTitle = stringResource(Res.string.compose_nav_anime)
     val nativeTabSearchTitle = stringResource(Res.string.compose_nav_search)
     val nativeTabLibraryTitle = stringResource(Res.string.compose_nav_library)
+    val nativeTabLiveTvTitle = stringResource(Res.string.compose_nav_live_tv)
     val nativeTabProfileTitle = stringResource(Res.string.compose_nav_profile)
     val homescreenSettingsTitle = stringResource(Res.string.compose_settings_page_homescreen)
     val metaScreenSettingsTitle = stringResource(Res.string.compose_settings_page_meta_screen)
@@ -1054,6 +1060,7 @@ private fun MainAppContent(
         nativeTabAnimeTitle,
         nativeTabSearchTitle,
         nativeTabLibraryTitle,
+        nativeTabLiveTvTitle,
         nativeTabProfileTitle,
         onTabTitles,
     ) {
@@ -1062,6 +1069,7 @@ private fun MainAppContent(
             anime = nativeTabAnimeTitle,
             search = nativeTabSearchTitle,
             library = nativeTabLibraryTitle,
+            liveTv = nativeTabLiveTvTitle,
             profile = nativeTabProfileTitle,
         )
         onTabTitles?.invoke(
@@ -1069,6 +1077,7 @@ private fun MainAppContent(
             nativeTabAnimeTitle,
             nativeTabSearchTitle,
             nativeTabLibraryTitle,
+            nativeTabLiveTvTitle,
             nativeTabProfileTitle,
         )
     }

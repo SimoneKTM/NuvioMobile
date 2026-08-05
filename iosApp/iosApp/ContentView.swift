@@ -36,6 +36,7 @@ private enum NuvioComposeHost {
 final class RootComposeViewController: UIViewController, UITabBarDelegate {
     private enum NativeTab: String, CaseIterable {
         case home = "Home"
+        case anime = "Anime"
         case search = "Search"
         case library = "Library"
         case liveTv = "LiveTv"
@@ -44,6 +45,7 @@ final class RootComposeViewController: UIViewController, UITabBarDelegate {
         var tag: Int {
             switch self {
             case .home: return 0
+            case .anime: return 5
             case .search: return 1
             case .library: return 2
             case .liveTv: return 3
@@ -54,6 +56,7 @@ final class RootComposeViewController: UIViewController, UITabBarDelegate {
         var titleKey: String {
             switch self {
             case .home: return "NuvioNativeTabTitleHome"
+            case .anime: return "NuvioNativeTabTitleAnime"
             case .search: return "NuvioNativeTabTitleSearch"
             case .library: return "NuvioNativeTabTitleLibrary"
             case .liveTv: return "NuvioNativeTabTitleLiveTv"
@@ -64,6 +67,7 @@ final class RootComposeViewController: UIViewController, UITabBarDelegate {
         var fallbackTitle: String {
             switch self {
             case .home: return "Home"
+            case .anime: return "Anime"
             case .search: return "Search"
             case .library: return "Library"
             case .liveTv: return "Live TV"
@@ -79,6 +83,8 @@ final class RootComposeViewController: UIViewController, UITabBarDelegate {
             switch self {
             case .liveTv:
                 return (UIImage(systemName: "tv") ?? UIImage()).withRenderingMode(.alwaysTemplate)
+            case .anime:
+                return (UIImage(systemName: "film.stack") ?? UIImage()).withRenderingMode(.alwaysTemplate)
             case .home, .search, .library, .settings:
                 guard let appTab = NuvioAppTab.from(kotlinName: rawValue) else { return UIImage() }
                 return NuvioNativeTabIcon.image(for: appTab)
@@ -300,19 +306,30 @@ final class TabNavigationCoordinator: ObservableObject {
 @available(iOS 16.0, *)
 enum NuvioAppTab: String, CaseIterable, Hashable {
     case home = "Home"
+    case anime = "Anime"
     case search = "Search"
     case library = "Library"
+    case liveTv = "LiveTv"
     case settings = "Settings"
 
     var fallbackTitle: String {
-        String(localized: String.LocalizationValue(rawValue))
+        switch self {
+        case .home: return String(localized: "Home")
+        case .anime: return String(localized: "Anime")
+        case .search: return String(localized: "Search")
+        case .library: return String(localized: "Library")
+        case .liveTv: return String(localized: "Live TV")
+        case .settings: return String(localized: "Settings")
+        }
     }
 
     static func from(kotlinName: String?) -> NuvioAppTab? {
         switch kotlinName?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
         case "home": return .home
+        case "anime": return .anime
         case "search": return .search
         case "library": return .library
+        case "livetv": return .liveTv
         case "settings", "profile": return .settings
         default: return nil
         }
@@ -321,8 +338,10 @@ enum NuvioAppTab: String, CaseIterable, Hashable {
     var iconAssetName: String {
         switch self {
         case .home: return "NuvioTabHome"
+        case .anime: return "NuvioTabAnime"
         case .search: return "NuvioTabSearch"
         case .library: return "NuvioTabLibrary"
+        case .liveTv: return "NuvioTabLiveTv"
         case .settings: return "NuvioTabProfile"
         }
     }
@@ -330,8 +349,10 @@ enum NuvioAppTab: String, CaseIterable, Hashable {
     var fallbackSystemImage: String {
         switch self {
         case .home: return "house.fill"
+        case .anime: return "film.stack"
         case .search: return "magnifyingglass"
         case .library: return "rectangle.stack.fill"
+        case .liveTv: return "tv"
         case .settings: return "person.crop.circle.fill"
         }
     }
@@ -594,8 +615,10 @@ final class AppNavigationCoordinator: ObservableObject {
     @Published var isProfileSwitcherPresented = false
 
     let homeCoordinator = TabNavigationCoordinator()
+    let animeCoordinator = TabNavigationCoordinator()
     let searchCoordinator = TabNavigationCoordinator()
     let libraryCoordinator = TabNavigationCoordinator()
+    let liveTvCoordinator = TabNavigationCoordinator()
     let settingsCoordinator = TabNavigationCoordinator()
     let profileSwitcherController = NativeProfileSwitcherController()
     let profileTabInteraction = NativeProfileTabInteractionCoordinator()
@@ -608,14 +631,23 @@ final class AppNavigationCoordinator: ObservableObject {
     }
 
     private var allCoordinators: [TabNavigationCoordinator] {
-        [homeCoordinator, searchCoordinator, libraryCoordinator, settingsCoordinator]
+        [
+            homeCoordinator,
+            animeCoordinator,
+            searchCoordinator,
+            libraryCoordinator,
+            liveTvCoordinator,
+            settingsCoordinator,
+        ]
     }
 
     func coordinator(for tab: NuvioAppTab) -> TabNavigationCoordinator {
         switch tab {
         case .home: return homeCoordinator
+        case .anime: return animeCoordinator
         case .search: return searchCoordinator
         case .library: return libraryCoordinator
+        case .liveTv: return liveTvCoordinator
         case .settings: return settingsCoordinator
         }
     }
@@ -631,11 +663,20 @@ final class AppNavigationCoordinator: ObservableObject {
         localizedTabTitles[tab] ?? tab.fallbackTitle
     }
 
-    func updateTabTitles(home: String, search: String, library: String, profile: String) {
+    func updateTabTitles(
+        home: String,
+        anime: String,
+        search: String,
+        library: String,
+        liveTv: String,
+        profile: String
+    ) {
         localizedTabTitles = [
             .home: home,
+            .anime: anime,
             .search: search,
             .library: library,
+            .liveTv: liveTv,
             .settings: profile,
         ]
     }
@@ -720,11 +761,13 @@ struct NativeNavComposeView: UIViewControllerRepresentable {
             onAppReady: { ready in
                 appCoordinator.updateAppReady(ready.boolValue)
             },
-            onTabTitles: { home, search, library, profile in
+            onTabTitles: { home, anime, search, library, liveTv, profile in
                 appCoordinator.updateTabTitles(
                     home: home,
+                    anime: anime,
                     search: search,
                     library: library,
+                    liveTv: liveTv,
                     profile: profile
                 )
             },
@@ -1170,9 +1213,64 @@ private struct NativeProfileSwitcherView: View {
 }
 
 @available(iOS 16.0, *)
+private final class NativeTabVisibilityStore: ObservableObject {
+    private static let liveTvVisibleKey = "NuvioLiveTvNavigationVisible"
+    private static let liveTvDidChange = Notification.Name("NuvioLiveTvNavigationVisibilityDidChange")
+    private static let animeVisibleKey = "NuvioAnimeNavigationVisible"
+    private static let animeDidChange = Notification.Name("NuvioAnimeNavigationVisibilityDidChange")
+
+    @Published private(set) var revision = 0
+    @Published private(set) var animeVisible = true
+    @Published private(set) var liveTvVisible = false
+
+    private var observers: [NSObjectProtocol] = []
+
+    init() {
+        reload()
+        observers = [
+            NotificationCenter.default.addObserver(
+                forName: Self.liveTvDidChange,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.reload()
+            },
+            NotificationCenter.default.addObserver(
+                forName: Self.animeDidChange,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.reload()
+            },
+        ]
+    }
+
+    deinit {
+        observers.forEach { NotificationCenter.default.removeObserver($0) }
+    }
+
+    func isVisible(_ tab: NuvioAppTab) -> Bool {
+        switch tab {
+        case .anime: return animeVisible
+        case .liveTv: return liveTvVisible
+        default: return true
+        }
+    }
+
+    private func reload() {
+        let defaults = UserDefaults.standard
+        liveTvVisible = defaults.bool(forKey: Self.liveTvVisibleKey)
+        let animeStored = defaults.object(forKey: Self.animeVisibleKey)
+        animeVisible = animeStored == nil ? true : defaults.bool(forKey: Self.animeVisibleKey)
+        revision &+= 1
+    }
+}
+
+@available(iOS 16.0, *)
 struct NativeNavContentView: View {
     @StateObject private var appCoordinator = AppNavigationCoordinator()
     @StateObject private var iconStore = NativeTabIconStore()
+    @StateObject private var visibilityStore = NativeTabVisibilityStore()
 
     private var usesNativeTabBar: Bool {
         guard UIDevice.current.userInterfaceIdiom == .phone else {
@@ -1210,9 +1308,13 @@ struct NativeNavContentView: View {
         )
     }
 
+    private var visibleTabs: [NuvioAppTab] {
+        NuvioAppTab.allCases.filter(visibilityStore.isVisible)
+    }
+
     private var legacyTabs: some View {
         TabView(selection: tabSelection) {
-            ForEach(NuvioAppTab.allCases, id: \.self) { tab in
+            ForEach(visibleTabs, id: \.self) { tab in
                 TabContentView(
                     tab: tab,
                     usesNativeTabBar: usesNativeTabBar,
@@ -1245,7 +1347,7 @@ struct NativeNavContentView: View {
     @available(iOS 26.0, *)
     private var nativeTabs: some View {
         TabView(selection: tabSelection) {
-            ForEach(NuvioAppTab.allCases, id: \.self) { tab in
+            ForEach(visibleTabs, id: \.self) { tab in
                 if tab == .settings {
                     Tab(value: tab) {
                         TabContentView(
@@ -1315,10 +1417,17 @@ struct NativeNavContentView: View {
 
     @ViewBuilder
     var body: some View {
-        if #available(iOS 26.0, *), usesNativeTabBar {
-            nativeTabs
-        } else {
-            legacyTabs
+        Group {
+            if #available(iOS 26.0, *), usesNativeTabBar {
+                nativeTabs
+            } else {
+                legacyTabs
+            }
+        }
+        .onChange(of: visibilityStore.revision) { _ in
+            if !visibleTabs.contains(appCoordinator.selectedTab) {
+                appCoordinator.selectedTab = .home
+            }
         }
     }
 }

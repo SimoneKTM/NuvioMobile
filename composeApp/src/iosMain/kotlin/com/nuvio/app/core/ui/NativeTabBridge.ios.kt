@@ -13,12 +13,15 @@ private const val nativeTabTitleHomeKey = "NuvioNativeTabTitleHome"
 private const val nativeTabTitleAnimeKey = "NuvioNativeTabTitleAnime"
 private const val nativeTabTitleSearchKey = "NuvioNativeTabTitleSearch"
 private const val nativeTabTitleLibraryKey = "NuvioNativeTabTitleLibrary"
+private const val nativeTabTitleLiveTvKey = "NuvioNativeTabTitleLiveTv"
 private const val nativeTabTitleProfileKey = "NuvioNativeTabTitleProfile"
 private const val nativeProfileNameKey = "NuvioNativeProfileName"
 private const val nativeProfileAvatarColorKey = "NuvioNativeProfileAvatarColor"
 private const val nativeProfileAvatarUrlKey = "NuvioNativeProfileAvatarURL"
 private const val nativeProfileAvatarBackgroundColorKey = "NuvioNativeProfileAvatarBackgroundColor"
 private const val nativeTabChromeDidChangeNotification = "NuvioNativeTabChromeDidChange"
+private const val nativeAnimeNavigationVisibleKey = "NuvioAnimeNavigationVisible"
+private const val nativeAnimeNavigationDidChangeNotification = "NuvioAnimeNavigationVisibilityDidChange"
 
 internal actual fun isLiquidGlassNativeTabBarSupported(): Boolean {
     return UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPhone &&
@@ -48,14 +51,24 @@ internal actual fun publishNativeTabTitles(
     anime: String,
     search: String,
     library: String,
+    liveTv: String,
     profile: String,
 ) {
     publishString(nativeTabTitleHomeKey, home)
     publishString(nativeTabTitleAnimeKey, anime)
     publishString(nativeTabTitleSearchKey, search)
     publishString(nativeTabTitleLibraryKey, library)
+    publishString(nativeTabTitleLiveTvKey, liveTv)
     publishString(nativeTabTitleProfileKey, profile)
     notifyNativeTabChromeChanged()
+}
+
+internal actual fun publishNativeAnimeTabVisible(visible: Boolean) {
+    NSUserDefaults.standardUserDefaults.setBool(visible, forKey = nativeAnimeNavigationVisibleKey)
+    NSNotificationCenter.defaultCenter.postNotificationName(
+        nativeAnimeNavigationDidChangeNotification,
+        null,
+    )
 }
 
 internal actual fun publishNativeProfileTabIcon(

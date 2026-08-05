@@ -24,7 +24,7 @@ fun MainViewController(
     onReplace: (AppRoute) -> Unit,
     onActivate: (String) -> Unit,
     onAppReady: (Boolean) -> Unit,
-    onTabTitles: (String, String, String, String) -> Unit,
+    onTabTitles: (String, String, String, String, String, String) -> Unit,
     nativeProfileSwitcherController: NativeProfileSwitcherController,
 ): UIViewController {
     val initialTab = AppScreenTab.fromName(initialTabName)
@@ -41,8 +41,8 @@ fun MainViewController(
             onReplace = onReplace,
             onActivate = { tab -> onActivate(tab.name) },
             onAppReady = onAppReady,
-            onTabTitles = { home, _, search, library, profile ->
-                onTabTitles(home, search, library, profile)
+            onTabTitles = { home, anime, search, library, liveTv, profile ->
+                onTabTitles(home, anime, search, library, liveTv, profile)
             },
             nativeProfileSwitcherController = nativeProfileSwitcherController,
         )

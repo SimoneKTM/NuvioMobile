@@ -15,8 +15,11 @@ internal actual fun publishNativeTabTitles(
     anime: String,
     search: String,
     library: String,
+    liveTv: String,
     profile: String,
 ) {}
+
+internal actual fun publishNativeAnimeTabVisible(visible: Boolean) {}
 
 internal actual fun publishNativeProfileTabIcon(
     name: String?,

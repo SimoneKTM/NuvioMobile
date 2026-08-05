@@ -63,9 +63,14 @@ internal object NativeTabBridge {
         anime: String,
         search: String,
         library: String,
+        liveTv: String,
         profile: String,
     ) {
-        publishNativeTabTitles(home, anime, search, library, profile)
+        publishNativeTabTitles(home, anime, search, library, liveTv, profile)
+    }
+
+    fun publishAnimeTabVisible(visible: Boolean) {
+        publishNativeAnimeTabVisible(visible)
     }
 
     fun publishProfileTabIcon(
@@ -207,8 +212,11 @@ internal expect fun publishNativeTabTitles(
     anime: String,
     search: String,
     library: String,
+    liveTv: String,
     profile: String,
 )
+
+internal expect fun publishNativeAnimeTabVisible(visible: Boolean)
 
 internal expect fun publishNativeProfileTabIcon(
     name: String?,
