@@ -19,13 +19,13 @@ object OpenSubtitlesRepository {
         return settings.enabled && settings.hasApiKey && settings.userToken.isNotBlank()
     }
 
-    suspend fun ensureLoggedIn(): Boolean {
+    suspend fun ensureLoggedIn(): String? {
         val settings = settingsRepository.snapshot()
-        if (settings.userToken.isNotBlank()) return true
+        if (settings.userToken.isNotBlank()) return null
         if (!settings.hasUserCredentials) {
             println("[OpenSubtitles] ensureLoggedIn: no username/password configured")
             InAppLogger.warn("OpenSubtitles", "ensureLoggedIn: no username/password configured")
-            return false
+            return "no_credentials"
         }
         return try {
             val response = apiClient.login(settings.apiKey, settings.username, settings.password)
@@ -33,16 +33,16 @@ object OpenSubtitlesRepository {
                 settingsRepository.setUserToken(response.token)
                 println("[OpenSubtitles] ensureLoggedIn: login successful, token=${response.token.take(20)}...")
                 InAppLogger.info("OpenSubtitles", "ensureLoggedIn: login successful")
-                true
+                null
             } else {
                 println("[OpenSubtitles] ensureLoggedIn: login returned no token, status=${response.status} message=${response.message}")
                 InAppLogger.warn("OpenSubtitles", "ensureLoggedIn: login returned no token: ${response.message}")
-                false
+                "login error: ${response.message ?: "no token"}"
             }
         } catch (e: Exception) {
             println("[OpenSubtitles] ensureLoggedIn: error: ${e.message}")
             InAppLogger.error("OpenSubtitles", "ensureLoggedIn error: ${e.message}")
-            false
+            "login error: ${e.message ?: "unknown"}"
         }
     }
 
@@ -254,21 +254,22 @@ object OpenSubtitlesRepository {
         return items
     }
 
-    suspend fun downloadItem(item: OpenSubtitlesSubtitleItem): String? {
+    suspend fun downloadItem(item: OpenSubtitlesSubtitleItem): Result<String> {
         val settings = settingsRepository.snapshot()
         if (!settings.hasApiKey) {
             println("[OpenSubtitles] downloadItem: no API key")
             InAppLogger.warn("OpenSubtitles", "downloadItem: no API key")
-            return null
+            return Result.failure(IllegalStateException("missing_api_key"))
         }
         val token = settings.userToken
         if (token.isBlank()) {
             println("[OpenSubtitles] downloadItem: no user token, trying login...")
             InAppLogger.warn("OpenSubtitles", "downloadItem: no user token, trying login...")
-            if (!ensureLoggedIn()) {
-                println("[OpenSubtitles] downloadItem: login failed, cannot download")
-                InAppLogger.error("OpenSubtitles", "downloadItem: login failed, cannot download")
-                return null
+            val loginError = ensureLoggedIn()
+            if (loginError != null) {
+                println("[OpenSubtitles] downloadItem: login failed ($loginError), cannot download")
+                InAppLogger.error("OpenSubtitles", "downloadItem: login failed: $loginError")
+                return Result.failure(IllegalStateException(loginError))
             }
         }
         val currentToken = settingsRepository.snapshot().userToken
@@ -280,15 +281,18 @@ object OpenSubtitlesRepository {
             if (link != null) {
                 println("[OpenSubtitles] downloadItem: success, link=${link.take(60)}...")
                 InAppLogger.info("OpenSubtitles", "downloadItem: success")
+                Result.success(link)
             } else {
                 println("[OpenSubtitles] downloadItem: response has no link")
                 InAppLogger.warn("OpenSubtitles", "downloadItem: response has no link")
+                Result.failure(IllegalStateException("no_link"))
             }
-            link
         } catch (e: Exception) {
-            println("[OpenSubtitles] downloadItem: error: ${e.message}")
-            InAppLogger.error("OpenSubtitles", "downloadItem error: ${e.message}")
-            null
+            val detail = e.message.orEmpty()
+            println("[OpenSubtitles] downloadItem: error: $detail")
+            InAppLogger.error("OpenSubtitles", "downloadItem error: $detail")
+            val failure = if (detail.contains("406") || detail.contains("429")) "limit_reached" else detail
+            Result.failure(IllegalStateException(failure.ifBlank { "unknown" }))
         }
     }
 

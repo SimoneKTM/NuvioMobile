@@ -84,7 +84,7 @@ final class RootComposeViewController: UIViewController, UITabBarDelegate {
             case .liveTv:
                 return (UIImage(systemName: "tv") ?? UIImage()).withRenderingMode(.alwaysTemplate)
             case .anime:
-                return (UIImage(systemName: "film.stack") ?? UIImage()).withRenderingMode(.alwaysTemplate)
+                return NuvioNativeTabIcon.image(for: NuvioAppTab.anime)
             case .home, .search, .library, .settings:
                 guard let appTab = NuvioAppTab.from(kotlinName: rawValue) else { return UIImage() }
                 return NuvioNativeTabIcon.image(for: appTab)
@@ -349,7 +349,7 @@ enum NuvioAppTab: String, CaseIterable, Hashable {
     var fallbackSystemImage: String {
         switch self {
         case .home: return "house.fill"
-        case .anime: return "film.stack"
+        case .anime: return "cloud.fill"
         case .search: return "magnifyingglass"
         case .library: return "rectangle.stack.fill"
         case .liveTv: return "tv"

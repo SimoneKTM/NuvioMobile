@@ -1,9 +1,18 @@
 package com.nuvio.app.features.player
 
 import com.nuvio.app.core.logging.InAppLogger
+import com.nuvio.app.core.ui.NuvioToastController
 import com.nuvio.app.features.opensubtitles.OpenSubtitlesRepository
 import com.nuvio.app.features.opensubtitles.OpenSubtitlesSubtitleItem
 import kotlinx.coroutines.launch
+import nuvio.composeapp.generated.resources.Res
+import nuvio.composeapp.generated.resources.compose_player_opensubtitles_download_failed
+import nuvio.composeapp.generated.resources.compose_player_opensubtitles_download_limit
+import nuvio.composeapp.generated.resources.compose_player_opensubtitles_search_failed
+import nuvio.composeapp.generated.resources.network_empty_response_body
+import nuvio.composeapp.generated.resources.settings_opensubtitles_add_api_key_first
+import nuvio.composeapp.generated.resources.settings_opensubtitles_login_description
+import org.jetbrains.compose.resources.getString
 
 internal val PlayerScreenRuntime.subtitleStyle: SubtitleStyleState
     get() = playerSettingsUiState.subtitleStyle
@@ -234,15 +243,26 @@ internal fun PlayerScreenRuntime.searchOpenSubtitles() {
     scope.launch {
         isLoadingOpenSubtitles = true
         openSubtitlesItems = emptyList()
-        openSubtitlesItems = OpenSubtitlesRepository.searchManual(
-            imdbId = imdbId,
-            type = contentType ?: parentMetaType,
-            seasonNumber = activeSeasonNumber,
-            episodeNumber = activeEpisodeNumber,
-        )
-        println("[Player] searchOpenSubtitles: found ${openSubtitlesItems.size} items")
-        InAppLogger.info("Player/OS", "searchOpenSubtitles: found ${openSubtitlesItems.size} items")
-        isLoadingOpenSubtitles = false
+        try {
+            openSubtitlesItems = OpenSubtitlesRepository.searchManual(
+                imdbId = imdbId,
+                type = contentType ?: parentMetaType,
+                seasonNumber = activeSeasonNumber,
+                episodeNumber = activeEpisodeNumber,
+            )
+            println("[Player] searchOpenSubtitles: found ${openSubtitlesItems.size} items")
+            InAppLogger.info("Player/OS", "searchOpenSubtitles: found ${openSubtitlesItems.size} items")
+        } catch (e: Exception) {
+            println("[Player] searchOpenSubtitles error: ${e.message}")
+            InAppLogger.error("Player/OS", "searchOpenSubtitles error: ${e.message}")
+            NuvioToastController.show(getString(Res.string.compose_player_opensubtitles_search_failed))
+        } finally {
+            isLoadingOpenSubtitles = false
+        }
+        val loginError = OpenSubtitlesRepository.ensureLoggedIn()
+        if (loginError != null) {
+            NuvioToastController.show(openSubtitlesErrorMessage(loginError))
+        }
     }
 }
 
@@ -250,18 +270,45 @@ internal fun PlayerScreenRuntime.loadOpenSubtitlesSubtitle(item: OpenSubtitlesSu
     println("[Player] loadOpenSubtitlesSubtitle: fileId=${item.fileId} lang=${item.languageCode}")
     InAppLogger.info("Player/OS", "loadOpenSubtitlesSubtitle: fileId=${item.fileId} lang=${item.languageCode}")
     scope.launch {
-        val url = OpenSubtitlesRepository.downloadItem(item)
-        if (url != null) {
-            selectedOpenSubtitlesFileId = item.fileId
-            selectedSubtitleIndex = -1
-            selectedAddonSubtitleId = null
-            useCustomSubtitles = true
-            playerController?.setSubtitleUri(url)
-            println("[Player] loadOpenSubtitlesSubtitle: loaded via setSubtitleUri")
-            InAppLogger.info("Player/OS", "loadOpenSubtitlesSubtitle: loaded via setSubtitleUri")
-        } else {
-            println("[Player] loadOpenSubtitlesSubtitle: download returned null URL")
-            InAppLogger.warn("Player/OS", "loadOpenSubtitlesSubtitle: download returned null URL")
+        selectedOpenSubtitlesFileId = item.fileId
+        val result = OpenSubtitlesRepository.downloadItem(item)
+        result.fold(
+            onSuccess = { url ->
+                selectedSubtitleIndex = -1
+                selectedAddonSubtitleId = null
+                useCustomSubtitles = true
+                playerController?.setSubtitleUri(url)
+                println("[Player] loadOpenSubtitlesSubtitle: loaded via setSubtitleUri")
+                InAppLogger.info("Player/OS", "loadOpenSubtitlesSubtitle: loaded via setSubtitleUri")
+            },
+            onFailure = { error ->
+                if (selectedOpenSubtitlesFileId == item.fileId) {
+                    selectedOpenSubtitlesFileId = null
+                }
+                println("[Player] loadOpenSubtitlesSubtitle failed: ${error.message}")
+                InAppLogger.error("Player/OS", "loadOpenSubtitlesSubtitle failed: ${error.message}")
+                NuvioToastController.show(openSubtitlesErrorMessage(error.message.orEmpty()))
+            },
+        )
+    }
+}
+
+private suspend fun openSubtitlesErrorMessage(message: String): String {
+    val emptyBody = getString(Res.string.network_empty_response_body)
+    return when {
+        message == "missing_api_key" -> getString(Res.string.settings_opensubtitles_add_api_key_first)
+        message == "limit_reached" -> getString(Res.string.compose_player_opensubtitles_download_limit)
+        message == "no_link" -> getString(Res.string.compose_player_opensubtitles_download_failed, emptyBody)
+        message == "no_credentials" -> getString(Res.string.settings_opensubtitles_login_description)
+        message.startsWith("login error") -> {
+            val detail = message.substringAfter("error: ", "").ifBlank { null }
+            if (detail != null) {
+                getString(Res.string.compose_player_opensubtitles_download_failed, detail)
+            } else {
+                getString(Res.string.settings_opensubtitles_login_description)
+            }
         }
+        message.isBlank() -> getString(Res.string.compose_player_opensubtitles_download_failed, emptyBody)
+        else -> getString(Res.string.compose_player_opensubtitles_download_failed, message)
     }
 }

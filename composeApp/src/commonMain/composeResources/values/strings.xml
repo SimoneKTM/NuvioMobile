@@ -366,6 +366,9 @@
     <string name="compose_player_opensubtitles_section">OpenSubtitles</string>
     <string name="compose_player_opensubtitles_source">OpenSub</string>
     <string name="compose_player_search_opensubtitles">Search OpenSubtitles</string>
+    <string name="compose_player_opensubtitles_search_failed">OpenSubtitles search failed</string>
+    <string name="compose_player_opensubtitles_download_failed">OpenSubtitles download failed: %1$s</string>
+    <string name="compose_player_opensubtitles_download_limit">OpenSubtitles daily download limit reached. Try again tomorrow</string>
     <string name="compose_player_outline">Outline</string>
     <string name="compose_player_outline_color">Outline Color</string>
     <string name="compose_player_panel_episodes">Episodes</string>

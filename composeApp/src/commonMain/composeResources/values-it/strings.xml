@@ -365,6 +365,9 @@
     <string name="compose_player_opensubtitles_section">OpenSubtitles</string>
     <string name="compose_player_opensubtitles_source">OpenSub</string>
     <string name="compose_player_search_opensubtitles">Cerca su OpenSubtitles</string>
+    <string name="compose_player_opensubtitles_search_failed">Ricerca OpenSubtitles fallita</string>
+    <string name="compose_player_opensubtitles_download_failed">Download OpenSubtitles fallito: %1$s</string>
+    <string name="compose_player_opensubtitles_download_limit">Limite giornaliero di download OpenSubtitles raggiunto. Riprova domani</string>
     <string name="compose_player_outline">Contorno</string>
     <string name="compose_player_outline_color">Colore del contorno</string>
     <string name="compose_player_panel_episodes">Episodi</string>
