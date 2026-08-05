@@ -181,10 +181,12 @@ actual suspend fun httpPostJsonWithHeaders(
 ): String =
     addonHttpClient
         .post(url) {
-            accept(ContentType.Application.Json)
-            header(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-            headers.forEach { (key, value) ->
-                header(key, value, append = false)
+            val mergedHeaders = mapOf(
+                HttpHeaders.Accept to ContentType.Application.Json.toString(),
+                HttpHeaders.ContentType to ContentType.Application.Json.toString(),
+            ) + headers
+            mergedHeaders.forEach { (key, value) ->
+                header(key, value)
             }
             applyCustomUserAgent(headers)
             setBody(body)
