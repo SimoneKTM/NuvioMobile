@@ -48,16 +48,29 @@ fun KitsuEditMediaBottomSheet(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val statusOptions = listOf("Planned", "Current", "Completed", "On Hold", "Dropped")
+    val statusOptions = listOf(
+        "current" to stringResource(Res.string.library_kitsu_status_current),
+        "completed" to stringResource(Res.string.library_kitsu_status_completed),
+        "planned" to stringResource(Res.string.library_kitsu_status_planned),
+        "on_hold" to stringResource(Res.string.library_kitsu_status_on_hold),
+        "dropped" to stringResource(Res.string.library_kitsu_status_dropped),
+    )
 
     var selectedStatus by remember(item) {
-        val initial = when (item.status.lowercase()) {
-            "current" -> "Current"
-            "completed" -> "Completed"
-            "planned" -> "Planned"
-            "on_hold" -> "On Hold"
-            "dropped" -> "Dropped"
-            else -> item.status.lowercase().replaceFirstChar { it.uppercase() }
+        val initial = when {
+            item.status.equals("current", ignoreCase = true) ||
+                item.status.equals("in visione", ignoreCase = true) ||
+                item.status.equals("in corso", ignoreCase = true) -> "current"
+            item.status.equals("completed", ignoreCase = true) ||
+                item.status.equals("completato", ignoreCase = true) -> "completed"
+            item.status.equals("planned", ignoreCase = true) ||
+                item.status.equals("pianificato", ignoreCase = true) -> "planned"
+            item.status.equals("on_hold", ignoreCase = true) ||
+                item.status.equals("on hold", ignoreCase = true) ||
+                item.status.equals("in pausa", ignoreCase = true) -> "on_hold"
+            item.status.equals("dropped", ignoreCase = true) ||
+                item.status.equals("abbandonato", ignoreCase = true) -> "dropped"
+            else -> item.status.lowercase()
         }
         mutableStateOf(initial)
     }
@@ -134,8 +147,8 @@ fun KitsuEditMediaBottomSheet(
                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                statusOptions.forEach { option ->
-                    val isActive = option.equals(selectedStatus, ignoreCase = true)
+                statusOptions.forEach { (key, label) ->
+                    val isActive = key == selectedStatus
                     val bgColor by animateColorAsState(
                         targetValue = if (isActive) lavender else buttonDarkBg,
                         animationSpec = tween(200)
@@ -148,11 +161,11 @@ fun KitsuEditMediaBottomSheet(
                         modifier = Modifier
                             .clip(RoundedCornerShape(50.dp))
                             .background(bgColor)
-                            .clickable { selectedStatus = option }
+                            .clickable { selectedStatus = key }
                             .padding(horizontal = 20.dp, vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(option, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = textColor))
+                        Text(label, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = textColor))
                     }
                 }
             }
