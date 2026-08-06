@@ -2262,12 +2262,8 @@ private fun MainAppContent(
                                             navController.navigate(DetailRoute(type = type, id = id, title = "", isAnime = true))
                                         },
                                         onAnimeSettingsClick = {
-                                            if (useNativeNavigation && !isTabletLayout) {
-                                                navController.navigate(AnimeProfileSettingsRoute(animeProfileTitle))
-                                            } else {
-                                                requestedSettingsPageName = "AnimeProfile"
-                                                activateTab(AppScreenTab.Settings)
-                                            }
+                                            requestedSettingsPageName = "AnimeProfile"
+                                            activateTab(AppScreenTab.Settings)
                                         },
                                         onFolderClick = { collectionId, folderId ->
                                             val folderTitle = CollectionRepository.collections.value
