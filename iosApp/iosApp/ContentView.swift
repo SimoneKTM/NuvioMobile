@@ -1202,8 +1202,6 @@ struct NativeNavContentView: View {
     @StateObject private var iconStore = NativeTabIconStore()
     @StateObject private var visibilityStore = NativeTabVisibilityStore()
 
-    @State private var visitedTabs: Set<NuvioAppTab> = [.home]
-
     private var usesNativeTabBar: Bool {
         guard UIDevice.current.userInterfaceIdiom == .phone else {
             return false
@@ -1239,16 +1237,6 @@ struct NativeNavContentView: View {
         NuvioAppTab.allCases.filter(visibilityStore.isVisible)
     }
 
-    /// Live TV is the sixth (scrolling) entry so the Profile tab stays reachable.
-    private var scrollableTabOrder: [NuvioAppTab] {
-        [.home, .anime, .search, .library, .settings, .liveTv]
-    }
-
-    private var showsNativeTabBar: Bool {
-        appCoordinator.isAppReady &&
-            appCoordinator.coordinator(for: appCoordinator.selectedTab).path.isEmpty
-    }
-
     private var legacyTabs: some View {
         TabView(selection: tabSelection) {
             ForEach(visibleTabs, id: \.self) { tab in
@@ -1281,167 +1269,13 @@ struct NativeNavContentView: View {
         .tint(Color(uiColor: iconStore.accentColor))
     }
 
-    @available(iOS 26.0, *)
-    private var nativeTabs: some View {
-        ZStack(alignment: .bottom) {
-            ForEach(NuvioAppTab.allCases, id: \.self) { tab in
-                if visitedTabs.contains(tab) {
-                    TabContentView(
-                        tab: tab,
-                        usesNativeTabBar: usesNativeTabBar,
-                        usesTabletFloatingTabBar: usesTabletFloatingTabBar,
-                        coordinator: appCoordinator.coordinator(for: tab),
-                        appCoordinator: appCoordinator
-                    )
-                    .allowsHitTesting(appCoordinator.selectedTab == tab)
-                    .zIndex(appCoordinator.selectedTab == tab ? 1 : 0)
-                    .opacity(appCoordinator.selectedTab == tab ? 1 : 0)
-                    .accessibilityHidden(appCoordinator.selectedTab != tab)
-                }
-            }
-
-            if showsNativeTabBar {
-                NativeScrollableTabBar(
-                    tabs: scrollableTabOrder,
-                    selectedTab: appCoordinator.selectedTab,
-                    iconStore: iconStore,
-                    title: { appCoordinator.title(for: $0) },
-                    onSelect: select,
-                    isProfileSwitcherPresented: $appCoordinator.isProfileSwitcherPresented,
-                    profileSwitcherController: appCoordinator.profileSwitcherController,
-                    onManageProfiles: appCoordinator.openProfileManagement
-                )
-            }
-        }
-        .onAppear {
-            visitedTabs.insert(appCoordinator.selectedTab)
-        }
-        .onChange(of: appCoordinator.selectedTab) { newTab in
-            visitedTabs.insert(newTab)
-        }
-    }
-
-    @ViewBuilder
     var body: some View {
-        Group {
-            if #available(iOS 26.0, *), usesNativeTabBar {
-                nativeTabs
-            } else {
-                legacyTabs
-            }
-        }
-        .onChange(of: visibilityStore.revision) { _ in
-            // The custom scrollable bar always shows every tab, so visibility
-            // changes must not force the selection back to Home there.
-            guard !usesNativeTabBar else { return }
-            if !visibleTabs.contains(appCoordinator.selectedTab) {
-                appCoordinator.selectedTab = .home
-            }
-        }
-    }
-}
-
-@available(iOS 26.0, *)
-private struct NativeScrollableTabBar: View {
-    let tabs: [NuvioAppTab]
-    let selectedTab: NuvioAppTab
-    @ObservedObject var iconStore: NativeTabIconStore
-    let title: (NuvioAppTab) -> String
-    let onSelect: (NuvioAppTab) -> Void
-    @Binding var isProfileSwitcherPresented: Bool
-    let profileSwitcherController: NativeProfileSwitcherController
-    let onManageProfiles: () -> Void
-
-    private var unselectedTint: Color {
-        Color(
-            uiColor: UIColor(
-                red: 150 / 255,
-                green: 156 / 255,
-                blue: 163 / 255,
-                alpha: 1
-            )
-        )
-    }
-
-    private func tint(for tab: NuvioAppTab) -> Color {
-        tab == selectedTab
-            ? Color(uiColor: iconStore.accentColor)
-            : unselectedTint
-    }
-
-    @ViewBuilder
-    private func item(for tab: NuvioAppTab) -> some View {
-        let isSelected = tab == selectedTab
-        let button = VStack(spacing: 3) {
-            Image(uiImage: iconStore.image(for: tab, selected: isSelected))
-                .resizable()
-                .scaledToFit()
-                .frame(width: 25, height: 25)
-                .foregroundStyle(tint(for: tab))
-            Text(title(tab))
-                .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
-                .lineLimit(1)
-                .foregroundStyle(tint(for: tab))
-        }
-        .frame(width: 78)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            onSelect(tab)
-        }
-        .onLongPressGesture(minimumDuration: 0.45) {
-            if tab == .settings {
-                isProfileSwitcherPresented = true
-            }
-        }
-        .accessibilityLabel(title(tab))
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
-
-        if tab == .settings {
-            button.popover(
-                isPresented: $isProfileSwitcherPresented,
-                attachmentAnchor: .rect(.bounds),
-                arrowEdge: .bottom
-            ) {
-                NativeProfileSwitcherView(
-                    controller: profileSwitcherController,
-                    onManageProfiles: onManageProfiles
-                )
-            }
-        } else {
-            button
-        }
-    }
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            ScrollViewReader { proxy in
-                HStack(spacing: 0) {
-                    ForEach(tabs, id: \.self) { tab in
-                        item(for: tab)
-                            .id(tab)
-                    }
-                }
-                .padding(.horizontal, 4)
-                .onAppear {
-                    proxy.scrollTo(selectedTab, anchor: .center)
-                }
-                .onChange(of: selectedTab) { newTab in
-                    withAnimation(.easeOut(duration: 0.25)) {
-                        proxy.scrollTo(newTab, anchor: .center)
-                    }
+        legacyTabs
+            .onChange(of: visibilityStore.revision) { _ in
+                if !visibleTabs.contains(appCoordinator.selectedTab) {
+                    appCoordinator.selectedTab = .home
                 }
             }
-        }
-        .frame(height: 49)
-        .background {
-            ZStack(alignment: .top) {
-                Color(uiColor: nuvioBackgroundColor)
-                    .ignoresSafeArea(edges: .bottom)
-                Rectangle()
-                    .fill(.white.opacity(0.08))
-                    .frame(height: 0.5)
-            }
-        }
     }
 }
 

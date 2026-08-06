@@ -982,7 +982,6 @@ private fun MainAppContent(
     val homescreenSettingsTitle = stringResource(Res.string.compose_settings_page_homescreen)
     val metaScreenSettingsTitle = stringResource(Res.string.compose_settings_page_meta_screen)
     val continueWatchingSettingsTitle = stringResource(Res.string.compose_settings_page_continue_watching)
-    val debridSettingsTitle = stringResource(Res.string.compose_settings_page_debrid)
     val downloadsSettingsTitle = stringResource(Res.string.compose_settings_root_downloads_title)
     val addonsSettingsTitle = stringResource(Res.string.compose_settings_page_addons)
     val pluginsSettingsTitle = stringResource(Res.string.compose_settings_page_plugins)
@@ -2179,41 +2178,6 @@ private fun MainAppContent(
                                             )
                                         },
                                         onLibrarySectionViewAllClick = onLibrarySectionViewAllClick,
-                                        onCloudFilePlay = { item, file ->
-                                            coroutineScope.launch {
-                                                val resumeItem = WatchProgressRepository
-                                                    .progressForVideo(
-                                                        videoId = item.playbackVideoId(file),
-                                                        parentMetaId = item.id,
-                                                    )
-                                                    ?.takeIf { it.isResumable }
-                                                    ?.toContinueWatchingItem()
-                                                if (
-                                                    !launchCloudLibraryFile(
-                                                        item = item,
-                                                        file = file,
-                                                        resumePositionMs = resumeItem?.resumePositionMs,
-                                                        resumeProgressFraction = resumeItem?.resumeProgressFraction,
-                                                    )
-                                                ) {
-                                                    NuvioToastController.show(cloudLibraryPlayFailedText)
-                                                }
-                                            }
-                                        },
-                                        onConnectCloudClick = {
-                                            if (useNativeNavigation && !isTabletLayout) {
-                                                activateTab(AppScreenTab.Settings)
-                                                navController.navigate(
-                                                    SettingsPageRoute(
-                                                        pageName = "Debrid",
-                                                        title = debridSettingsTitle,
-                                                    )
-                                                )
-                                            } else {
-                                                requestedSettingsPageName = "Debrid"
-                                                activateTab(AppScreenTab.Settings)
-                                            }
-                                        },
                                         onLiveTvChannelClick = onLiveTvChannelClick,
                                         onContinueWatchingClick = onContinueWatchingClick,
                                         onContinueWatchingLongPress = onContinueWatchingLongPress,
@@ -4035,8 +3999,6 @@ private fun AppTabHost(
     onLibraryPosterClick: ((LibraryItem) -> Unit)? = null,
     onLibraryPosterLongClick: ((LibraryItem, LibrarySection) -> Unit)? = null,
     onLibrarySectionViewAllClick: ((LibrarySection) -> Unit)? = null,
-    onCloudFilePlay: ((CloudLibraryItem, CloudLibraryFile) -> Unit)? = null,
-    onConnectCloudClick: (() -> Unit)? = null,
     onLiveTvChannelClick: (LiveTvChannel) -> Unit = {},
     onContinueWatchingClick: ((ContinueWatchingItem) -> Unit)? = null,
     onContinueWatchingLongPress: ((ContinueWatchingItem) -> Unit)? = null,
@@ -4112,8 +4074,6 @@ private fun AppTabHost(
                         onPosterClick = onLibraryPosterClick,
                         onPosterLongClick = onLibraryPosterLongClick,
                         onSectionViewAllClick = onLibrarySectionViewAllClick,
-                        onCloudFilePlay = onCloudFilePlay,
-                        onConnectCloudClick = onConnectCloudClick,
                     )
                 }
 
