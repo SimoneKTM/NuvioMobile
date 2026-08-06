@@ -59,6 +59,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.core.animateDpAsState
+import com.nuvio.app.core.i18n.localizedGenreLabel
+import com.nuvio.app.core.i18n.localizedMediaTypeLabel
 import com.nuvio.app.core.ui.NuvioInputField
 import com.nuvio.app.core.ui.NuvioModalBottomSheet
 import com.nuvio.app.core.ui.NuvioPrimaryButton
@@ -1023,9 +1025,7 @@ private fun CatalogPickerScreen(
                             subtitle = if (catalog.addonId == "livetv") {
                                 stringResource(Res.string.compose_nav_live_tv)
                             } else {
-                                catalog.type.replaceFirstChar {
-                                    if (it.isLowerCase()) it.titlecase() else it.toString()
-                                }
+                                localizedMediaTypeLabel(catalog.type)
                             },
                             selected = isSelected,
                             onClick = { onToggle(catalog) },
@@ -2088,7 +2088,7 @@ private fun GenrePickerSheet(
 
             itemsIndexed(genreOptions) { _, genre ->
                 GenrePickerOptionRow(
-                    title = genre,
+                    title = localizedGenreLabel(genre),
                     selected = selectedGenre == genre,
                     onClick = { onSelect(genre) },
                 )
@@ -2315,15 +2315,14 @@ private fun FolderCatalogSourceCard(
     onRemove: () -> Unit,
     onOpenGenrePicker: () -> Unit,
 ) {
-    val typeLabel = source.type.replaceFirstChar {
-        if (it.isLowerCase()) it.titlecase() else it.toString()
-    }
+    val typeLabel = localizedMediaTypeLabel(source.type)
     val metaLine = buildString {
         append(typeLabel)
         append(" · ${source.catalogId}")
     }
     val genreOptions = matchingCatalog?.genreOptions.orEmpty()
-    val selectedGenreLabel = source.genre ?: if (matchingCatalog?.genreRequired == true) {
+    val selectedGenreLabel = source.genre?.takeIf { it.isNotBlank() }?.let { localizedGenreLabel(it) }
+        ?: if (matchingCatalog?.genreRequired == true) {
         stringResource(Res.string.collections_editor_select_genre)
     } else {
         stringResource(Res.string.collections_editor_all_genres)

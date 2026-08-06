@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.graphicsLayer
 import coil3.compose.AsyncImage
+import com.nuvio.app.core.i18n.localizedGenreLabel
 import com.nuvio.app.features.details.MetaDetails
 import nuvio.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -243,7 +244,7 @@ fun DetailHero(
                     if (meta.genres.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = meta.genres.take(3).joinToString(" \u2022 "),
+                            text = meta.genres.take(3).joinToString(" \u2022 ") { localizedGenreLabel(it) },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,

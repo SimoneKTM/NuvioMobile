@@ -104,6 +104,7 @@ import com.nuvio.app.core.sync.RealtimeSyncInvalidationService
 import com.nuvio.app.core.sync.SyncManager
 import com.nuvio.app.core.ui.NuvioNavigationBar
 import com.nuvio.app.core.format.formatReleaseDateForDisplay
+import com.nuvio.app.core.i18n.localizedMediaTypeLabel
 import com.nuvio.app.core.ui.NuvioContinueWatchingActionSheet
 import com.nuvio.app.core.ui.NuvioPosterZoomActionOverlay
 import com.nuvio.app.core.ui.PosterZoomAnchor
@@ -3600,9 +3601,7 @@ private fun MainAppContent(
                         subtitle = preview.releaseInfo
                             ?.takeIf { it.isNotBlank() }
                             ?.let { formatReleaseDateForDisplay(it) }
-                            ?: preview.type.replaceFirstChar { char ->
-                                if (char.isLowerCase()) char.titlecase() else char.toString()
-                            },
+                            ?: localizedMediaTypeLabel(preview.type),
                         isWatched = isWatched,
                         anchor = selectedPosterAnchor,
                         actions = listOf(

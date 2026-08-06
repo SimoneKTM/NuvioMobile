@@ -52,6 +52,8 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.nuvio.app.core.format.formatDateForDisplay
 import com.nuvio.app.core.format.rememberDateFormatOption
+import com.nuvio.app.core.i18n.localizedGenreLabel
+import com.nuvio.app.core.i18n.localizedMediaTypeLabel
 import com.nuvio.app.features.home.MetaPreview
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -404,10 +406,10 @@ private fun HeroContentBlock(
             },
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            HeroMetaText(text = item.type.replaceFirstChar(Char::uppercase))
+            HeroMetaText(text = localizedMediaTypeLabel(item.type))
             item.genres.firstOrNull()?.let { genre ->
                 HeroMetaDot()
-                HeroMetaText(text = genre)
+                HeroMetaText(text = localizedGenreLabel(genre))
             }
             item.releaseInfo?.takeIf { it.isNotBlank() }?.let { info ->
                 HeroMetaDot()

@@ -45,6 +45,27 @@ import nuvio.composeapp.generated.resources.downloads_failed_create_file
 import nuvio.composeapp.generated.resources.downloads_failed_open_stream
 import nuvio.composeapp.generated.resources.downloads_failed_open_stream_generic
 import nuvio.composeapp.generated.resources.downloads_hls_unsupported_desktop
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_action
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_adventure
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_animation
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_comedy
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_crime
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_documentary
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_drama
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_family
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_fantasy
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_history
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_horror
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_music
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_mystery
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_reality
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_romance
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_science_fiction
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_scifi
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_thriller
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_tv_movie
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_war
+import nuvio.composeapp.generated.resources.collections_editor_tmdb_genre_western
 import nuvio.composeapp.generated.resources.generic_unknown_error
 import nuvio.composeapp.generated.resources.live_tv_read_m3u_failed
 import nuvio.composeapp.generated.resources.live_tv_present_picker_failed
@@ -90,6 +111,34 @@ fun localizedMediaTypeLabel(type: String): String {
 }
 
 fun localizedMovieTypeLabel(): String = resourceString("Movie") { getString(Res.string.media_movie) }
+
+fun localizedGenreLabel(genre: String): String {
+    val fallback = genre.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+    return when (genre.trim().lowercase()) {
+        "action" -> resourceString("Action") { getString(Res.string.collections_editor_tmdb_genre_action) }
+        "adventure" -> resourceString("Adventure") { getString(Res.string.collections_editor_tmdb_genre_adventure) }
+        "animation" -> resourceString("Animation") { getString(Res.string.collections_editor_tmdb_genre_animation) }
+        "comedy" -> resourceString("Comedy") { getString(Res.string.collections_editor_tmdb_genre_comedy) }
+        "crime" -> resourceString("Crime") { getString(Res.string.collections_editor_tmdb_genre_crime) }
+        "documentary" -> resourceString("Documentary") { getString(Res.string.collections_editor_tmdb_genre_documentary) }
+        "drama" -> resourceString("Drama") { getString(Res.string.collections_editor_tmdb_genre_drama) }
+        "family" -> resourceString("Family") { getString(Res.string.collections_editor_tmdb_genre_family) }
+        "fantasy" -> resourceString("Fantasy") { getString(Res.string.collections_editor_tmdb_genre_fantasy) }
+        "history" -> resourceString("History") { getString(Res.string.collections_editor_tmdb_genre_history) }
+        "horror" -> resourceString("Horror") { getString(Res.string.collections_editor_tmdb_genre_horror) }
+        "music" -> resourceString("Music") { getString(Res.string.collections_editor_tmdb_genre_music) }
+        "mystery" -> resourceString("Mystery") { getString(Res.string.collections_editor_tmdb_genre_mystery) }
+        "reality" -> resourceString("Reality") { getString(Res.string.collections_editor_tmdb_genre_reality) }
+        "romance" -> resourceString("Romance") { getString(Res.string.collections_editor_tmdb_genre_romance) }
+        "science fiction" -> resourceString("Science Fiction") { getString(Res.string.collections_editor_tmdb_genre_science_fiction) }
+        "scifi", "sci-fi" -> resourceString("Sci-Fi") { getString(Res.string.collections_editor_tmdb_genre_scifi) }
+        "thriller" -> resourceString("Thriller") { getString(Res.string.collections_editor_tmdb_genre_thriller) }
+        "tv movie" -> resourceString("TV Movie") { getString(Res.string.collections_editor_tmdb_genre_tv_movie) }
+        "war" -> resourceString("War") { getString(Res.string.collections_editor_tmdb_genre_war) }
+        "western" -> resourceString("Western") { getString(Res.string.collections_editor_tmdb_genre_western) }
+        else -> fallback
+    }
+}
 
 fun localizedSeasonEpisodeCode(seasonNumber: Int?, episodeNumber: Int?): String? =
     when {

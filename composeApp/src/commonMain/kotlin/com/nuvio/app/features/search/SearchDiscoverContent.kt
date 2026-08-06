@@ -34,6 +34,7 @@ import coil3.compose.AsyncImage
 import com.nuvio.app.core.network.NetworkCondition
 import com.nuvio.app.core.format.formatDateForDisplay
 import com.nuvio.app.core.format.rememberDateFormatOption
+import com.nuvio.app.core.i18n.localizedGenreLabel
 import com.nuvio.app.core.ui.NuvioDropdownChip
 import com.nuvio.app.core.ui.NuvioDropdownOption
 import com.nuvio.app.core.ui.NuvioNetworkOfflineCard
@@ -179,11 +180,12 @@ private fun DiscoverFilterRow(
             if (selectedCatalog?.genreRequired != true) {
                 add(NuvioDropdownOption(key = "", label = stringResource(Res.string.discover_all_genres)))
             }
-            addAll(state.genreOptions.map { genre -> NuvioDropdownOption(key = genre, label = genre) })
+            addAll(state.genreOptions.map { genre -> NuvioDropdownOption(key = genre, label = localizedGenreLabel(genre)) })
         }
         NuvioDropdownChip(
             title = stringResource(Res.string.discover_select_genre),
-            label = state.selectedGenre ?: stringResource(Res.string.discover_all_genres),
+            label = state.selectedGenre?.takeIf { it.isNotBlank() }?.let { localizedGenreLabel(it) }
+                ?: stringResource(Res.string.discover_all_genres),
             selectedKey = state.selectedGenre ?: "",
             options = genreOptions,
             enabled = genreOptions.size > 1 || selectedCatalog?.genreRequired == true,
