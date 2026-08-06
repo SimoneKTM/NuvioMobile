@@ -957,7 +957,7 @@ final class MPVPlayerViewController: UIViewController {
     }
 
     private func readPlaybackStateFromMpv() {
-        guard let self, self.mpv != nil else { return }
+        guard self.mpv != nil else { return }
         let duration = getDouble("duration")
         let position = getDouble("time-pos")
         let cached = getDouble("demuxer-cache-time")
