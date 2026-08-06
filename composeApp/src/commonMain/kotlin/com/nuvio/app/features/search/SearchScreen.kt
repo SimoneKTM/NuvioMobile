@@ -252,6 +252,9 @@ fun SearchScreen(
         val searchResultColumns = remember(maxWidth) {
             searchResultColumnCountForWidth(maxWidth)
         }
+        val threeColumnPosterWidth = remember(maxWidth) {
+            (maxWidth - 48.dp) / 3f
+        }
         val homeSectionPadding = remember(maxWidth) {
             homeSectionHorizontalPaddingForWidth(maxWidth.value)
         }
@@ -390,11 +393,12 @@ fun SearchScreen(
                             .filter { it.target is CatalogTarget.CloudStream }
                             .flatMap { it.items }
                             .distinctBy { "${it.type}:${it.id}" }
-                        val normalItems = uiState.sections
-                            .filterNot { it.target is CatalogTarget.CloudStream }
-                            .flatMap { it.items }
-                            .distinctBy { "${it.type}:${it.id}" }
-                            .sortedWith(compareByDescending<MetaPreview> { it.popularity }.thenByDescending { it.releaseInfo?.take(4)?.toIntOrNull() })
+                        val normalItems = sortSearchResultsBySeries(
+                            uiState.sections
+                                .filterNot { it.target is CatalogTarget.CloudStream }
+                                .flatMap { it.items }
+                                .distinctBy { "${it.type}:${it.id}" },
+                        )
                         val activeCloudStreamNames = cloudStreamUiState.plugins
                             .filter(CloudStreamPluginItem::isRunnable)
                             .map { it.metadata.name }
@@ -423,6 +427,7 @@ fun SearchScreen(
                                     DiscoverGridRow(
                                         items = rowItems,
                                         columns = searchResultColumns,
+                                        referencePosterWidth = threeColumnPosterWidth,
                                         modifier = Modifier.padding(horizontal = 16.dp),
                                         watchedKeys = watchedUiState.watchedKeys,
                                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
@@ -442,6 +447,7 @@ fun SearchScreen(
                                     DiscoverGridRow(
                                         items = rowItems,
                                         columns = searchResultColumns,
+                                        referencePosterWidth = threeColumnPosterWidth,
                                         modifier = Modifier.padding(horizontal = 16.dp),
                                         watchedKeys = watchedUiState.watchedKeys,
                                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
@@ -487,6 +493,30 @@ private fun searchResultColumnCountForWidth(screenWidth: Dp): Int =
         screenWidth >= 840.dp -> 5
         else -> 4
     }
+
+private fun sortSearchResultsBySeries(items: List<MetaPreview>): List<MetaPreview> =
+    items.groupBy { searchSeriesBaseKey(it.name) }
+        .entries
+        .sortedWith(
+            compareByDescending<Map.Entry<String, List<MetaPreview>>> { entry ->
+                entry.value.maxOfOrNull { it.popularity ?: 0.0 } ?: 0.0
+            }.thenBy { it.key },
+        )
+        .flatMap { entry ->
+            entry.value.sortedWith(
+                compareBy<MetaPreview> { it.releaseInfo?.take(4)?.toIntOrNull() ?: Int.MAX_VALUE }
+                    .thenBy { it.name.lowercase() },
+            )
+        }
+
+private fun searchSeriesBaseKey(name: String): String =
+    name.lowercase()
+        .replace(Regex("""\s+(?:season|s)\s*\d+"""), "")
+        .replace(Regex("""\s+(?:part|vol(?:ume)?)\s*\d+"""), "")
+        .replace(Regex("""\s+\d+(?:st|nd|rd|th)?\s*$"""), "")
+        .replace(Regex("""\s+(?:ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii)\s*$"""), "")
+        .trim()
+        .trimEnd(':', '-', '.', '!', '?')
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
