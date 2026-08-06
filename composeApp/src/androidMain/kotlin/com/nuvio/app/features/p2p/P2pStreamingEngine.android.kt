@@ -3,6 +3,7 @@ package com.nuvio.app.features.p2p
 import android.content.Context
 import android.util.Log
 import com.nuvio.app.core.logging.InAppLogger
+import com.nuvio.app.core.i18n.localizedP2pAddTorrentFailed
 import com.nuvio.app.core.i18n.localizedP2pUnknownTorrentError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
