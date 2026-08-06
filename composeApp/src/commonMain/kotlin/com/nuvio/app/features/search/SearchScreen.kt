@@ -252,9 +252,6 @@ fun SearchScreen(
         val searchResultColumns = remember(maxWidth) {
             searchResultColumnCountForWidth(maxWidth)
         }
-        val threeColumnPosterWidth = remember(maxWidth) {
-            (maxWidth - 48.dp) / 3f
-        }
         val homeSectionPadding = remember(maxWidth) {
             homeSectionHorizontalPaddingForWidth(maxWidth.value)
         }
@@ -427,7 +424,6 @@ fun SearchScreen(
                                     DiscoverGridRow(
                                         items = rowItems,
                                         columns = searchResultColumns,
-                                        referencePosterWidth = threeColumnPosterWidth,
                                         modifier = Modifier.padding(horizontal = 16.dp),
                                         watchedKeys = watchedUiState.watchedKeys,
                                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,
@@ -447,7 +443,6 @@ fun SearchScreen(
                                     DiscoverGridRow(
                                         items = rowItems,
                                         columns = searchResultColumns,
-                                        referencePosterWidth = threeColumnPosterWidth,
                                         modifier = Modifier.padding(horizontal = 16.dp),
                                         watchedKeys = watchedUiState.watchedKeys,
                                         fullyWatchedSeriesKeys = fullyWatchedSeriesKeys,

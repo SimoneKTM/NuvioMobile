@@ -28,7 +28,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
@@ -199,7 +198,6 @@ private fun DiscoverFilterRow(
 internal fun DiscoverGridRow(
     items: List<MetaPreview>,
     columns: Int,
-    referencePosterWidth: Dp? = null,
     modifier: Modifier = Modifier,
     watchedKeys: Set<String> = emptySet(),
     fullyWatchedSeriesKeys: Set<String> = emptySet(),
@@ -218,7 +216,6 @@ internal fun DiscoverGridRow(
                 item = item,
                 cornerRadiusDp = posterCardStyle.cornerRadiusDp,
                 hideLabels = posterCardStyle.hideLabelsEnabled,
-                referencePosterWidth = referencePosterWidth,
                 modifier = Modifier.weight(1f),
                 isWatched = WatchingState.isPosterWatched(
                     watchedKeys = watchedKeys,
@@ -242,7 +239,6 @@ private fun DiscoverPosterTile(
     cornerRadiusDp: Int,
     hideLabels: Boolean,
     modifier: Modifier = Modifier,
-    referencePosterWidth: Dp? = null,
     isWatched: Boolean = false,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
@@ -251,17 +247,10 @@ private fun DiscoverPosterTile(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        val posterModifier = if (referencePosterWidth != null) {
-            Modifier
-                .fillMaxWidth()
-                .height(referencePosterWidth / item.posterShape.discoverAspectRatio())
-        } else {
-            Modifier
+        Box(
+            modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(item.posterShape.discoverAspectRatio())
-        }
-        Box(
-            modifier = posterModifier
                 .clip(RoundedCornerShape(cornerRadiusDp.dp))
                 .background(MaterialTheme.colorScheme.surface)
                 .posterCardClickable(
