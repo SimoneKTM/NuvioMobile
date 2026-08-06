@@ -15,11 +15,15 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withTimeoutOrNull
 
 const val CATALOG_PAGE_SIZE = 100
 private const val DUPLICATE_CATALOG_PAGE_ADVANCE_LIMIT = 3
+private const val CATALOG_ENRICH_PAGE_LIMIT = 10
+private const val CATALOG_ENRICH_CONCURRENCY = 6
 
 data class CatalogPage(
     val items: List<MetaPreview>,
@@ -67,6 +71,7 @@ suspend fun fetchCatalogPage(
     search: String? = null,
     skip: Int? = null,
     maxItems: Int? = null,
+    enrichLimit: Int = CATALOG_ENRICH_PAGE_LIMIT,
 ): CatalogPage {
     val url = buildCatalogUrl(
         manifestUrl = manifestUrl,
@@ -81,7 +86,7 @@ suspend fun fetchCatalogPage(
         payload = payload,
         maxItems = maxItems,
     )
-    val enrichedItems = enrichTitlesFromMeta(manifestUrl, type, parsed.items)
+    val enrichedItems = enrichTitlesFromMeta(manifestUrl, type, parsed.items, enrichLimit)
     val nextSkip = if (parsed.rawItemCount > 0) {
         (skip ?: 0) + parsed.rawItemCount
     } else {
@@ -98,25 +103,32 @@ private suspend fun enrichTitlesFromMeta(
     manifestUrl: String,
     type: String,
     items: List<MetaPreview>,
+    enrichLimit: Int,
 ): List<MetaPreview> = coroutineScope {
-    items.map { item ->
+    if (enrichLimit <= 0 || items.isEmpty()) return@coroutineScope items
+    val semaphore = Semaphore(CATALOG_ENRICH_CONCURRENCY)
+    val (toEnrich, unchanged) = items.take(enrichLimit) to items.drop(enrichLimit)
+    val enriched = toEnrich.map { item ->
         async {
-            val isAnime = item.isAnime ||
-                item.type.equals("anime", ignoreCase = true) ||
-                item.id.startsWith("anilist:", ignoreCase = true) ||
-                item.id.startsWith("kitsu:", ignoreCase = true) ||
-                item.id.startsWith("mal:", ignoreCase = true)
-            val details = withTimeoutOrNull(3_000L) {
-                MetaDetailsRepository.fetch(type = type, id = item.id, isAnime = isAnime)
-            }
-            val metaName = details?.name?.trim()?.takeIf(String::isNotBlank)
-            if (metaName != null && metaName != item.name || item.isAnime != isAnime) {
-                item.copy(name = metaName ?: item.name, isAnime = isAnime)
-            } else {
-                item
+            semaphore.withPermit {
+                val isAnime = item.isAnime ||
+                    item.type.equals("anime", ignoreCase = true) ||
+                    item.id.startsWith("anilist:", ignoreCase = true) ||
+                    item.id.startsWith("kitsu:", ignoreCase = true) ||
+                    item.id.startsWith("mal:", ignoreCase = true)
+                val details = withTimeoutOrNull(3_000L) {
+                    MetaDetailsRepository.fetch(type = type, id = item.id, isAnime = isAnime)
+                }
+                val metaName = details?.name?.trim()?.takeIf(String::isNotBlank)
+                if (metaName != null && metaName != item.name || item.isAnime != isAnime) {
+                    item.copy(name = metaName ?: item.name, isAnime = isAnime)
+                } else {
+                    item
+                }
             }
         }
     }.map { it.await() }
+    enriched + unchanged
 }
 
 fun AddonCatalog.supportsPagination(): Boolean =

@@ -58,6 +58,7 @@ import com.nuvio.app.features.anime.AnimeAddonRepository
 import com.nuvio.app.features.catalog.CatalogTarget
 import com.nuvio.app.features.cloudstream.CloudStreamPluginItem
 import com.nuvio.app.features.cloudstream.CloudStreamRepository
+import com.nuvio.app.features.home.HomeCatalogSection
 import com.nuvio.app.features.home.HomeCatalogSettingsRepository
 import com.nuvio.app.features.home.MetaPreview
 import com.nuvio.app.features.home.components.HomeCatalogRowSection
@@ -66,7 +67,9 @@ import com.nuvio.app.features.home.components.homeSectionHorizontalPaddingForWid
 import com.nuvio.app.features.home.components.BouncingDots
 import com.nuvio.app.features.home.components.HomeSkeletonRow
 import com.nuvio.app.features.watched.WatchedRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
@@ -243,6 +246,13 @@ fun SearchScreen(
         }
     }
 
+    var preparedSearchSections by remember { mutableStateOf(PreparedSearchSections()) }
+    LaunchedEffect(uiState.sections) {
+        preparedSearchSections = withContext(Dispatchers.Default) {
+            prepareSearchSections(uiState.sections)
+        }
+    }
+
     BoxWithConstraints(
         modifier = modifier.fillMaxSize(),
     ) {
@@ -386,16 +396,8 @@ fun SearchScreen(
                     }
 
                     else -> {
-                        val cloudStreamItems = uiState.sections
-                            .filter { it.target is CatalogTarget.CloudStream }
-                            .flatMap { it.items }
-                            .distinctBy { "${it.type}:${it.id}" }
-                        val normalItems = sortSearchResultsBySeries(
-                            uiState.sections
-                                .filterNot { it.target is CatalogTarget.CloudStream }
-                                .flatMap { it.items }
-                                .distinctBy { "${it.type}:${it.id}" },
-                        )
+                        val cloudStreamItems = preparedSearchSections.cloudItems
+                        val normalItems = preparedSearchSections.normalItems
                         val activeCloudStreamNames = cloudStreamUiState.plugins
                             .filter(CloudStreamPluginItem::isRunnable)
                             .map { it.metadata.name }
@@ -488,6 +490,25 @@ private fun searchResultColumnCountForWidth(screenWidth: Dp): Int =
         screenWidth >= 840.dp -> 5
         else -> 4
     }
+
+private data class PreparedSearchSections(
+    val cloudItems: List<MetaPreview> = emptyList(),
+    val normalItems: List<MetaPreview> = emptyList(),
+)
+
+private fun prepareSearchSections(sections: List<HomeCatalogSection>): PreparedSearchSections =
+    PreparedSearchSections(
+        cloudItems = sections
+            .filter { it.target is CatalogTarget.CloudStream }
+            .flatMap { it.items }
+            .distinctBy { "${it.type}:${it.id}" },
+        normalItems = sortSearchResultsBySeries(
+            sections
+                .filterNot { it.target is CatalogTarget.CloudStream }
+                .flatMap { it.items }
+                .distinctBy { "${it.type}:${it.id}" },
+        ),
+    )
 
 private fun sortSearchResultsBySeries(items: List<MetaPreview>): List<MetaPreview> =
     items.groupBy { searchSeriesBaseKey(it.name) }

@@ -26,6 +26,7 @@ import com.nuvio.app.features.home.filterReleasedItems
 import com.nuvio.app.features.watchprogress.CurrentDateProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -149,6 +151,16 @@ object SearchRepository {
                 jobs.joinAll()
                 resultChannel.close()
             }
+            val cloudSectionsDeferred = async {
+                cloudSearchSections(normalizedQuery, cloudPlugins) { section ->
+                    _uiState.update { current ->
+                        current.copy(
+                            isLoading = true,
+                            sections = (current.sections + section).distinctBy(HomeCatalogSection::key),
+                        )
+                    }
+                }
+            }
             val results = arrayOfNulls<IndexedSearchResult>(requests.size)
 
             try {
@@ -167,14 +179,7 @@ object SearchRepository {
                 resultChannel.close()
             }
 
-            val cloudSections = cloudSearchSections(normalizedQuery, cloudPlugins) { section ->
-                _uiState.update { current ->
-                    current.copy(
-                        isLoading = true,
-                        sections = (current.sections + section).distinctBy(HomeCatalogSection::key),
-                    )
-                }
-            }
+            val cloudSections = cloudSectionsDeferred.await()
 
             val completedResults = results.filterNotNull()
             val sections = results.orderedSections()
@@ -628,7 +633,9 @@ private fun String.displayLabel(): String =
 
 private const val CLOUDSTREAM_SEARCH_MIN_QUERY_LENGTH = 3
 private const val CLOUDSTREAM_SEARCH_CONCURRENCY = 8
-private const val CLOUDSTREAM_SEARCH_PROVIDER_TIMEOUT_MS = 15_000L
+private const val CLOUDSTREAM_SEARCH_PROVIDER_TIMEOUT_MS = 7_000L
+private const val CLOUDSTREAM_SEARCH_START_BATCH = 4
+private const val CLOUDSTREAM_SEARCH_BATCH_DELAY_MS = 1_200L
 
 private suspend fun SearchRepository.cloudSearchSections(
     query: String,
@@ -639,20 +646,28 @@ private suspend fun SearchRepository.cloudSearchSections(
     val sectionMutex = Mutex()
     val sectionsByProviderId = mutableMapOf<String, HomeCatalogSection>()
 
-    plugins.map { plugin ->
-        async {
-            val section = semaphore.withPermit {
-                withTimeoutOrNull(CLOUDSTREAM_SEARCH_PROVIDER_TIMEOUT_MS) {
-                    plugin.toCloudSearchSection(query)
-                }
-            } ?: return@async
+    val chunks = plugins.chunked(CLOUDSTREAM_SEARCH_START_BATCH)
+    val deferreds = mutableListOf<Deferred<Unit>>()
+    chunks.forEachIndexed { index, chunk ->
+        deferreds += chunk.map { plugin ->
+            async {
+                val section = semaphore.withPermit {
+                    withTimeoutOrNull(CLOUDSTREAM_SEARCH_PROVIDER_TIMEOUT_MS) {
+                        plugin.toCloudSearchSection(query)
+                    }
+                } ?: return@async
 
-            sectionMutex.withLock {
-                sectionsByProviderId[plugin.metadata.id.value] = section
+                sectionMutex.withLock {
+                    sectionsByProviderId[plugin.metadata.id.value] = section
+                }
+                onSection(section)
             }
-            onSection(section)
         }
-    }.awaitAll()
+        if (index < chunks.lastIndex) {
+            delay(CLOUDSTREAM_SEARCH_BATCH_DELAY_MS)
+        }
+    }
+    deferreds.awaitAll()
 
     plugins.mapNotNull { plugin -> sectionsByProviderId[plugin.metadata.id.value] }
 }
