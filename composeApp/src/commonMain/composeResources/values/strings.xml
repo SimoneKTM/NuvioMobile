@@ -1972,6 +1972,11 @@
     <string name="library_mal_status_on_hold">On Hold</string>
     <string name="library_mal_status_dropped">Dropped</string>
     <string name="library_mal_status_plan_to_watch">Plan to Watch</string>
+    <string name="library_kitsu_status_current">Current</string>
+    <string name="library_kitsu_status_completed">Completed</string>
+    <string name="library_kitsu_status_planned">Planned</string>
+    <string name="library_kitsu_status_on_hold">On Hold</string>
+    <string name="library_kitsu_status_dropped">Dropped</string>
     <string name="library_anilist_title">AniList Library</string>
     <string name="library_anilist_empty_title">Your AniList library is empty</string>
     <string name="library_anilist_empty_message">Connect AniList and add anime to your list to see them here.</string>

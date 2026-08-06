@@ -1976,6 +1976,11 @@
 <string name="library_mal_status_on_hold">In pausa</string>
 <string name="library_mal_status_dropped">Abbandonati</string>
 <string name="library_mal_status_plan_to_watch">Da vedere</string>
+<string name="library_kitsu_status_current">In visione</string>
+<string name="library_kitsu_status_completed">Completati</string>
+<string name="library_kitsu_status_planned">Pianificati</string>
+<string name="library_kitsu_status_on_hold">In pausa</string>
+<string name="library_kitsu_status_dropped">Abbandonati</string>
 <string name="library_anilist_title">Libreria AniList</string>
 <string name="library_anilist_empty_title">La tua libreria AniList è vuota</string>
 <string name="library_anilist_empty_message">Connetti AniList e aggiungi anime alla tua lista per vederli qui.</string>

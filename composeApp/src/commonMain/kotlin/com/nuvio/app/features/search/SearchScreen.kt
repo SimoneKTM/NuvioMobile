@@ -510,12 +510,22 @@ private fun prepareSearchSections(sections: List<HomeCatalogSection>): PreparedS
         ),
     )
 
-private fun sortSearchResultsBySeries(items: List<MetaPreview>): List<MetaPreview> =
-    items.groupBy { searchSeriesBaseKey(it.name) }
-        .entries
+private fun sortSearchResultsBySeries(items: List<MetaPreview>): List<MetaPreview> {
+    if (items.size < 2) return items
+    val groups = items.groupBy { searchSeriesBaseKey(it.name) }.entries.toList()
+    if (groups.size < 2) return groups.first().value
+
+    val maxPopularity = groups.maxOfOrNull { entry ->
+        entry.value.maxOfOrNull { it.popularity ?: 0.0 } ?: 0.0
+    } ?: 0.0
+    val years = groups.mapNotNull { entry -> entry.value.searchSeriesYear() }
+    val minYear = years.minOrNull()
+    val maxYear = years.maxOrNull()
+
+    return groups
         .sortedWith(
             compareByDescending<Map.Entry<String, List<MetaPreview>>> { entry ->
-                entry.value.maxOfOrNull { it.popularity ?: 0.0 } ?: 0.0
+                entry.value.searchSeriesScore(maxPopularity, minYear, maxYear)
             }.thenBy { it.key },
         )
         .flatMap { entry ->
@@ -524,6 +534,39 @@ private fun sortSearchResultsBySeries(items: List<MetaPreview>): List<MetaPrevie
                     .thenBy { it.name.lowercase() },
             )
         }
+}
+
+private fun List<MetaPreview>.searchSeriesYear(): Int? =
+    mapNotNull { item ->
+        item.rawReleaseDate?.take(4)?.toIntOrNull()
+            ?: item.releaseInfo?.let { info ->
+                Regex("""(19|20)\d{2}""").find(info)?.value?.toIntOrNull()
+            }
+    }.maxOrNull()
+
+private fun List<MetaPreview>.searchSeriesScore(
+    maxPopularity: Double,
+    minYear: Int?,
+    maxYear: Int?,
+): Double {
+    val popularity = maxOfOrNull { it.popularity ?: 0.0 } ?: 0.0
+    val popNorm = if (maxPopularity > 0.0) {
+        (popularity / maxPopularity).coerceIn(0.0, 1.0)
+    } else {
+        0.0
+    }
+    val yearNorm = when {
+        minYear != null && maxYear != null && maxYear > minYear -> {
+            val year = searchSeriesYear() ?: return SEARCH_POPULARITY_WEIGHT * popNorm
+            ((year - minYear).toDouble() / (maxYear - minYear).toDouble()).coerceIn(0.0, 1.0)
+        }
+        else -> 0.5
+    }
+    return SEARCH_POPULARITY_WEIGHT * popNorm + SEARCH_YEAR_WEIGHT * yearNorm
+}
+
+private const val SEARCH_POPULARITY_WEIGHT = 0.5
+private const val SEARCH_YEAR_WEIGHT = 0.5
 
 private fun searchSeriesBaseKey(name: String): String =
     name.lowercase()

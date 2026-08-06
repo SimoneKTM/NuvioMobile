@@ -41,10 +41,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nuvio.app.features.anilist.AniListAuthRepository
+import com.nuvio.app.features.kitsu.KitsuAuthRepository
 import com.nuvio.app.features.library.LibrarySourceMode
+import com.nuvio.app.features.mal.MalAuthRepository
 import com.nuvio.app.features.profiles.ProfileRepository
+import com.nuvio.app.features.simkl.SimklAuthRepository
+import com.nuvio.app.features.tmdb.TmdbSettingsRepository
 import com.nuvio.app.features.trakt.TraktAuthRepository
 import com.nuvio.app.features.trakt.TraktBrandAsset
 import com.nuvio.app.features.trakt.TraktAuthUiState
@@ -57,6 +63,7 @@ import com.nuvio.app.features.trakt.WatchProgressSource
 import com.nuvio.app.features.trakt.TRAKT_CONTINUE_WATCHING_DAYS_CAP_ALL
 import com.nuvio.app.features.trakt.normalizeTraktContinueWatchingDaysCap
 import com.nuvio.app.features.trakt.traktBrandPainter
+import com.nuvio.app.features.tvdb.TvdbSettingsRepository
 import nuvio.composeapp.generated.resources.trakt_device_code_verification_url
 import nuvio.composeapp.generated.resources.trakt_device_code_instructions
 import nuvio.composeapp.generated.resources.trakt_device_code_polling
@@ -176,6 +183,14 @@ private fun TraktFeatureRows(
     var statusMessage by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
+    val isTraktAuth by TraktAuthRepository.isAuthenticated.collectAsStateWithLifecycle()
+    val isMalAuth by MalAuthRepository.isAuthenticated.collectAsStateWithLifecycle()
+    val isAniListAuth by AniListAuthRepository.isAuthenticated.collectAsStateWithLifecycle()
+    val isKitsuAuth by KitsuAuthRepository.isAuthenticated.collectAsStateWithLifecycle()
+    val isSimklAuth by SimklAuthRepository.isAuthenticated.collectAsStateWithLifecycle()
+    val tmdbSettings by TmdbSettingsRepository.uiState.collectAsStateWithLifecycle()
+    val tvdbSettings by TvdbSettingsRepository.uiState.collectAsStateWithLifecycle()
+
     val librarySourceValue = librarySourceModeLabel(settingsUiState.librarySourceMode)
     val watchProgressValue = watchProgressSourceLabel(settingsUiState.watchProgressSource)
     val continueWatchingWindowValue = continueWatchingDaysCapLabel(settingsUiState.continueWatchingDaysCap)
@@ -237,6 +252,10 @@ private fun TraktFeatureRows(
     if (showLibrarySourceDialog) {
         LibrarySourceModeDialog(
             selectedSource = settingsUiState.librarySourceMode,
+            isTraktAuth = isTraktAuth,
+            isMalAuth = isMalAuth,
+            isAniListAuth = isAniListAuth,
+            isKitsuAuth = isKitsuAuth,
             onSourceSelected = { source ->
                 TraktSettingsRepository.setLibrarySourceMode(source)
                 statusMessage = when (source) {
@@ -253,6 +272,8 @@ private fun TraktFeatureRows(
     if (showWatchProgressDialog) {
         WatchProgressSourceDialog(
             selectedSource = settingsUiState.watchProgressSource,
+            isTraktAuth = isTraktAuth,
+            isSimklAuth = isSimklAuth,
             onSourceSelected = { source ->
                 scope.launch {
                     val result = WatchProgressSourceCoordinator.selectSource(
@@ -289,6 +310,9 @@ private fun TraktFeatureRows(
     if (showMoreLikeThisSourceDialog) {
         MoreLikeThisSourceDialog(
             selectedSource = settingsUiState.moreLikeThisSource,
+            isTraktAuth = isTraktAuth,
+            isTmdbEnabled = tmdbSettings.enabled,
+            isTvdbEnabled = tvdbSettings.enabled,
             onSourceSelected = { source ->
                 TraktSettingsRepository.setMoreLikeThisSource(source)
                 showMoreLikeThisSourceDialog = false
@@ -405,6 +429,10 @@ private fun continueWatchingDaysCapLabel(daysCap: Int): String {
 @OptIn(ExperimentalMaterial3Api::class)
 private fun LibrarySourceModeDialog(
     selectedSource: LibrarySourceMode,
+    isTraktAuth: Boolean,
+    isMalAuth: Boolean,
+    isAniListAuth: Boolean,
+    isKitsuAuth: Boolean,
     onSourceSelected: (LibrarySourceMode) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -434,7 +462,13 @@ private fun LibrarySourceModeDialog(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    listOf(LibrarySourceMode.TRAKT, LibrarySourceMode.MAL, LibrarySourceMode.ANILIST, LibrarySourceMode.KITSU, LibrarySourceMode.LOCAL).forEach { source ->
+                    buildList {
+                        if (isTraktAuth) add(LibrarySourceMode.TRAKT)
+                        if (isMalAuth) add(LibrarySourceMode.MAL)
+                        if (isAniListAuth) add(LibrarySourceMode.ANILIST)
+                        if (isKitsuAuth) add(LibrarySourceMode.KITSU)
+                        add(LibrarySourceMode.LOCAL)
+                    }.forEach { source ->
                         TraktDialogOption(
                             label = librarySourceModeLabel(source),
                             selected = source == selectedSource,
@@ -458,6 +492,8 @@ private fun LibrarySourceModeDialog(
 @OptIn(ExperimentalMaterial3Api::class)
 private fun WatchProgressSourceDialog(
     selectedSource: WatchProgressSource,
+    isTraktAuth: Boolean,
+    isSimklAuth: Boolean,
     onSourceSelected: (WatchProgressSource) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -487,7 +523,11 @@ private fun WatchProgressSourceDialog(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    WatchProgressSource.entries.forEach { source ->
+                    buildList {
+                        if (isTraktAuth) add(WatchProgressSource.TRAKT)
+                        if (isSimklAuth) add(WatchProgressSource.SIMKL)
+                        add(WatchProgressSource.NUVIO_SYNC)
+                    }.forEach { source ->
                         TraktDialogOption(
                             label = watchProgressSourceLabel(source),
                             selected = source == selectedSource,
@@ -567,6 +607,9 @@ private fun ContinueWatchingWindowDialog(
 @OptIn(ExperimentalMaterial3Api::class)
 private fun MoreLikeThisSourceDialog(
     selectedSource: MoreLikeThisSourcePreference,
+    isTraktAuth: Boolean,
+    isTmdbEnabled: Boolean,
+    isTvdbEnabled: Boolean,
     onSourceSelected: (MoreLikeThisSourcePreference) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -596,7 +639,11 @@ private fun MoreLikeThisSourceDialog(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    MoreLikeThisSourcePreference.entries.forEach { source ->
+                    buildList {
+                        if (isTraktAuth) add(MoreLikeThisSourcePreference.TRAKT)
+                        if (isTmdbEnabled) add(MoreLikeThisSourcePreference.TMDB)
+                        if (isTvdbEnabled) add(MoreLikeThisSourcePreference.TVDB)
+                    }.forEach { source ->
                         TraktDialogOption(
                             label = moreLikeThisSourceLabel(source),
                             selected = source == selectedSource,

@@ -62,6 +62,7 @@ import com.nuvio.app.core.ui.nuvio
 import com.nuvio.app.features.kitsu.KitsuAuthRepository
 import com.nuvio.app.features.kitsu.KitsuConnectionMode
 import com.nuvio.app.features.kitsu.KitsuSectionSettings
+import com.nuvio.app.features.kitsu.kitsuSectionDisplayTitle
 import com.nuvio.app.features.kitsu.KitsuSettingsRepository
 import com.nuvio.app.features.kitsu.KitsuSyncCoordinator
 import nuvio.composeapp.generated.resources.Res
@@ -487,7 +488,7 @@ private fun KitsuSectionSettingsRow(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = item.type,
+                text = kitsuSectionDisplayTitle(item.type),
                 style = MaterialTheme.typography.bodyLarge,
                 color = tokens.colors.textPrimary,
                 fontWeight = FontWeight.SemiBold,

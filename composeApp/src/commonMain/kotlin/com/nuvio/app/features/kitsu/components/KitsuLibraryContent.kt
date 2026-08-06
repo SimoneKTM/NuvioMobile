@@ -15,6 +15,7 @@ import com.nuvio.app.features.kitsu.KitsuLibraryItem
 import com.nuvio.app.features.kitsu.KitsuLibraryUiState
 import com.nuvio.app.features.kitsu.KitsuSectionSettings
 import com.nuvio.app.features.kitsu.KitsuSortBy
+import com.nuvio.app.features.kitsu.kitsuSectionDisplayTitle
 import nuvio.composeapp.generated.resources.Res
 import nuvio.composeapp.generated.resources.action_retry
 import nuvio.composeapp.generated.resources.kitsu_library_empty_message
@@ -112,7 +113,7 @@ fun LazyListScope.kitsuLibraryContent(
                     displayedAnySection = true
                     item {
                         NuvioShelfSection(
-                            title = title,
+                            title = kitsuSectionDisplayTitle(title),
                             entries = list,
                             headerHorizontalPadding = 16.dp,
                             rowContentPadding = PaddingValues(horizontal = 16.dp),

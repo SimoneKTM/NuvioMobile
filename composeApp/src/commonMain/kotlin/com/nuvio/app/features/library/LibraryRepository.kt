@@ -29,6 +29,7 @@ import com.nuvio.app.features.kitsu.KitsuAuthRepository
 import com.nuvio.app.features.kitsu.KitsuLibraryRepository
 import com.nuvio.app.features.kitsu.KitsuLibraryItem
 import com.nuvio.app.features.kitsu.KitsuSettingsRepository
+import com.nuvio.app.features.kitsu.kitsuStatusDisplayTitle
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
 import kotlinx.atomicfu.locks.SynchronizedObject
@@ -792,7 +793,7 @@ object LibraryRepository {
                 }
                 LibrarySection(
                     type = "kitsu:$englishKey",
-                    displayTitle = config.type,
+                    displayTitle = kitsuStatusDisplayTitle(config.type),
                     items = statusItems.map { it.toLibraryItem() },
                 )
             }
