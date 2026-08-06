@@ -756,6 +756,18 @@ struct TabContentView: View {
     let usesTabletFloatingTabBar: Bool
     @ObservedObject var coordinator: TabNavigationCoordinator
     @ObservedObject var appCoordinator: AppNavigationCoordinator
+    @ObservedObject var iconStore: NativeTabIconStore
+
+    private var showsProfileAvatar: Bool {
+        appCoordinator.isAppReady &&
+            coordinator.path.isEmpty &&
+            (tab == .home || tab == .anime)
+    }
+
+    private func presentProfileSwitcher() {
+        guard appCoordinator.isAppReady, !appCoordinator.isProfileSwitcherPresented else { return }
+        appCoordinator.isProfileSwitcherPresented = true
+    }
 
     var body: some View {
         NavigationStack(
@@ -800,6 +812,71 @@ struct TabContentView: View {
                 : Visibility.hidden,
             for: .tabBar
         )
+        .overlay(alignment: .topLeading) {
+            if showsProfileAvatar {
+                GeometryReader { proxy in
+                    ProfileAvatarButton(
+                        iconStore: iconStore,
+                        isProfileSwitcherPresented: $appCoordinator.isProfileSwitcherPresented,
+                        profileSwitcherController: appCoordinator.profileSwitcherController,
+                        onPress: presentProfileSwitcher,
+                        onManageProfiles: appCoordinator.openProfileManagement
+                    )
+                    .position(
+                        x: profileAvatarSize / 2 + profileAvatarLeadingPadding,
+                        y: proxy.safeAreaInsets.top + profileAvatarSize / 2 + profileAvatarTopPadding
+                    )
+                }
+            }
+        }
+    }
+}
+
+private let profileAvatarSize: CGFloat = 34
+private let profileAvatarTopPadding: CGFloat = 10
+private let profileAvatarLeadingPadding: CGFloat = 16
+
+@available(iOS 16.0, *)
+private struct ProfileAvatarButton: View {
+    @ObservedObject var iconStore: NativeTabIconStore
+    @Binding var isProfileSwitcherPresented: Bool
+    let profileSwitcherController: NativeProfileSwitcherController
+    let onPress: () -> Void
+    let onManageProfiles: () -> Void
+
+    private var avatar: some View {
+        Image(uiImage: iconStore.image(for: .settings, selected: false))
+            .resizable()
+            .scaledToFill()
+            .frame(width: profileAvatarSize, height: profileAvatarSize)
+            .clipShape(Circle())
+            .overlay {
+                Circle().stroke(.white.opacity(0.28), lineWidth: 1.5)
+            }
+            .shadow(color: .black.opacity(0.45), radius: 6, y: 2)
+            .contentShape(Circle())
+            .accessibilityLabel(String(localized: "Profile"))
+            .onTapGesture(perform: onPress)
+            .onLongPressGesture(minimumDuration: 0.45, perform: onPress)
+    }
+
+    @ViewBuilder
+    var body: some View {
+        if #available(iOS 26.0, *) {
+            avatar
+                .popover(
+                    isPresented: $isProfileSwitcherPresented,
+                    attachmentAnchor: .rect(.bounds),
+                    arrowEdge: .bottom
+                ) {
+                    NativeProfileSwitcherView(
+                        controller: profileSwitcherController,
+                        onManageProfiles: onManageProfiles
+                    )
+                }
+        } else {
+            avatar
+        }
     }
 }
 
@@ -1245,7 +1322,8 @@ struct NativeNavContentView: View {
                     usesNativeTabBar: usesNativeTabBar,
                     usesTabletFloatingTabBar: usesTabletFloatingTabBar,
                     coordinator: appCoordinator.coordinator(for: tab),
-                    appCoordinator: appCoordinator
+                    appCoordinator: appCoordinator,
+                    iconStore: iconStore
                 )
                 .tabItem {
                     Label {
